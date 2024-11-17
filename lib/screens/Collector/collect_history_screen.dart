@@ -21,17 +21,17 @@ class _CollectorHistoryScreenState extends State<CollectorHistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
-        elevation: 0,
+        centerTitle: true,
         title: const Text(
           'Histórico de Coletas',
           style: TextStyle(color: Colors.white),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: _buildHistoryList(),
     );

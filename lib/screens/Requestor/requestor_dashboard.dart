@@ -2,8 +2,11 @@ import 'package:ciclou_projeto/components/custom_drawer.dart';
 import 'package:ciclou_projeto/components/custom_requestor_navigationbar.dart';
 import 'package:ciclou_projeto/screens/Requestor/create_collection_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/payment_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_history_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_map_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/register_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
 import 'package:flutter/material.dart';
 
 class RequestorDashboard extends StatefulWidget {
@@ -28,31 +31,40 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        backgroundColor: Colors.green,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () {
-            _scaffoldKey.currentState?.openDrawer();
-          },
-          child: const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              backgroundImage: AssetImage('assets/user_profile.jpg'),
-            ),
-          ),
-        ),
-        title: const Text(
-          'Olá, Caio!',
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
+      appBar: _selectedIndex == 0
+          ? AppBar(
+              backgroundColor: Colors.green,
+              elevation: 0,
+              leading: GestureDetector(
+                onTap: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+                child: const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: CircleAvatar(
+                    backgroundImage: AssetImage('assets/user_profile.jpg'),
+                  ),
+                ),
+              ),
+              title: const Text(
+                'Olá, Caio!',
+                style: TextStyle(color: Colors.white),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RequestorNotificationsScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            )
+          : null,
       drawer: CustomDrawer(
         userName: 'Caio',
         userEmail: 'Caio@gmail.com',
@@ -83,7 +95,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       case 2:
         return const CreateCollection();
       case 3:
-        return const Center(child: Text('Tela de Histórico'));
+        return RequestorHistoryScreen();
       case 4:
         return const PaymentScreen();
       default:
@@ -124,8 +136,8 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8.0),
           _buildSolicitationCard(
-              'Restaurante X', '10 Litros', 'Aguardando Propostas'),
-          _buildSolicitationCard('Condomínio Y', '5 Litros', 'Proposta Aceita'),
+              'Restaurante', '10 Litros', 'Aguardando Propostas'),
+          _buildSolicitationCard('Condomínio', '5 Litros', 'Aguardando Aceita'),
           TextButton(
             onPressed: () {},
             child: const Text('Ver Todas'),
@@ -182,7 +194,14 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
         title: Text(title),
         subtitle: Text('$quantity - $status'),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16.0),
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProposalsScreen(solicitationTitle: title),
+            ),
+          );
+        },
       ),
     );
   }

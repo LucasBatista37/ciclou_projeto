@@ -1,7 +1,9 @@
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_history_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_map_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/sent_proposals_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/request_details.dart';
 import 'package:ciclou_projeto/screens/register_screen.dart';
@@ -29,31 +31,40 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        backgroundColor: Colors.green,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () {
-            _scaffoldKey.currentState?.openDrawer();
-          },
-          child: const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              backgroundImage: AssetImage('assets/user_profile.jpg'),
-            ),
-          ),
-        ),
-        title: const Text(
-          'Bem-vindo, Coletor!',
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
+      appBar: _selectedIndex == 0
+          ? AppBar(
+              backgroundColor: Colors.green,
+              elevation: 0,
+              leading: GestureDetector(
+                onTap: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+                child: const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: CircleAvatar(
+                    backgroundImage: AssetImage('assets/user_profile.jpg'),
+                  ),
+                ),
+              ),
+              title: const Text(
+                'Bem-vindo, Coletor!',
+                style: TextStyle(color: Colors.white),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CollectorNotificationsScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            )
+          : null,
       drawer: CustomDrawer(
         userName: 'Coletor',
         userEmail: 'coletor@gmail.com',
@@ -82,7 +93,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       case 1:
         return const CollectorMapScreen();
       case 2:
-        return const Center(child: Text('Tela de Solicitações'));
+        return const CollectProcess();
       case 3:
         return const CollectorHistoryScreen();
       default:
@@ -159,7 +170,13 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
             MaterialPageRoute(
                 builder: (context) => const SentProposalsScreen()),
           );
-        } else if (label == 'Histórico') {}
+        } else if (label == 'Histórico') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const CollectorHistoryScreen()),
+          );
+        }
       },
       child: Column(
         children: [

@@ -10,8 +10,24 @@ class CertificatesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Visualizar Certificado'),
         backgroundColor: Colors.green,
+        centerTitle: true,
+        title: const Text(
+          'Visualizar Certificados',
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: PDFView(
         filePath: filePath,

@@ -31,8 +31,18 @@ class SentProposalsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Propostas Enviadas'),
         backgroundColor: Colors.green,
+        centerTitle: true,
+        title: const Text(
+          'Propostas Enviadas',
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: ListView.builder(
         itemCount: propostas.length,
