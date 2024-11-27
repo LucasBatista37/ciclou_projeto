@@ -230,12 +230,10 @@ class _CreateCollectionState extends State<CreateCollection> {
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
-    if (dataSelecionada != null) {
-      setState(() {
-        _prazo = dataSelecionada;
-      });
+    setState(() {
+      _prazo = dataSelecionada;
+    });
     }
-  }
 
   void _selecionarLocalizacao(LatLng localizacao) {
     setState(() {
