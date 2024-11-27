@@ -11,7 +11,7 @@ class FirebaseService {
   static FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   // Função para registrar usuário
-  static Future<User?> registerWithEmail(String email, String password, String name, String userType) async {
+  static Future<User?> registerWithEmail(String email, String password, String name, String userType, {required Map<String, String> additionalData}) async {
     try {
       final userCredential = await auth.createUserWithEmailAndPassword(
         email: email,

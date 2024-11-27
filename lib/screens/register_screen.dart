@@ -1,8 +1,9 @@
 import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
-import 'package:ciclou_projeto/services/firebase_service.dart'; // Serviço do Firebase que criamos
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,17 +18,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isConfirmPasswordVisible = false;
 
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _cpfCnpjController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _neighborhoodController = TextEditingController();
+  final TextEditingController _stateController = TextEditingController();
 
   void _registerUser() async {
     final String name = _nameController.text.trim();
+    final String cpfCnpj = _cpfCnpjController.text.trim();
     final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
     final String confirmPassword = _confirmPasswordController.text.trim();
+    final String phone = _phoneController.text.trim();
+    final String address = _addressController.text.trim();
+    final String city = _cityController.text.trim();
+    final String neighborhood = _neighborhoodController.text.trim();
+    final String state = _stateController.text.trim();
 
-    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (name.isEmpty ||
+        cpfCnpj.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty ||
+        phone.isEmpty ||
+        address.isEmpty ||
+        city.isEmpty ||
+        neighborhood.isEmpty ||
+        state.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor, preencha todos os campos.')),
       );
@@ -41,26 +64,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // Registrar usuário no Firebase
-    final user = await FirebaseService.registerWithEmail(email, password, name, _selectedUserType);
+    try {
+      final userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    if (user != null) {
-      // Redirecionar com base no tipo de usuário
-      if (_selectedUserType == 'Solicitante') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const RequestorDashboard()),
+      final userId = userCredential.user?.uid;
+
+      if (userId != null) {
+        String collectionName =
+            _selectedUserType == 'Solicitante' ? 'requestor' : 'collector';
+
+        await FirebaseFirestore.instance
+            .collection(collectionName)
+            .doc(userId)
+            .set({
+          'name': name,
+          'cpfCnpj': cpfCnpj,
+          'email': email,
+          'phone': phone,
+          'address': address,
+          'city': city,
+          'neighborhood': neighborhood,
+          'state': state,
+          'userType': _selectedUserType,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        if (_selectedUserType == 'Solicitante') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const RequestorDashboard()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const CollectorDashboard()),
+          );
+        }
+      }
+    } catch (e) {
+      if (e is FirebaseAuthException && e.code == 'email-already-in-use') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('O e-mail já está em uso.')),
         );
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const CollectorDashboard()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao registrar: ${e.toString()}')),
         );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao criar conta. Tente novamente.')),
-      );
     }
   }
 
@@ -81,11 +135,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16),
                 _buildTextField('Nome', false, _nameController),
                 const SizedBox(height: 16),
+                _buildTextField('CPF / CNPJ', false, _cpfCnpjController),
+                const SizedBox(height: 16),
                 _buildTextField('Email', false, _emailController),
                 const SizedBox(height: 16),
-                _buildTextField('Senha', true, _passwordController, isVisible: _isPasswordVisible),
+                _buildTextField('Telefone', false, _phoneController),
                 const SizedBox(height: 16),
-                _buildTextField('Confirmar Senha', true, _confirmPasswordController, isVisible: _isConfirmPasswordVisible),
+                _buildTextField('Endereço', false, _addressController),
+                const SizedBox(height: 16),
+                _buildTextField('Cidade', false, _cityController),
+                const SizedBox(height: 16),
+                _buildTextField('Bairro', false, _neighborhoodController),
+                const SizedBox(height: 16),
+                _buildTextField('Estado', false, _stateController),
+                const SizedBox(height: 16),
+                _buildTextField('Senha', true, _passwordController,
+                    isVisible: _isPasswordVisible),
+                const SizedBox(height: 16),
+                _buildTextField(
+                    'Confirmar Senha', true, _confirmPasswordController,
+                    isVisible: _isConfirmPasswordVisible),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: _selectedUserType,
@@ -126,7 +195,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
                     );
                   },
                   child: const Text(
@@ -142,7 +212,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildTextField(String hint, bool isPassword, TextEditingController controller, {bool isVisible = false}) {
+  Widget _buildTextField(
+      String hint, bool isPassword, TextEditingController controller,
+      {bool isVisible = false}) {
     return TextField(
       controller: controller,
       obscureText: isPassword ? !isVisible : false,

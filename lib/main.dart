@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Inicializa o Firebase
+  await Firebase.initializeApp(); 
   runApp(MyApp());
 }
 
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Ciclou App',
       theme: ThemeData(primarySwatch: Colors.green),
-      home: RegisterScreen(), // Tela inicial
+      home: RegisterScreen(), 
     );
   }
 }
