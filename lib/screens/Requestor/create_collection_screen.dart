@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +10,6 @@ class CreateCollection extends StatefulWidget {
   const CreateCollection({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _CreateCollectionState createState() => _CreateCollectionState();
 }
 
@@ -20,6 +21,7 @@ class _CreateCollectionState extends State<CreateCollection> {
   final _comentariosController = TextEditingController();
   LatLng _localizacaoSelecionada = LatLng(-24.0924, -46.6213);
   late GoogleMapController _mapController;
+  bool _isLoading = false;
 
   final List<String> _tiposEstabelecimento = [
     'Restaurante',
@@ -39,6 +41,81 @@ class _CreateCollectionState extends State<CreateCollection> {
     var status = await Permission.location.status;
     if (!status.isGranted) {
       await Permission.location.request();
+    }
+  }
+
+  Future<void> _selecionarData() async {
+    DateTime? dataSelecionada = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+    );
+    setState(() {
+      _prazo = dataSelecionada;
+    });
+  }
+
+  void _selecionarLocalizacao(LatLng localizacao) {
+    setState(() {
+      _localizacaoSelecionada = localizacao;
+      _mapController.animateCamera(
+        CameraUpdate.newLatLng(localizacao),
+      );
+    });
+  }
+
+  Future<void> _enviarSolicitacao() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+
+        if (userId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Usuário não autenticado.')),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+
+        await FirebaseFirestore.instance.collection('coletas').add({
+          'tipoEstabelecimento': _selectedTipoEstabelecimento,
+          'quantidadeOleo': _quantidadeOleo,
+          'prazo': _prazo?.toIso8601String(),
+          'localizacao': {
+            'latitude': _localizacaoSelecionada.latitude,
+            'longitude': _localizacaoSelecionada.longitude,
+          },
+          'comentarios': _comentariosController.text.trim(),
+          'status': 'pendente',
+          'userId': userId,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Solicitação enviada com sucesso!')),
+        );
+
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao enviar solicitação: $e')),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos obrigatórios.')),
+      );
     }
   }
 
@@ -68,8 +145,7 @@ class _CreateCollectionState extends State<CreateCollection> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
-            physics:
-                const ClampingScrollPhysics(), 
+            physics: const ClampingScrollPhysics(),
             padding: const EdgeInsets.all(16.0),
             child: ConstrainedBox(
               constraints: BoxConstraints(
@@ -202,16 +278,18 @@ class _CreateCollectionState extends State<CreateCollection> {
                     ),
                     const SizedBox(height: 16.0),
                     Center(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24.0, vertical: 12.0),
-                        ),
-                        onPressed: _enviarSolicitacao,
-                        child: const Text('Enviar Solicitação',
-                            style: TextStyle(color: Colors.white)),
-                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator()
+                          : ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24.0, vertical: 12.0),
+                              ),
+                              onPressed: _enviarSolicitacao,
+                              child: const Text('Enviar Solicitação',
+                                  style: TextStyle(color: Colors.white)),
+                            ),
                     ),
                   ],
                 ),
@@ -221,38 +299,5 @@ class _CreateCollectionState extends State<CreateCollection> {
         },
       ),
     );
-  }
-
-  Future<void> _selecionarData() async {
-    DateTime? dataSelecionada = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-    );
-    setState(() {
-      _prazo = dataSelecionada;
-    });
-    }
-
-  void _selecionarLocalizacao(LatLng localizacao) {
-    setState(() {
-      _localizacaoSelecionada = localizacao;
-      _mapController.animateCamera(
-        CameraUpdate.newLatLng(localizacao),
-      );
-    });
-  }
-
-  void _enviarSolicitacao() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Solicitação enviada com sucesso!')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha todos os campos obrigatórios.')),
-      );
-    }
   }
 }

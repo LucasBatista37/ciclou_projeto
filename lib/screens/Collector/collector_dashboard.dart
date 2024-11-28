@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_history_screen.dart';
@@ -13,7 +14,6 @@ class CollectorDashboard extends StatefulWidget {
   const CollectorDashboard({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _CollectorDashboardState createState() => _CollectorDashboardState();
 }
 
@@ -130,19 +130,17 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
             ],
           ),
           const SizedBox(height: 16.0),
-          const Text('Solicitações Disponíveis',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8.0),
-          _buildSolicitationCard(
-              'Restaurante', '10 Litros', 'Aguardando Propostas'),
-          _buildSolicitationCard('Condomínio', '15 Litros', 'Urgente'),
-          TextButton(
-            onPressed: () {},
-            child: const Text('Ver Todas'),
+          const Text(
+            'Solicitações Disponíveis',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 8.0),
+          _buildSolicitationsList(),
           const SizedBox(height: 16.0),
-          const Text('Estatísticas de Performance',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            'Estatísticas de Performance',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -153,6 +151,50 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSolicitationsList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('coletas')
+          .where('status', isEqualTo: 'pendente')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return const Center(child: Text('Erro ao carregar solicitações.'));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Text('Nenhuma solicitação disponível no momento.'),
+          );
+        }
+
+        final documents = snapshot.data!.docs;
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: documents.length,
+          itemBuilder: (context, index) {
+            final data = documents[index].data() as Map<String, dynamic>;
+
+            return _buildSolicitationCard(
+              data['tipoEstabelecimento'] ?? 'N/A',
+              '${data['quantidadeOleo'] ?? 'N/A'} Litros',
+              data['prazo'] ?? 'N/A',
+              data['comentarios'] ?? 'Sem observações',
+              documents[index].id,
+            );
+          },
+        );
+      },
     );
   }
 
@@ -192,12 +234,13 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
     );
   }
 
-  Widget _buildSolicitationCard(String title, String quantity, String urgency) {
+  Widget _buildSolicitationCard(String title, String quantity, String prazo,
+      String comentarios, String documentId) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: ListTile(
         title: Text(title),
-        subtitle: Text('$quantity - $urgency'),
+        subtitle: Text('$quantity - Prazo: $prazo'),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16.0),
         onTap: () {
           Navigator.push(
@@ -206,9 +249,9 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
               builder: (context) => RequestDetails(
                 tipoEstabelecimento: title,
                 quantidadeOleo: quantity,
-                prazo: '10/12/2024',
-                endereco: 'Rua mongagua',
-                observacoes: 'Observação',
+                prazo: prazo,
+                endereco: 'Endereço não disponível',
+                observacoes: comentarios,
               ),
             ),
           );
