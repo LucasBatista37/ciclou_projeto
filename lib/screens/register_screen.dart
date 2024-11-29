@@ -9,6 +9,7 @@ class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _RegisterScreenState createState() => _RegisterScreenState();
 }
 
@@ -79,6 +80,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
 
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(
             builder: (context) => _selectedUserType == 'Solicitante'
@@ -89,10 +91,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (e is FirebaseAuthException && e.code == 'email-already-in-use') {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('O e-mail já está em uso.')),
         );
       } else {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao registrar: ${e.toString()}')),
         );
@@ -132,8 +136,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     'CPF / CNPJ',
                     _cpfCnpjController,
                     (value) {
-                      if (value!.isEmpty)
+                      if (value!.isEmpty) {
                         return 'Por favor, insira o CPF/CNPJ.';
+                      }
                       if (!_isValidCpfCnpj(value)) {
                         return 'CPF ou CNPJ inválido.';
                       }

@@ -10,7 +10,6 @@ class FirebaseService {
   static FirebaseAuth auth = FirebaseAuth.instance;
   static FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  // Função para registrar usuário
   static Future<User?> registerWithEmail(String email, String password, String name, String userType, {required Map<String, String> additionalData}) async {
     try {
       final userCredential = await auth.createUserWithEmailAndPassword(
@@ -18,11 +17,10 @@ class FirebaseService {
         password: password,
       );
 
-      // Salvar dados do usuário no Firestore
       await firestore.collection('users').doc(userCredential.user?.uid).set({
         'name': name,
         'email': email,
-        'userType': userType, // "Solicitante" ou "Coletor"
+        'userType': userType, 
         'createdAt': DateTime.now(),
       });
 
@@ -33,7 +31,6 @@ class FirebaseService {
     }
   }
 
-  // Função para login
   static Future<User?> loginWithEmail(String email, String password) async {
     try {
       final userCredential = await auth.signInWithEmailAndPassword(
@@ -47,12 +44,10 @@ class FirebaseService {
     }
   }
 
-  // Verificar usuário logado
   static User? getCurrentUser() {
     return auth.currentUser;
   }
 
-  // Logout
   static Future<void> logout() async {
     await auth.signOut();
   }
