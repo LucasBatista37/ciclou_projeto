@@ -5,8 +5,8 @@ import 'package:ciclou_projeto/screens/Requestor/payment_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_history_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_map_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
-import 'package:ciclou_projeto/screens/register_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
+import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:flutter/material.dart';
 
 class RequestorDashboard extends StatefulWidget {
@@ -74,7 +74,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
         onLogout: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+            MaterialPageRoute(builder: (context) => const RegisterRequestorScreen()),
           );
         },
       ),

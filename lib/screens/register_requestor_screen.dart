@@ -1,49 +1,39 @@
-import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
-import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'register_collector_screen.dart'; 
 import 'login_screen.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class RegisterRequestorScreen extends StatefulWidget {
+  const RegisterRequestorScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
-  _RegisterScreenState createState() => _RegisterScreenState();
+  _RegisterRequestorScreenState createState() =>
+      _RegisterRequestorScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  String _selectedUserType = 'Solicitante';
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
-
+class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _cpfCnpjController = TextEditingController();
+  final TextEditingController _businessNameController = TextEditingController();
+  final TextEditingController _cnpjController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _responsibleController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _neighborhoodController = TextEditingController();
-  final TextEditingController _stateController = TextEditingController();
 
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
 
-  bool _isValidCpfCnpj(String cpfCnpj) {
-    if (cpfCnpj.length == 11) {
-      return RegExp(r'^\d{11}$').hasMatch(cpfCnpj); 
-    } else if (cpfCnpj.length == 14) {
-      return RegExp(r'^\d{14}$').hasMatch(cpfCnpj); 
-    }
-    return false;
+  bool _isValidCnpj(String cnpj) {
+    return RegExp(r'^\d{14}$').hasMatch(cnpj);
   }
 
-  void _registerUser() async {
+  Future<void> _registerRequestor() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -60,52 +50,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final userId = userCredential.user?.uid;
 
       if (userId != null) {
-        String collectionName =
-            _selectedUserType == 'Solicitante' ? 'requestor' : 'collector';
-
         await FirebaseFirestore.instance
-            .collection(collectionName)
+            .collection('requestor')
             .doc(userId)
             .set({
-          'name': _nameController.text.trim(),
-          'cpfCnpj': _cpfCnpjController.text.trim(),
-          'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim(),
+          'businessName': _businessNameController.text.trim(),
+          'cnpj': _cnpjController.text.trim(),
           'address': _addressController.text.trim(),
-          'city': _cityController.text.trim(),
-          'neighborhood': _neighborhoodController.text.trim(),
-          'state': _stateController.text.trim(),
-          'userType': _selectedUserType,
+          'responsible': _responsibleController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'email': _emailController.text.trim(),
+          'userType': 'Solicitante',
           'createdAt': FieldValue.serverTimestamp(),
         });
 
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Solicitante registrado com sucesso!')),
+        );
+
         Navigator.pushReplacement(
-          // ignore: use_build_context_synchronously
           context,
-          MaterialPageRoute(
-            builder: (context) => _selectedUserType == 'Solicitante'
-                ? const RequestorDashboard()
-                : const CollectorDashboard(),
-          ),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
-    } catch (e) {
-      if (e is FirebaseAuthException && e.code == 'email-already-in-use') {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('O e-mail já está em uso.')),
-        );
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      if (e.code == 'email-already-in-use') {
+        errorMessage = 'O e-mail já está em uso.';
+      } else if (e.code == 'weak-password') {
+        errorMessage = 'A senha é muito fraca.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'E-mail inválido.';
       } else {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao registrar: ${e.toString()}')),
-        );
+        errorMessage = 'Erro: ${e.message}';
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro inesperado: ${e.toString()}')),
+      );
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -126,24 +123,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
-                    'Nome',
-                    _nameController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira seu nome.' : null,
+                    'Razão Social',
+                    _businessNameController,
+                    (value) => value!.isEmpty
+                        ? 'Por favor, insira a razão social.'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
-                    'CPF / CNPJ',
-                    _cpfCnpjController,
+                    'CNPJ',
+                    _cnpjController,
                     (value) {
-                      if (value!.isEmpty) {
-                        return 'Por favor, insira o CPF/CNPJ.';
-                      }
-                      if (!_isValidCpfCnpj(value)) {
-                        return 'CPF ou CNPJ inválido.';
+                      if (value!.isEmpty) return 'Por favor, insira o CNPJ.';
+                      if (!_isValidCnpj(value)) {
+                        return 'CNPJ inválido.';
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Endereço',
+                    _addressController,
+                    (value) =>
+                        value!.isEmpty ? 'Por favor, insira o endereço.' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Responsável',
+                    _responsibleController,
+                    (value) => value!.isEmpty
+                        ? 'Por favor, insira o nome do responsável.'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Telefone',
+                    _phoneController,
+                    (value) =>
+                        value!.isEmpty ? 'Por favor, insira o telefone.' : null,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -158,68 +176,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  _buildTextField(
-                    'Telefone',
-                    _phoneController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira o telefone.' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'Endereço',
-                    _addressController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira o endereço.' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'Cidade',
-                    _cityController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira a cidade.' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'Bairro',
-                    _neighborhoodController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira o bairro.' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'Estado',
-                    _stateController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira o estado.' : null,
-                  ),
-                  const SizedBox(height: 16),
                   _buildPasswordTextField('Senha', _passwordController, true),
                   const SizedBox(height: 16),
                   _buildPasswordTextField(
                       'Confirmar Senha', _confirmPasswordController, false),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: _selectedUserType,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                    ),
-                    items: ['Solicitante', 'Coletor'].map((String userType) {
-                      return DropdownMenuItem<String>(
-                        value: userType,
-                        child: Text(userType),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedUserType = newValue!;
-                      });
-                    },
-                  ),
                   const SizedBox(height: 32),
                   _isLoading
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
-                          onPressed: _registerUser,
+                          onPressed: _registerRequestor,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             shape: RoundedRectangleBorder(
@@ -229,7 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           child: const Center(
                             child: Text(
-                              'Criar Conta',
+                              'Registrar Solicitante',
                               style:
                                   TextStyle(fontSize: 16, color: Colors.white),
                             ),
@@ -247,6 +212,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: const Text(
                       'Já tem uma conta? Entrar',
                       style: TextStyle(fontSize: 16, color: Colors.green),
+                    ),
+                  ),
+                  const Text("Ou"),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const RegisterCollectorScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'Registrar como Coletor',
+                      style: TextStyle(fontSize: 16, color: Colors.blue),
                     ),
                   ),
                 ],

@@ -1,7 +1,7 @@
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'register_screen.dart';
+import 'register_requestor_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -101,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const RegisterScreen()),
+                          builder: (context) => const RegisterRequestorScreen()),
                     );
                   },
                   child: const Text(

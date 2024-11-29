@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
@@ -7,7 +8,6 @@ import 'package:ciclou_projeto/screens/Collector/collector_map_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/sent_proposals_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/request_details.dart';
-import 'package:ciclou_projeto/screens/register_screen.dart';
 import 'package:flutter/material.dart';
 
 class CollectorDashboard extends StatefulWidget {
@@ -75,7 +75,8 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
         onLogout: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+            MaterialPageRoute(
+                builder: (context) => const RegisterRequestorScreen()),
           );
         },
       ),

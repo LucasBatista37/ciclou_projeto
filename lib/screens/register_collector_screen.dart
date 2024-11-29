@@ -1,0 +1,318 @@
+import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'login_screen.dart';
+
+class RegisterCollectorScreen extends StatefulWidget {
+  const RegisterCollectorScreen({super.key});
+
+  @override
+  _RegisterCollectorScreenState createState() =>
+      _RegisterCollectorScreenState();
+}
+
+class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _businessNameController = TextEditingController();
+  final TextEditingController _cnpjController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _responsibleController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _licenseNumberController =
+      TextEditingController();
+  final TextEditingController _licenseExpiryController =
+      TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+  bool _isLoading = false;
+
+  bool _isValidCnpj(String cnpj) {
+    return RegExp(r'^\d{14}$').hasMatch(cnpj);
+  }
+
+  Future<void> _registerCollector() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      final userId = userCredential.user?.uid;
+
+      if (userId != null) {
+        await FirebaseFirestore.instance
+            .collection('collector')
+            .doc(userId)
+            .set({
+          'businessName': _businessNameController.text.trim(),
+          'cnpj': _cnpjController.text.trim(),
+          'address': _addressController.text.trim(),
+          'responsible': _responsibleController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'licenseNumber': _licenseNumberController.text.trim(),
+          'licenseExpiry': _licenseExpiryController.text.trim(),
+          'email': _emailController.text.trim(),
+          'userType': 'Coletor',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Coletor registrado com sucesso!')),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      if (e.code == 'email-already-in-use') {
+        errorMessage = 'O e-mail já está em uso.';
+      } else if (e.code == 'weak-password') {
+        errorMessage = 'A senha é muito fraca.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'E-mail inválido.';
+      } else {
+        errorMessage = 'Erro: ${e.message}';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro inesperado: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/ciclou.png',
+                    height: 300,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Razão Social',
+                    _businessNameController,
+                    (value) => value!.isEmpty
+                        ? 'Por favor, insira a razão social.'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'CNPJ',
+                    _cnpjController,
+                    (value) {
+                      if (value!.isEmpty) return 'Por favor, insira o CNPJ.';
+                      if (!_isValidCnpj(value)) {
+                        return 'CNPJ inválido.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Endereço completo',
+                    _addressController,
+                    (value) =>
+                        value!.isEmpty ? 'Por favor, insira o endereço.' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Responsável',
+                    _responsibleController,
+                    (value) => value!.isEmpty
+                        ? 'Por favor, insira o nome do responsável.'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Telefone',
+                    _phoneController,
+                    (value) =>
+                        value!.isEmpty ? 'Por favor, insira o telefone.' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Número da Licença de Operação',
+                    _licenseNumberController,
+                    (value) => value!.isEmpty
+                        ? 'Por favor, insira o número da licença.'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Data de Vencimento da Licença',
+                    _licenseExpiryController,
+                    (value) => value!.isEmpty
+                        ? 'Por favor, insira a data de vencimento.'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    'Email',
+                    _emailController,
+                    (value) {
+                      if (value!.isEmpty) return 'Por favor, insira o e-mail.';
+                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value)) {
+                        return 'E-mail inválido.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildPasswordTextField('Senha', _passwordController, true),
+                  const SizedBox(height: 16),
+                  _buildPasswordTextField(
+                      'Confirmar Senha', _confirmPasswordController, false),
+                  const SizedBox(height: 32),
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton(
+                          onPressed: _registerCollector,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Registrar Coletor',
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'Já tem uma conta? Entrar',
+                      style: TextStyle(fontSize: 16, color: Colors.green),
+                    ),
+                  ),
+                  const Text("Ou"),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const RegisterRequestorScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'Registrar como Solicitante',
+                      style: TextStyle(fontSize: 16, color: Colors.blue),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    String hint,
+    TextEditingController controller,
+    String? Function(String?) validator,
+  ) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: hint,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+      validator: validator,
+    );
+  }
+
+  Widget _buildPasswordTextField(
+      String hint, TextEditingController controller, bool isPasswordField) {
+    return TextFormField(
+      controller: controller,
+      obscureText:
+          isPasswordField ? !_isPasswordVisible : !_isConfirmPasswordVisible,
+      decoration: InputDecoration(
+        hintText: hint,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(
+            isPasswordField
+                ? (_isPasswordVisible ? Icons.visibility : Icons.visibility_off)
+                : (_isConfirmPasswordVisible
+                    ? Icons.visibility
+                    : Icons.visibility_off),
+          ),
+          onPressed: () {
+            setState(() {
+              if (isPasswordField) {
+                _isPasswordVisible = !_isPasswordVisible;
+              } else {
+                _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+              }
+            });
+          },
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Por favor, insira a $hint.';
+        }
+        if (isPasswordField && value.length < 6) {
+          return 'A senha deve ter pelo menos 6 caracteres.';
+        }
+        if (!isPasswordField && value != _passwordController.text.trim()) {
+          return 'As senhas não correspondem.';
+        }
+        return null;
+      },
+    );
+  }
+}
