@@ -1,4 +1,6 @@
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
+import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'register_requestor_screen.dart';
@@ -7,7 +9,6 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _LoginScreenState createState() => _LoginScreenState();
 }
 
@@ -24,21 +25,60 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
     try {
-      await _auth.signInWithEmailAndPassword(
+      // Realiza login com Firebase Authentication
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      Navigator.pushReplacement(
-        // ignore: use_build_context_synchronously
-        context,
-        MaterialPageRoute(builder: (context) => const RequestorDashboard()),
-      );
-      // ignore: use_build_context_synchronously
+
+      final userId = userCredential.user?.uid;
+
+      if (userId != null) {
+        // Obtém o tipo de usuário do Firestore
+        final userDoc = await FirebaseFirestore.instance
+            .collection(
+                'requestor') // Verifica inicialmente na coleção `requestor`
+            .doc(userId)
+            .get();
+
+        if (userDoc.exists) {
+          final userType = userDoc.data()?['userType'] ?? 'Solicitante';
+
+          if (userType == 'Solicitante') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const RequestorDashboard()),
+            );
+          }
+        } else {
+          // Se não existir na coleção `requestor`, verifica na coleção `collector`
+          final collectorDoc = await FirebaseFirestore.instance
+              .collection('collector')
+              .doc(userId)
+              .get();
+
+          if (collectorDoc.exists) {
+            final userType = collectorDoc.data()?['userType'] ?? 'Coletor';
+
+            if (userType == 'Coletor') {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const CollectorDashboard()),
+              );
+            }
+          } else {
+            // Caso o usuário não exista em nenhuma das coleções
+            throw Exception('Usuário não encontrado em nenhuma coleção.');
+          }
+        }
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login realizado com sucesso!')),
       );
     } catch (e) {
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao fazer login: $e')),
       );
@@ -101,7 +141,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const RegisterRequestorScreen()),
+                          builder: (context) =>
+                              const RegisterRequestorScreen()),
                     );
                   },
                   child: const Text(

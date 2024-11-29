@@ -1,3 +1,7 @@
+import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
 import 'package:ciclou_projeto/components/custom_requestor_navigationbar.dart';
 import 'package:ciclou_projeto/screens/Requestor/create_collection_screen.dart';
@@ -6,20 +10,62 @@ import 'package:ciclou_projeto/screens/Requestor/requestor_history_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_map_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
-import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
-import 'package:flutter/material.dart';
 
 class RequestorDashboard extends StatefulWidget {
   const RequestorDashboard({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _RequestorDashboardState createState() => _RequestorDashboardState();
 }
 
 class _RequestorDashboardState extends State<RequestorDashboard> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  String? _userName;
+  String? _userEmail;
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        print('Usuário autenticado: ${user.uid}');
+        setState(() {
+          _userEmail = user.email;
+          _userId = user.uid;
+        });
+
+        final userDoc = await FirebaseFirestore.instance
+            .collection('requestor')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists) {
+          print('Dados do Firestore recuperados: ${userDoc.data()}');
+          setState(() {
+            _userName = userDoc.data()?['name'] ?? 'Usuário';
+          });
+        } else {
+          print('Documento do usuário não encontrado no Firestore.');
+        }
+      } else {
+        print('Nenhum usuário autenticado.');
+      }
+    } catch (e) {
+      print('Erro ao carregar dados do usuário: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar dados do usuário: $e')),
+      );
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -46,9 +92,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                   ),
                 ),
               ),
-              title: const Text(
-                'Olá, Caio!',
-                style: TextStyle(color: Colors.white),
+              title: Text(
+                'Olá, ${_userName ?? 'Carregando...'}!',
+                style: const TextStyle(color: Colors.white),
               ),
               actions: [
                 IconButton(
@@ -66,15 +112,17 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             )
           : null,
       drawer: CustomDrawer(
-        userName: 'Caio',
-        userEmail: 'Caio@gmail.com',
+        userName: _userName ?? 'Carregando...',
+        userEmail: _userEmail ?? 'Carregando...',
         profileImageUrl: 'assets/user_profile.jpg',
         onEditProfile: () {},
         onSettings: () {},
         onLogout: () {
-          Navigator.push(
+          FirebaseAuth.instance.signOut();
+          Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const RegisterRequestorScreen()),
+            MaterialPageRoute(
+                builder: (context) => const RegisterRequestorScreen()),
           );
         },
       ),
@@ -135,13 +183,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           const Text('Minhas Solicitações Ativas',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8.0),
-          _buildSolicitationCard(
-              'Restaurante', '10 Litros', 'Aguardando Propostas'),
-          _buildSolicitationCard('Condomínio', '5 Litros', 'Aguardando Aceita'),
-          TextButton(
-            onPressed: () {},
-            child: const Text('Ver Todas'),
-          ),
+          _buildSolicitationsList(),
           const SizedBox(height: 16.0),
           const Text('Estatísticas de Sustentabilidade',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -171,7 +213,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             context,
             MaterialPageRoute(builder: (context) => const RequestorMapScreen()),
           );
-        } else {}
+        }
       },
       child: Column(
         children: [
@@ -184,6 +226,48 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           Text(label, style: const TextStyle(fontSize: 12)),
         ],
       ),
+    );
+  }
+
+  Widget _buildSolicitationsList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('solicitacoes')
+          .where('status', isEqualTo: 'ativa')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return const Center(child: Text('Erro ao carregar solicitações.'));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Text('Nenhuma solicitação ativa no momento.'),
+          );
+        }
+
+        final documents = snapshot.data!.docs;
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: documents.length,
+          itemBuilder: (context, index) {
+            final data = documents[index].data() as Map<String, dynamic>;
+
+            return _buildSolicitationCard(
+              data['tipoEstabelecimento'] ?? 'N/A',
+              '${data['quantidadeOleo'] ?? 'N/A'} Litros',
+              data['status'] ?? 'N/A',
+            );
+          },
+        );
+      },
     );
   }
 

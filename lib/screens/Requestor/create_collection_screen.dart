@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -77,11 +78,15 @@ class _CreateCollectionState extends State<CreateCollection> {
 
         if (userId == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuário não autenticado.')),
+            const SnackBar(
+              content:
+                  Text('Usuário não autenticado. Faça login para continuar.'),
+            ),
           );
-          setState(() {
-            _isLoading = false;
-          });
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const RequestorDashboard()),
+          );
           return;
         }
 
@@ -102,7 +107,6 @@ class _CreateCollectionState extends State<CreateCollection> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Solicitação enviada com sucesso!')),
         );
-
         Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
