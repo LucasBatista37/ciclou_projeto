@@ -83,7 +83,7 @@ class _CreateCollectionState extends State<CreateCollection> {
             'longitude': _localizacaoSelecionada.longitude,
           },
           'comentarios': _comentariosController.text.trim(),
-          'status': 'pendente',
+          'status': 'ativa',
           'userId': widget.user.userId,
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -107,7 +107,6 @@ class _CreateCollectionState extends State<CreateCollection> {
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {

@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/register_collector_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
@@ -64,13 +65,20 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
         userName: widget.user.responsible,
         userEmail: widget.user.email,
         profileImageUrl: 'assets/user_profile.jpg',
-        onEditProfile: () {
-        },
-        onSettings: () {
-        },
+        onEditProfile: () {},
+        onSettings: () {},
         onLogout: () {
-          FirebaseAuth.instance.signOut();
-          Navigator.pushReplacementNamed(context, '/login');
+          FirebaseAuth.instance.signOut().then((_) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const RegisterCollectorScreen()),
+            );
+          }).catchError((error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao fazer logout: $error')),
+            );
+          });
         },
       ),
       body: _getBodyContent(),

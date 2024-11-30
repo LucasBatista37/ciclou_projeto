@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'package:ciclou_projeto/screens/Requestor/certificates_screen.dart';
 import 'package:ciclou_projeto/screens/configuration_screen.dart';
-import 'package:ciclou_projeto/screens/edit_perfil_screen.dart';
+import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
+import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class CustomDrawer extends StatelessWidget {
@@ -30,18 +33,6 @@ class CustomDrawer extends StatelessWidget {
         children: [
           _buildDrawerHeader(),
           _buildDrawerItem(
-            icon: Icons.edit,
-            text: 'Editar Perfil',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const EditarPerfilScreen(),
-                ),
-              );
-            },
-          ),
-          _buildDrawerItem(
             icon: Icons.settings,
             text: 'Configurações',
             onTap: () {
@@ -51,6 +42,66 @@ class CustomDrawer extends StatelessWidget {
                   builder: (context) => const PerfilConfiguracoesScreen(),
                 ),
               );
+            },
+          ),
+          _buildDrawerItem(
+            icon: Icons.edit,
+            text: 'Editar Perfil',
+            onTap: () async {
+              final uid = FirebaseAuth.instance.currentUser?.uid;
+
+              if (uid != null) {
+                try {
+                  final collectorDoc = await FirebaseFirestore.instance
+                      .collection('collector')
+                      .doc(uid)
+                      .get();
+
+                  if (collectorDoc.exists) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditCollectorProfile(),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final requestorDoc = await FirebaseFirestore.instance
+                      .collection('requestor')
+                      .doc(uid)
+                      .get();
+
+                  if (requestorDoc.exists) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditRequestorProfile(),
+                      ),
+                    );
+                    return;
+                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Erro: Usuário não encontrado.'),
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erro ao verificar usuário: $e'),
+                    ),
+                  );
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content:
+                        Text('Usuário não autenticado. Faça login novamente.'),
+                  ),
+                );
+              }
             },
           ),
           _buildDrawerItem(

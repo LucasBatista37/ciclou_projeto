@@ -1,9 +1,65 @@
-import 'package:ciclou_projeto/screens/edit_perfil_screen.dart';
+import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
+import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PerfilConfiguracoesScreen extends StatelessWidget {
   const PerfilConfiguracoesScreen({super.key});
+
+  void navigateToProfile(BuildContext context) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      print('UID do usuário autenticado: $uid');
+
+      final requestorDoc = await FirebaseFirestore.instance
+          .collection('requestor')
+          .doc(uid)
+          .get();
+      if (requestorDoc.exists) {
+        final userType = requestorDoc.data()?['userType'];
+        print('Usuário encontrado na coleção "requestor": userType=$userType');
+        if (userType == 'Solicitante') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const EditRequestorProfile(),
+            ),
+          );
+          return;
+        }
+      }
+
+      final collectorDoc = await FirebaseFirestore.instance
+          .collection('collector')
+          .doc(uid)
+          .get();
+      if (collectorDoc.exists) {
+        final userType = collectorDoc.data()?['userType'];
+        print('Usuário encontrado na coleção "collector": userType=$userType');
+        if (userType == 'Coletor') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const EditCollectorProfile(),
+            ),
+          );
+          return;
+        }
+      }
+
+      print('Usuário não encontrado em nenhuma coleção.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro: Usuário não encontrado.')),
+      );
+    } else {
+      print('Usuário não autenticado.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário não autenticado.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +91,7 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
             leading: const Icon(Icons.person, color: Colors.green),
             title: const Text('Editar Perfil', style: TextStyle(fontSize: 16)),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const EditarPerfilScreen(),
-                ),
-              );
+              navigateToProfile(context);
             },
           ),
           const Divider(),

@@ -1,16 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 
-class EditarPerfilScreen extends StatefulWidget {
-  const EditarPerfilScreen({super.key});
+class EditCollectorProfile extends StatefulWidget {
+  const EditCollectorProfile({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
-  _EditarPerfilScreenState createState() => _EditarPerfilScreenState();
+  _EditCollectorProfileState createState() => _EditCollectorProfileState();
 }
 
-class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
+class _EditCollectorProfileState extends State<EditCollectorProfile> {
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _telefoneController = TextEditingController();
@@ -19,9 +20,63 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   @override
   void initState() {
     super.initState();
-    _nomeController.text = "João Coletor";
-    _emailController.text = "joao.coletor@gmail.com";
-    _telefoneController.text = "(11) 98765-4321";
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('collector')
+          .doc(uid)
+          .get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        setState(() {
+          _nomeController.text = data['responsible'] ?? '';
+          _emailController.text = data['email'] ?? '';
+          _telefoneController.text = data['phone'] ?? '';
+        });
+      }
+    }
+  }
+
+  Future<void> _saveUserData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('collector')
+            .doc(uid)
+            .update({
+          'responsible': _nomeController.text,
+          'email': _emailController.text,
+          'phone': _telefoneController.text,
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dados salvos com sucesso!')),
+        );
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar os dados: $e')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário não autenticado.')),
+      );
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      setState(() {
+        _profileImage = pickedImage;
+      });
+    }
   }
 
   @override
@@ -100,9 +155,7 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
             _buildTextField(label: 'Telefone', controller: _telefoneController),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                _updateUserProfile();
-              },
+              onPressed: _saveUserData,
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: Colors.green,
@@ -133,26 +186,5 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
         border: const OutlineInputBorder(),
       ),
     );
-  }
-
-  Future<void> _pickImage() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedImage =
-        await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedImage != null) {
-      setState(() {
-        _profileImage = pickedImage;
-      });
-    }
-  }
-
-  void _updateUserProfile() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Perfil atualizado com sucesso!'),
-      ),
-    );
-    Navigator.pop(context);
   }
 }

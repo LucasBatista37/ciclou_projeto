@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -68,8 +69,16 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
         onEditProfile: () {},
         onSettings: () {},
         onLogout: () {
-          FirebaseAuth.instance.signOut();
-          Navigator.pushReplacementNamed(context, '/login');
+          FirebaseAuth.instance.signOut().then((_) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const RegisterRequestorScreen()),
+            );
+          }).catchError((error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao fazer logout: $error')),
+            );
+          });
         },
       ),
       body: _getBodyContent(),
