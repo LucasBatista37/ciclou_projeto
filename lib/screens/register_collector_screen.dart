@@ -8,6 +8,7 @@ class RegisterCollectorScreen extends StatefulWidget {
   const RegisterCollectorScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _RegisterCollectorScreenState createState() =>
       _RegisterCollectorScreenState();
 }

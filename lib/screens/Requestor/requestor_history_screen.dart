@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:flutter/material.dart';
 
 class RequestorHistoryScreen extends StatelessWidget {
@@ -22,7 +23,7 @@ class RequestorHistoryScreen extends StatelessWidget {
     },
   ];
 
-  RequestorHistoryScreen({super.key});
+  RequestorHistoryScreen({super.key, required UserModel user});
 
   @override
   Widget build(BuildContext context) {

@@ -1,4 +1,4 @@
-import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,64 +8,21 @@ import 'package:ciclou_projeto/screens/Requestor/create_collection_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/payment_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_history_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_map_screen.dart';
-import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
 
 class RequestorDashboard extends StatefulWidget {
-  const RequestorDashboard({super.key});
+  final UserModel user;
+
+  const RequestorDashboard({super.key, required this.user});
 
   @override
+  // ignore: library_private_types_in_public_api
   _RequestorDashboardState createState() => _RequestorDashboardState();
 }
 
 class _RequestorDashboardState extends State<RequestorDashboard> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  String? _userName;
-  String? _userEmail;
-  String? _userId;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUserData();
-  }
-
-  Future<void> _fetchUserData() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-
-      if (user != null) {
-        print('Usuário autenticado: ${user.uid}');
-        setState(() {
-          _userEmail = user.email;
-          _userId = user.uid;
-        });
-
-        final userDoc = await FirebaseFirestore.instance
-            .collection('requestor')
-            .doc(user.uid)
-            .get();
-
-        if (userDoc.exists) {
-          print('Dados do Firestore recuperados: ${userDoc.data()}');
-          setState(() {
-            _userName = userDoc.data()?['name'] ?? 'Usuário';
-          });
-        } else {
-          print('Documento do usuário não encontrado no Firestore.');
-        }
-      } else {
-        print('Nenhum usuário autenticado.');
-      }
-    } catch (e) {
-      print('Erro ao carregar dados do usuário: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar dados do usuário: $e')),
-      );
-    }
-  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -77,53 +34,42 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: _selectedIndex == 0
-          ? AppBar(
-              backgroundColor: Colors.green,
-              elevation: 0,
-              leading: GestureDetector(
-                onTap: () {
-                  _scaffoldKey.currentState?.openDrawer();
-                },
-                child: const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircleAvatar(
-                    backgroundImage: AssetImage('assets/user_profile.jpg'),
-                  ),
-                ),
-              ),
-              title: Text(
-                'Olá, ${_userName ?? 'Carregando...'}!',
-                style: const TextStyle(color: Colors.white),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.notifications, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RequestorNotificationsScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            )
-          : null,
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        elevation: 0,
+        leading: GestureDetector(
+          onTap: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
+          child: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: CircleAvatar(
+              backgroundImage: AssetImage('assets/user_profile.jpg'),
+            ),
+          ),
+        ),
+        title: Text(
+          'Olá, ${widget.user.responsible}!',
+          style: const TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.white),
+            onPressed: () {
+              Navigator.pushNamed(context, '/notifications');
+            },
+          ),
+        ],
+      ),
       drawer: CustomDrawer(
-        userName: _userName ?? 'Carregando...',
-        userEmail: _userEmail ?? 'Carregando...',
+        userName: widget.user.responsible,
+        userEmail: widget.user.email,
         profileImageUrl: 'assets/user_profile.jpg',
         onEditProfile: () {},
         onSettings: () {},
         onLogout: () {
           FirebaseAuth.instance.signOut();
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const RegisterRequestorScreen()),
-          );
+          Navigator.pushReplacementNamed(context, '/login');
         },
       ),
       body: _getBodyContent(),
@@ -141,9 +87,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       case 1:
         return const RequestorMapScreen();
       case 2:
-        return const CreateCollection();
+        return CreateCollection(user: widget.user);
       case 3:
-        return RequestorHistoryScreen();
+        return RequestorHistoryScreen(user: widget.user);
       case 4:
         return const PaymentScreen();
       default:
@@ -206,7 +152,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
         if (label == 'Solicitar Coleta') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const CreateCollection()),
+            MaterialPageRoute(
+              builder: (context) => CreateCollection(user: widget.user),
+            ),
           );
         } else if (label == 'Mapa') {
           Navigator.push(
@@ -230,28 +178,35 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
   }
 
   Widget _buildSolicitationsList() {
+    print("Usuário atual UID: ${widget.user.userId}");
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('solicitacoes')
+          .collection('coletas')
           .where('status', isEqualTo: 'ativa')
+          .where('userId', isEqualTo: widget.user.userId)
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
+          print("Carregando solicitações...");
           return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
+          print("Erro ao carregar solicitações: ${snapshot.error}");
           return const Center(child: Text('Erro ao carregar solicitações.'));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          print(
+              "Nenhuma solicitação encontrada para o UID ${widget.user.userId}");
           return const Center(
             child: Text('Nenhuma solicitação ativa no momento.'),
           );
         }
 
         final documents = snapshot.data!.docs;
+        print("Solicitações carregadas: ${documents.length}");
 
         return ListView.builder(
           shrinkWrap: true,
@@ -260,6 +215,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           itemBuilder: (context, index) {
             final data = documents[index].data() as Map<String, dynamic>;
 
+            print("Solicitação ${index + 1}: ${data['tipoEstabelecimento']}");
             return _buildSolicitationCard(
               data['tipoEstabelecimento'] ?? 'N/A',
               '${data['quantidadeOleo'] ?? 'N/A'} Litros',

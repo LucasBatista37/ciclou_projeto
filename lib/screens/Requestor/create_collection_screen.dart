@@ -1,6 +1,5 @@
-import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -8,10 +7,11 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class CreateCollection extends StatefulWidget {
-  const CreateCollection({super.key});
+  final UserModel user;
+
+  const CreateCollection({super.key, required this.user});
 
   @override
-  // ignore: library_private_types_in_public_api
   _CreateCollectionState createState() => _CreateCollectionState();
 }
 
@@ -74,22 +74,6 @@ class _CreateCollectionState extends State<CreateCollection> {
       });
 
       try {
-        final userId = FirebaseAuth.instance.currentUser?.uid;
-
-        if (userId == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content:
-                  Text('Usuário não autenticado. Faça login para continuar.'),
-            ),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const RequestorDashboard()),
-          );
-          return;
-        }
-
         await FirebaseFirestore.instance.collection('coletas').add({
           'tipoEstabelecimento': _selectedTipoEstabelecimento,
           'quantidadeOleo': _quantidadeOleo,
@@ -100,7 +84,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           },
           'comentarios': _comentariosController.text.trim(),
           'status': 'pendente',
-          'userId': userId,
+          'userId': widget.user.userId,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
@@ -123,6 +107,7 @@ class _CreateCollectionState extends State<CreateCollection> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

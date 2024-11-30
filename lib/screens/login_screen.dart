@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -25,7 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
     try {
-      // Realiza login com Firebase Authentication
+      print("Tentando login com email: ${_emailController.text}");
+
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -34,51 +36,56 @@ class _LoginScreenState extends State<LoginScreen> {
       final userId = userCredential.user?.uid;
 
       if (userId != null) {
-        // Obtém o tipo de usuário do Firestore
+        print("Login bem-sucedido, UID do usuário: $userId");
+
         final userDoc = await FirebaseFirestore.instance
-            .collection(
-                'requestor') // Verifica inicialmente na coleção `requestor`
+            .collection('requestor')
             .doc(userId)
             .get();
 
         if (userDoc.exists) {
-          final userType = userDoc.data()?['userType'] ?? 'Solicitante';
+          final user = UserModel.fromFirestore(userDoc.data()!, userId);
+          print("Usuário encontrado em 'requestor':");
+          print("  Nome: ${user.responsible}");
+          print("  Email: ${user.email}");
+          print("  UserID: ${user.userId}");
 
-          if (userType == 'Solicitante') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const RequestorDashboard()),
-            );
-          }
-        } else {
-          // Se não existir na coleção `requestor`, verifica na coleção `collector`
-          final collectorDoc = await FirebaseFirestore.instance
-              .collection('collector')
-              .doc(userId)
-              .get();
-
-          if (collectorDoc.exists) {
-            final userType = collectorDoc.data()?['userType'] ?? 'Coletor';
-
-            if (userType == 'Coletor') {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const CollectorDashboard()),
-              );
-            }
-          } else {
-            // Caso o usuário não exista em nenhuma das coleções
-            throw Exception('Usuário não encontrado em nenhuma coleção.');
-          }
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RequestorDashboard(user: user),
+            ),
+          );
+          return;
         }
-      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login realizado com sucesso!')),
-      );
+        final collectorDoc = await FirebaseFirestore.instance
+            .collection('collector')
+            .doc(userId)
+            .get();
+
+        if (collectorDoc.exists) {
+          final user = UserModel.fromFirestore(collectorDoc.data()!, userId);
+          print("Usuário encontrado em 'collector':");
+          print("  Nome: ${user.responsible}");
+          print("  Email: ${user.email}");
+          print("  UserID: ${user.userId}");
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CollectorDashboard(user: user),
+            ),
+          );
+          return;
+        }
+
+        throw Exception('Usuário não encontrado em nenhuma coleção.');
+      } else {
+        print("Erro: UID do usuário é nulo.");
+      }
     } catch (e) {
+      print("Erro durante o login: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao fazer login: $e')),
       );
