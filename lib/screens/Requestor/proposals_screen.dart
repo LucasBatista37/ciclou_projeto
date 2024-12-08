@@ -173,25 +173,48 @@ class ProposalsScreen extends StatelessWidget {
         .doc(documentId)
         .collection('propostas')
         .doc(proposalId)
-        .update({'status': 'Aceita'}).then((_) {
-      FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(documentId)
-          .update({'status': 'Em andamento'}).then((_) {
+        .get()
+        .then((proposalDoc) {
+      final proposalData = proposalDoc.data();
+      if (proposalData != null && proposalData['collectorId'] != null) {
+        final collectorId = proposalData['collectorId'];
+
+        FirebaseFirestore.instance
+            .collection('coletas')
+            .doc(documentId)
+            .collection('propostas')
+            .doc(proposalId)
+            .update({'status': 'Aceita'}).then((_) {
+          FirebaseFirestore.instance
+              .collection('coletas')
+              .doc(documentId)
+              .update({'status': 'Em andamento'}).then((_) {
+            _sendNotification(
+              collectorId,
+              'Proposta Aceita!',
+              'Sua proposta para $solicitationTitle foi aceita. Prepare-se para a coleta!',
+            );
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text(
+                      'Proposta aceita com sucesso! Coleta em andamento.')),
+            );
+          }).catchError((error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao atualizar a coleta: $error')),
+            );
+          });
+        }).catchError((error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao aceitar proposta: $error')),
+          );
+        });
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content:
-                  Text('Proposta aceita com sucesso! Coleta em andamento.')),
+          const SnackBar(content: Text('Erro: coletor não encontrado.')),
         );
-      }).catchError((error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar a coleta: $error')),
-        );
-      });
-    }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao aceitar proposta: $error')),
-      );
+      }
     });
   }
 
@@ -202,6 +225,12 @@ class ProposalsScreen extends StatelessWidget {
         .collection('propostas')
         .doc(proposalId)
         .update({'status': 'Rejeitado'}).then((_) {
+      _sendNotification(
+        proposalId,
+        'Proposta Rejeitada',
+        'Sua proposta para $solicitationTitle foi rejeitada.',
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Proposta rejeitada com sucesso!')),
       );
@@ -209,6 +238,15 @@ class ProposalsScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao rejeitar proposta: $error')),
       );
+    });
+  }
+
+  void _sendNotification(String collectorId, String title, String message) {
+    FirebaseFirestore.instance.collection('notifications').add({
+      'title': title,
+      'message': message,
+      'collectorId': collectorId,
+      'timestamp': FieldValue.serverTimestamp(),
     });
   }
 }

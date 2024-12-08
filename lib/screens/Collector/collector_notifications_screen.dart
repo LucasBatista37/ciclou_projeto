@@ -1,37 +1,19 @@
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_map_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/payment_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class CollectorNotificationsScreen extends StatelessWidget {
-  final List<Map<String, String>> notifications = [
-    {
-      'title': 'Proposta Aceita!',
-      'message':
-          'Sua proposta para o Restaurante foi aceita. Prepare-se para a coleta!',
-      'time': '5 minutos atrás',
-    },
-    {
-      'title': 'Nova Solicitação Próxima',
-      'message':
-          'Um novo condomínio precisa de coleta de óleo. Veja os detalhes.',
-      'time': '10 minutos atrás',
-    },
-    {
-      'title': 'Pagamento Recebido',
-      'message':
-          'Você recebeu R\$ 500 pelo serviço de coleta no Escola Municipal.',
-      'time': '1 hora atrás',
-    },
-    {
-      'title': 'Solicitação Cancelada',
-      'message':
-          'O Solicitante cancelou a coleta agendada. Verifique o histórico.',
-      'time': '3 horas atrás',
-    },
-  ];
+  final String collectorId;
+  final UserModel user;
 
-  CollectorNotificationsScreen({super.key});
+  CollectorNotificationsScreen({
+    super.key,
+    required this.collectorId,
+    required this.user,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -47,38 +29,62 @@ class CollectorNotificationsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: notifications.length,
-        itemBuilder: (context, index) {
-          final notification = notifications[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 10.0),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0)),
-            child: ListTile(
-              leading: Icon(
-                _getIconForNotification(notification['title']!),
-                color: _getColorForNotification(notification['title']!),
-              ),
-              title: Text(
-                notification['title']!,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(notification['message']!),
-                  const SizedBox(height: 4.0),
-                  Text(
-                    notification['time']!,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('notifications')
+            .where('collectorId', isEqualTo: collectorId)
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return const Center(child: Text('Erro ao carregar notificações.'));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text('Nenhuma notificação disponível no momento.'),
+            );
+          }
+
+          final notifications = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16.0),
+            itemCount: notifications.length,
+            itemBuilder: (context, index) {
+              final data = notifications[index].data() as Map<String, dynamic>;
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10.0),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0)),
+                child: ListTile(
+                  leading: Icon(
+                    _getIconForNotification(data['title']!),
+                    color: _getColorForNotification(data['title']!),
                   ),
-                ],
-              ),
-              onTap: () =>
-                  _handleNotificationTap(context, notification['title']!),
-            ),
+                  title: Text(
+                    data['title'] ?? 'Notificação',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(data['message'] ?? ''),
+                      const SizedBox(height: 4.0),
+                      Text(
+                        data['timestamp']?.toDate()?.toString() ?? '',
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -89,11 +95,7 @@ class CollectorNotificationsScreen extends StatelessWidget {
     switch (title) {
       case 'Proposta Aceita!':
         return Icons.check_circle;
-      case 'Nova Solicitação Próxima':
-        return Icons.location_on;
-      case 'Pagamento Recebido':
-        return Icons.attach_money;
-      case 'Solicitação Cancelada':
+      case 'Proposta Rejeitada':
         return Icons.cancel;
       default:
         return Icons.notifications;
@@ -104,45 +106,41 @@ class CollectorNotificationsScreen extends StatelessWidget {
     switch (title) {
       case 'Proposta Aceita!':
         return Colors.green;
-      case 'Nova Solicitação Próxima':
-        return Colors.blue;
-      case 'Pagamento Recebido':
-        return Colors.teal;
-      case 'Solicitação Cancelada':
+      case 'Proposta Rejeitada':
         return Colors.red;
       default:
         return Colors.grey;
     }
   }
+}
 
-  void _handleNotificationTap(BuildContext context, String title) {
-    switch (title) {
-      case 'Proposta Aceita!':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const CollectProcess()),
-        );
-        break;
-      case 'Nova Solicitação Próxima':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const CollectorMapScreen()),
-        );
-        break;
-      case 'Pagamento Recebido':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const PaymentScreen()),
-        );
-        break;
-      case 'Solicitação Cancelada':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const CollectProcess()),
-        );
-        break;
-      default:
-        break;
-    }
+void _handleNotificationTap(BuildContext context, String title) {
+  switch (title) {
+    case 'Proposta Aceita!':
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CollectProcess()),
+      );
+      break;
+    case 'Nova Solicitação Próxima':
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CollectorMapScreen()),
+      );
+      break;
+    case 'Pagamento Recebido':
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const PaymentScreen()),
+      );
+      break;
+    case 'Solicitação Cancelada':
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CollectProcess()),
+      );
+      break;
+    default:
+      break;
   }
 }

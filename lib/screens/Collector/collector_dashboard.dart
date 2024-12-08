@@ -8,6 +8,7 @@ import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_map_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/sent_proposals_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/request_details.dart';
+import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -56,7 +57,15 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           IconButton(
             icon: const Icon(Icons.notifications, color: Colors.white),
             onPressed: () {
-              Navigator.pushNamed(context, '/collectorNotifications');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CollectorNotificationsScreen(
+                    collectorId: widget.user.userId,
+                    user: widget.user,
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -256,7 +265,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 endereco: 'Endereço não disponível',
                 observacoes: comentarios,
                 documentId: documentId,
-                user: widget.user, 
+                user: widget.user,
               ),
             ),
           );
