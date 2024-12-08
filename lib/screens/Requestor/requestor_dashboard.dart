@@ -17,7 +17,6 @@ class RequestorDashboard extends StatefulWidget {
   const RequestorDashboard({super.key, required this.user});
 
   @override
-  // ignore: library_private_types_in_public_api
   _RequestorDashboardState createState() => _RequestorDashboardState();
 }
 
@@ -72,7 +71,8 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           FirebaseAuth.instance.signOut().then((_) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const RegisterRequestorScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const RegisterRequestorScreen()),
             );
           }).catchError((error) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -187,35 +187,29 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
   }
 
   Widget _buildSolicitationsList() {
-    print("Usuário atual UID: ${widget.user.userId}");
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('coletas')
-          .where('status', isEqualTo: 'ativa')
+          .where('status', isEqualTo: 'Pendente')
           .where('userId', isEqualTo: widget.user.userId)
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          print("Carregando solicitações...");
           return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          print("Erro ao carregar solicitações: ${snapshot.error}");
           return const Center(child: Text('Erro ao carregar solicitações.'));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          print(
-              "Nenhuma solicitação encontrada para o UID ${widget.user.userId}");
           return const Center(
             child: Text('Nenhuma solicitação ativa no momento.'),
           );
         }
 
         final documents = snapshot.data!.docs;
-        print("Solicitações carregadas: ${documents.length}");
 
         return ListView.builder(
           shrinkWrap: true,
@@ -223,12 +217,13 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           itemCount: documents.length,
           itemBuilder: (context, index) {
             final data = documents[index].data() as Map<String, dynamic>;
+            final documentId = documents[index].id;
 
-            print("Solicitação ${index + 1}: ${data['tipoEstabelecimento']}");
             return _buildSolicitationCard(
               data['tipoEstabelecimento'] ?? 'N/A',
               '${data['quantidadeOleo'] ?? 'N/A'} Litros',
               data['status'] ?? 'N/A',
+              documentId, 
             );
           },
         );
@@ -236,7 +231,8 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
     );
   }
 
-  Widget _buildSolicitationCard(String title, String quantity, String status) {
+  Widget _buildSolicitationCard(
+      String title, String quantity, String status, String documentId) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: ListTile(
@@ -247,7 +243,10 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProposalsScreen(solicitationTitle: title),
+              builder: (context) => ProposalsScreen(
+                solicitationTitle: title,
+                documentId: documentId, 
+              ),
             ),
           );
         },

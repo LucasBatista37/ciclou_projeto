@@ -1,29 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ProposalsScreen extends StatelessWidget {
   final String solicitationTitle;
-  final List<Map<String, dynamic>> proposals = [
-    {
-      'collectorName': 'Coletor João',
-      'pricePerLiter': 'R\$ 2,50',
-      'comments': 'Posso coletar amanhã pela manhã.',
-      'status': 'Pendente'
-    },
-    {
-      'collectorName': 'Coletor Maria',
-      'pricePerLiter': 'R\$ 2,70',
-      'comments': 'Disponível hoje à tarde.',
-      'status': 'Pendente'
-    },
-    {
-      'collectorName': 'Coletor Pedro',
-      'pricePerLiter': 'R\$ 2,30',
-      'comments': 'Pronto para coletar agora.',
-      'status': 'Pendente'
-    },
-  ];
+  final String documentId;
 
-  ProposalsScreen({super.key, required this.solicitationTitle});
+  const ProposalsScreen({
+    super.key,
+    required this.solicitationTitle,
+    required this.documentId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -40,141 +26,178 @@ class ProposalsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Padding(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('coletas')
+            .doc(documentId)
+            .collection('propostas')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return const Center(child: Text('Erro ao carregar propostas.'));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          final proposals = snapshot.data!.docs;
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ListView.builder(
+              itemCount: proposals.length,
+              itemBuilder: (context, index) {
+                final data = proposals[index].data() as Map<String, dynamic>;
+                return _buildProposalCard(context, data, proposals[index].id);
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 100,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 16.0),
+          const Text(
+            'Nenhuma proposta encontrada.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProposalCard(
+      BuildContext context, Map<String, dynamic> proposal, String proposalId) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: proposals.length,
-          itemBuilder: (context, index) {
-            final proposal = proposals[index];
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 8.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              proposal['collectorName'] ?? 'Desconhecido',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      proposal['collectorName'],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8.0),
+            Text(
+              'Preço por Litro: ${proposal['precoPorLitro'] ?? 'N/A'}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8.0),
+            Text(
+              'Comentários: ${proposal['comentarios'] ?? 'Nenhum comentário'}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8.0),
+            Text(
+              'Status: ${proposal['status'] ?? 'Indefinido'}',
+              style: TextStyle(
+                fontSize: 16,
+                color: proposal['status'] == 'Aceito'
+                    ? Colors.green
+                    : proposal['status'] == 'Rejeitado'
+                        ? Colors.red
+                        : Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 16.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    _rejectProposal(context, proposalId);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                    Text('Preço por Litro: ${proposal['pricePerLiter']}'),
-                    Text('Comentários: ${proposal['comments']}'),
-                    Text(
-                      'Status: ${proposal['status']}',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 8.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            _rejectProposal(context, proposal['collectorName']);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                          ),
-                          child: const Text(
-                            'Rejeitar',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                        const SizedBox(width: 8.0),
-                        ElevatedButton(
-                          onPressed: () {
-                            _acceptProposal(context, proposal['collectorName']);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                          ),
-                          child: const Text(
-                            'Aceitar',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
+                  child: const Text(
+                    'Rejeitar',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
-            );
-          },
+                const SizedBox(width: 8.0),
+                ElevatedButton(
+                  onPressed: () {
+                    _acceptProposal(context, proposalId);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Aceitar',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _acceptProposal(BuildContext context, String collectorName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Aceitar Proposta'),
-        content: Text(
-            'Você tem certeza que deseja aceitar a proposta de $collectorName?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Proposta de $collectorName aceita!')),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-            ),
-            child: const Text(
-              'Aceitar',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _acceptProposal(BuildContext context, String proposalId) {
+    FirebaseFirestore.instance
+        .collection('coletas')
+        .doc(documentId)
+        .collection('propostas')
+        .doc(proposalId)
+        .update({'status': 'Aceito'}).then((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Proposta aceita com sucesso!')),
+      );
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao aceitar proposta: $error')),
+      );
+    });
   }
 
-  void _rejectProposal(BuildContext context, String collectorName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rejeitar Proposta'),
-        content: Text(
-            'Você tem certeza que deseja rejeitar a proposta de $collectorName?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text('Proposta de $collectorName rejeitada!')),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text(
-              'Rejeitar',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _rejectProposal(BuildContext context, String proposalId) {
+    FirebaseFirestore.instance
+        .collection('coletas')
+        .doc(documentId)
+        .collection('propostas')
+        .doc(proposalId)
+        .update({'status': 'Rejeitado'}).then((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Proposta rejeitada com sucesso!')),
+      );
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao rejeitar proposta: $error')),
+      );
+    });
   }
-} 
+}

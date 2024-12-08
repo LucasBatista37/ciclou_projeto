@@ -161,7 +161,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('coletas')
-          .where('status', isEqualTo: 'pendente')
+          .where('status', isEqualTo: 'Pendente')
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
@@ -255,6 +255,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 prazo: prazo,
                 endereco: 'Endereço não disponível',
                 observacoes: comentarios,
+                documentId: documentId,
               ),
             ),
           );

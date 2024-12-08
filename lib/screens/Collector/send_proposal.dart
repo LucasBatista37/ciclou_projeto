@@ -1,10 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class SendProposal extends StatefulWidget {
-  const SendProposal({super.key});
+  final String documentId; 
+
+  const SendProposal({super.key, required this.documentId});
 
   @override
-  // ignore: library_private_types_in_public_api
   _SendProposalState createState() => _SendProposalState();
 }
 
@@ -12,6 +14,35 @@ class _SendProposalState extends State<SendProposal> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _precoController = TextEditingController();
   final TextEditingController _comentariosController = TextEditingController();
+
+  void _enviarProposta() async {
+    if (_formKey.currentState!.validate()) {
+      final preco = _precoController.text.trim();
+      final comentarios = _comentariosController.text.trim();
+
+      try {
+        await FirebaseFirestore.instance
+            .collection('coletas')
+            .doc(widget.documentId) 
+            .collection('propostas') 
+            .add({
+          'precoPorLitro': preco,
+          'comentarios': comentarios,
+          'status': 'Pendente',
+          'criadoEm': FieldValue.serverTimestamp(),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Proposta enviada com sucesso!')),
+        );
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao enviar proposta: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,14 +124,5 @@ class _SendProposalState extends State<SendProposal> {
         ),
       ),
     );
-  }
-
-  void _enviarProposta() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Proposta enviada com sucesso!')),
-      );
-      Navigator.pop(context);
-    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -83,7 +84,7 @@ class _CreateCollectionState extends State<CreateCollection> {
             'longitude': _localizacaoSelecionada.longitude,
           },
           'comentarios': _comentariosController.text.trim(),
-          'status': 'ativa',
+          'status': 'Pendente',
           'userId': widget.user.userId,
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -91,7 +92,11 @@ class _CreateCollectionState extends State<CreateCollection> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Solicitação enviada com sucesso!')),
         );
-        Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => RequestorDashboard(user: widget.user)),
+        );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao enviar solicitação: $e')),

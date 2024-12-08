@@ -7,6 +7,7 @@ class RequestDetails extends StatelessWidget {
   final String prazo;
   final String endereco;
   final String observacoes;
+  final String documentId; 
 
   const RequestDetails({
     super.key,
@@ -15,6 +16,7 @@ class RequestDetails extends StatelessWidget {
     required this.prazo,
     required this.endereco,
     required this.observacoes,
+    required this.documentId, 
   });
 
   @override
@@ -100,7 +102,9 @@ class RequestDetails extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SendProposal(),
+                      builder: (context) => SendProposal(
+                        documentId: documentId, 
+                      ),
                     ),
                   );
                 },
@@ -109,7 +113,7 @@ class RequestDetails extends StatelessWidget {
                   style: TextStyle(color: Colors.white),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
