@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:ciclou_projeto/models/user_model.dart';
 
 class SendProposal extends StatefulWidget {
   final String documentId; 
+  final UserModel user;
 
-  const SendProposal({super.key, required this.documentId});
+  const SendProposal({super.key, required this.documentId, required this.user});
 
   @override
   _SendProposalState createState() => _SendProposalState();
@@ -23,13 +25,15 @@ class _SendProposalState extends State<SendProposal> {
       try {
         await FirebaseFirestore.instance
             .collection('coletas')
-            .doc(widget.documentId) 
+            .doc(widget.documentId)
             .collection('propostas') 
             .add({
           'precoPorLitro': preco,
           'comentarios': comentarios,
           'status': 'Pendente',
           'criadoEm': FieldValue.serverTimestamp(),
+          'collectorName': widget.user.responsible,
+          'collectorId': widget.user.userId, 
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

@@ -256,6 +256,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 endereco: 'Endereço não disponível',
                 observacoes: comentarios,
                 documentId: documentId,
+                user: widget.user, 
               ),
             ),
           );
