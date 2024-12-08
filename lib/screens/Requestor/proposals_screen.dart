@@ -173,10 +173,21 @@ class ProposalsScreen extends StatelessWidget {
         .doc(documentId)
         .collection('propostas')
         .doc(proposalId)
-        .update({'status': 'Aceito'}).then((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Proposta aceita com sucesso!')),
-      );
+        .update({'status': 'Aceita'}).then((_) {
+      FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .update({'status': 'Em andamento'}).then((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text('Proposta aceita com sucesso! Coleta em andamento.')),
+        );
+      }).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar a coleta: $error')),
+        );
+      });
     }).catchError((error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao aceitar proposta: $error')),

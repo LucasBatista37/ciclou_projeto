@@ -4,23 +4,81 @@ import 'package:pdf/widgets.dart' as pw;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CollectProcess extends StatefulWidget {
   const CollectProcess({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _CollectProcessState createState() => _CollectProcessState();
 }
 
 class _CollectProcessState extends State<CollectProcess> {
-  final String _endereco = "Rua Monteiro, 123 - São Paulo";
-  final String _tipoEstabelecimento = "Restaurante";
-  final String _quantidadeEstimativa = "20 Litros";
+  DocumentSnapshot? _coletaAtual; 
+  bool _carregando = true;
+  String? _caminhoCertificado;
 
   double _quantidadeReal = 0.0;
   bool _coletaFinalizada = false;
-  String? _caminhoCertificado;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarColetaEmAndamento();
+  }
+
+  Future<void> _carregarColetaEmAndamento() async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('coletas')
+          .where('status', isEqualTo: 'Em andamento')
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        setState(() {
+          _coletaAtual = querySnapshot.docs.first;
+          _carregando = false;
+        });
+      } else {
+        setState(() {
+          _carregando = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _carregando = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar coleta: $e')),
+      );
+    }
+  }
+
+  Future<void> _confirmarColeta() async {
+    if (_coletaAtual == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual!.id)
+          .update({'status': 'Finalizada', 'quantidadeReal': _quantidadeReal});
+
+      await _gerarCertificado();
+
+      setState(() {
+        _coletaFinalizada = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Coleta confirmada com sucesso!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao confirmar coleta: $e')),
+      );
+    }
+  }
 
   Future<void> _gerarCertificado() async {
     final pdf = pw.Document();
@@ -37,9 +95,8 @@ class _CollectProcessState extends State<CollectProcess> {
                 style: const pw.TextStyle(fontSize: 16)),
             pw.Text('Data: ${DateTime.now().toString().split(' ')[0]}',
                 style: const pw.TextStyle(fontSize: 16)),
-            pw.Text('Quantidade Coletada: $_quantidadeReal Litros',
-                style: const pw.TextStyle(fontSize: 16)),
-            pw.Text('Endereço: $_endereco',
+            pw.Text(
+                'Quantidade Coletada: ${_quantidadeReal.toStringAsFixed(2)} Litros',
                 style: const pw.TextStyle(fontSize: 16)),
             pw.SizedBox(height: 16),
             pw.Text(
@@ -60,13 +117,6 @@ class _CollectProcessState extends State<CollectProcess> {
       _caminhoCertificado = file.path;
     });
 
-    // ignore: use_build_context_synchronously
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content:
-              Text('Certificado gerado com sucesso! Salvo em: ${file.path}')),
-    );
-
     _abrirCertificado();
   }
 
@@ -76,20 +126,25 @@ class _CollectProcessState extends State<CollectProcess> {
     }
   }
 
-  void _confirmarColeta() {
-    setState(() {
-      _coletaFinalizada = true;
-    });
-
-    _gerarCertificado();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Coleta confirmada com sucesso!')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    if (_carregando) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_coletaAtual == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            'Nenhuma coleta em andamento.',
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
@@ -112,18 +167,13 @@ class _CollectProcessState extends State<CollectProcess> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Endereço: $_endereco',
+                'Tipo de Estabelecimento: ${_coletaAtual?['tipoEstabelecimento'] ?? 'N/A'}',
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                'Tipo de Estabelecimento: $_tipoEstabelecimento',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Quantidade Estimada: $_quantidadeEstimativa',
+                'Quantidade Estimada: ${_coletaAtual?['quantidadeOleo'] ?? 'N/A'} Litros',
                 style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 16),
@@ -147,22 +197,6 @@ class _CollectProcessState extends State<CollectProcess> {
                 },
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Observações',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Observações sobre a coleta',
-                ),
-                onChanged: (value) {
-                  setState(() {});
-                },
-              ),
-              const SizedBox(height: 16),
               Center(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -170,45 +204,13 @@ class _CollectProcessState extends State<CollectProcess> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24.0, vertical: 12.0),
                   ),
-                  onPressed: _coletaFinalizada
-                      ? null
-                      : () {
-                          _confirmarColeta();
-                        },
+                  onPressed: _coletaFinalizada ? null : _confirmarColeta,
                   child: const Text(
                     'Confirmar Coleta',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              if (_coletaFinalizada)
-                Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      color: Colors.lightGreen,
-                      child: const Text(
-                        'Coleta finalizada com sucesso! Certificado gerado.',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24.0, vertical: 12.0),
-                      ),
-                      onPressed: _abrirCertificado,
-                      child: const Text(
-                        'Abrir Certificado',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
             ],
           ),
         ),
