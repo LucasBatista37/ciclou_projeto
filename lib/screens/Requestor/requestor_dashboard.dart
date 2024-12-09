@@ -8,7 +8,6 @@ import 'package:ciclou_projeto/components/custom_requestor_navigationbar.dart';
 import 'package:ciclou_projeto/screens/Requestor/create_collection_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/payment_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_history_screen.dart';
-import 'package:ciclou_projeto/screens/Requestor/requestor_map_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
 
 class RequestorDashboard extends StatefulWidget {
@@ -94,12 +93,10 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       case 0:
         return _buildHomeScreen();
       case 1:
-        return const RequestorMapScreen();
-      case 2:
         return CreateCollection(user: widget.user);
-      case 3:
+      case 2:
         return RequestorHistoryScreen(user: widget.user);
-      case 4:
+      case 3:
         return const PaymentScreen();
       default:
         return _buildHomeScreen();
@@ -168,7 +165,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
         } else if (label == 'Mapa') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const RequestorMapScreen()),
+            MaterialPageRoute(builder: (context) => const PaymentScreen ()),
           );
         }
       },
@@ -223,7 +220,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
               data['tipoEstabelecimento'] ?? 'N/A',
               '${data['quantidadeOleo'] ?? 'N/A'} Litros',
               data['status'] ?? 'N/A',
-              documentId, 
+              documentId,
             );
           },
         );
@@ -245,7 +242,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             MaterialPageRoute(
               builder: (context) => ProposalsScreen(
                 solicitationTitle: title,
-                documentId: documentId, 
+                documentId: documentId,
               ),
             ),
           );

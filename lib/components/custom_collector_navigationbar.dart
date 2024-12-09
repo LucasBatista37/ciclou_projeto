@@ -24,10 +24,6 @@ class CollectorBottomNavigationBar extends StatelessWidget {
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.map),
-          label: 'Mapa',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.local_shipping),
           label: 'Coletas Ativas',
         ),

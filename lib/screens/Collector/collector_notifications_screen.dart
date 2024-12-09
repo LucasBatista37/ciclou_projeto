@@ -1,6 +1,5 @@
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
-import 'package:ciclou_projeto/screens/Collector/collector_map_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/payment_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -120,12 +119,6 @@ void _handleNotificationTap(BuildContext context, String title) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const CollectProcess()),
-      );
-      break;
-    case 'Nova Solicitação Próxima':
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const CollectorMapScreen()),
       );
       break;
     case 'Pagamento Recebido':

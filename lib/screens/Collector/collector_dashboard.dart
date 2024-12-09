@@ -5,7 +5,6 @@ import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_history_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
-import 'package:ciclou_projeto/screens/Collector/collector_map_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/sent_proposals_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/request_details.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
@@ -103,10 +102,8 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       case 0:
         return _buildHomeScreen();
       case 1:
-        return const CollectorMapScreen();
-      case 2:
         return const CollectProcess();
-      case 3:
+      case 2:
         return const CollectorHistoryScreen();
       default:
         return _buildHomeScreen();
@@ -135,7 +132,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildQuickActionButton(
-                  Icons.map, 'Solicitações Próximas', Colors.blue),
+                  Icons.local_shipping, 'Coletas Ativas', Colors.blue),
               _buildQuickActionButton(
                   Icons.send, 'Propostas Enviadas', Colors.orange),
               _buildQuickActionButton(Icons.history, 'Histórico', Colors.green),
@@ -213,10 +210,10 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
   Widget _buildQuickActionButton(IconData icon, String label, Color color) {
     return GestureDetector(
       onTap: () {
-        if (label == 'Solicitações Próximas') {
+        if (label == 'Coletas Ativas') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const CollectorMapScreen()),
+            MaterialPageRoute(builder: (context) => const CollectProcess()),
           );
         } else if (label == 'Propostas Enviadas') {
           Navigator.push(

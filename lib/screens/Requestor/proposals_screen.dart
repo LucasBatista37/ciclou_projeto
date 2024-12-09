@@ -224,20 +224,37 @@ class ProposalsScreen extends StatelessWidget {
         .doc(documentId)
         .collection('propostas')
         .doc(proposalId)
-        .update({'status': 'Rejeitado'}).then((_) {
-      _sendNotification(
-        proposalId,
-        'Proposta Rejeitada',
-        'Sua proposta para $solicitationTitle foi rejeitada.',
-      );
+        .get()
+        .then((proposalDoc) {
+      final proposalData = proposalDoc.data();
+      if (proposalData != null && proposalData['collectorId'] != null) {
+        final collectorId = proposalData['collectorId'];
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Proposta rejeitada com sucesso!')),
-      );
-    }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao rejeitar proposta: $error')),
-      );
+        FirebaseFirestore.instance
+            .collection('coletas')
+            .doc(documentId)
+            .collection('propostas')
+            .doc(proposalId)
+            .update({'status': 'Rejeitada '}).then((_) {
+          _sendNotification(
+            collectorId,
+            'Proposta Rejeitada',
+            'Sua proposta para $solicitationTitle foi rejeitada.',
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Proposta rejeitada com sucesso!')),
+          );
+        }).catchError((error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao rejeitar proposta: $error')),
+          );
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro: coletor não encontrado.')),
+        );
+      }
     });
   }
 
