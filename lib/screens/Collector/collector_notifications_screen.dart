@@ -55,15 +55,16 @@ class CollectorNotificationsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             itemCount: notifications.length,
             itemBuilder: (context, index) {
-              final data = notifications[index].data() as Map<String, dynamic>;
+              final notification = notifications[index];
+              final data = notification.data() as Map<String, dynamic>;
               return Card(
                 margin: const EdgeInsets.only(bottom: 10.0),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0)),
                 child: ListTile(
                   leading: Icon(
-                    _getIconForNotification(data['title']!),
-                    color: _getColorForNotification(data['title']!),
+                    _getIconForNotification(data['title'] ?? ''),
+                    color: _getColorForNotification(data['title'] ?? ''),
                   ),
                   title: Text(
                     data['title'] ?? 'Notificação',
@@ -75,11 +76,19 @@ class CollectorNotificationsScreen extends StatelessWidget {
                       Text(data['message'] ?? ''),
                       const SizedBox(height: 4.0),
                       Text(
-                        data['timestamp']?.toDate()?.toString() ?? '',
+                        (data['timestamp'] as Timestamp?)
+                                ?.toDate()
+                                .toString() ??
+                            '',
                         style:
                             const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
+                  ),
+                  onTap: () => _handleNotificationTap(
+                    context,
+                    data['title'] ?? '',
+                    notification,
                   ),
                 ),
               );
@@ -96,6 +105,10 @@ class CollectorNotificationsScreen extends StatelessWidget {
         return Icons.check_circle;
       case 'Proposta Rejeitada':
         return Icons.cancel;
+      case 'Pagamento Recebido':
+        return Icons.payment;
+      case 'Solicitação Cancelada':
+        return Icons.cancel_schedule_send;
       default:
         return Icons.notifications;
     }
@@ -107,33 +120,48 @@ class CollectorNotificationsScreen extends StatelessWidget {
         return Colors.green;
       case 'Proposta Rejeitada':
         return Colors.red;
+      case 'Pagamento Recebido':
+        return Colors.blue;
+      case 'Solicitação Cancelada':
+        return Colors.orange;
       default:
         return Colors.grey;
     }
   }
-}
 
-void _handleNotificationTap(BuildContext context, String title) {
-  switch (title) {
-    case 'Proposta Aceita!':
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const CollectProcess()),
-      );
-      break;
-    case 'Pagamento Recebido':
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const PaymentScreen()),
-      );
-      break;
-    case 'Solicitação Cancelada':
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const CollectProcess()),
-      );
-      break;
-    default:
-      break;
+  void _handleNotificationTap(
+      BuildContext context, String title, DocumentSnapshot notification) {
+    switch (title) {
+      case 'Proposta Aceita!':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CollectProcess(
+              coletaAtual: notification,
+            ),
+          ),
+        );
+        break;
+      case 'Pagamento Recebido':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentScreen(),
+          ),
+        );
+        break;
+      case 'Solicitação Cancelada':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CollectProcess(
+              coletaAtual: notification,
+            ),
+          ),
+        );
+        break;
+      default:
+        break;
+    }
   }
 }

@@ -1,10 +1,10 @@
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Collector/collects_screen.dart';
 import 'package:ciclou_projeto/screens/register_collector_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_history_screen.dart';
-import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/sent_proposals_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/request_details.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
@@ -102,7 +102,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       case 0:
         return _buildHomeScreen();
       case 1:
-        return const CollectProcess();
+        return const ColetasEmAndamento();
       case 2:
         return const CollectorHistoryScreen();
       default:
@@ -213,7 +213,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
         if (label == 'Coletas Ativas') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const CollectProcess()),
+            MaterialPageRoute(builder: (context) => const ColetasEmAndamento()),
           );
         } else if (label == 'Propostas Enviadas') {
           Navigator.push(

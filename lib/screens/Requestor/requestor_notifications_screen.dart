@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:flutter/material.dart';
 
 class RequestorNotificationsScreen extends StatelessWidget {
@@ -27,7 +28,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
     },
   ];
 
-  RequestorNotificationsScreen({super.key});
+  RequestorNotificationsScreen({super.key, required String collectorId, required UserModel user});
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +82,6 @@ class RequestorNotificationsScreen extends StatelessWidget {
     );
   }
 
-  // Helper method to get the appropriate icon for each notification
   IconData _getIconForNotification(String title) {
     switch (title) {
       case 'Nova Proposta Recebida!':

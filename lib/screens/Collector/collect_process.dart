@@ -7,14 +7,16 @@ import 'package:open_file/open_file.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CollectProcess extends StatefulWidget {
-  const CollectProcess({super.key});
+  final DocumentSnapshot<Object?> coletaAtual;
+
+  const CollectProcess({super.key, required this.coletaAtual});
 
   @override
   _CollectProcessState createState() => _CollectProcessState();
 }
 
 class _CollectProcessState extends State<CollectProcess> {
-  DocumentSnapshot? _coletaAtual; 
+  late DocumentSnapshot _coletaAtual;
   bool _carregando = true;
   String? _caminhoCertificado;
 
@@ -24,35 +26,8 @@ class _CollectProcessState extends State<CollectProcess> {
   @override
   void initState() {
     super.initState();
-    _carregarColetaEmAndamento();
-  }
-
-  Future<void> _carregarColetaEmAndamento() async {
-    try {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('coletas')
-          .where('status', isEqualTo: 'Em andamento')
-          .limit(1)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        setState(() {
-          _coletaAtual = querySnapshot.docs.first;
-          _carregando = false;
-        });
-      } else {
-        setState(() {
-          _carregando = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _carregando = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar coleta: $e')),
-      );
-    }
+    _coletaAtual = widget.coletaAtual;
+    _carregando = false;
   }
 
   Future<void> _confirmarColeta() async {
@@ -61,7 +36,7 @@ class _CollectProcessState extends State<CollectProcess> {
     try {
       await FirebaseFirestore.instance
           .collection('coletas')
-          .doc(_coletaAtual!.id)
+          .doc(_coletaAtual.id)
           .update({'status': 'Finalizada', 'quantidadeReal': _quantidadeReal});
 
       await _gerarCertificado();
@@ -145,6 +120,8 @@ class _CollectProcessState extends State<CollectProcess> {
       );
     }
 
+    final data = _coletaAtual.data() as Map<String, dynamic>;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
@@ -167,13 +144,13 @@ class _CollectProcessState extends State<CollectProcess> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Tipo de Estabelecimento: ${_coletaAtual?['tipoEstabelecimento'] ?? 'N/A'}',
+                'Tipo de Estabelecimento: ${data['tipoEstabelecimento'] ?? 'N/A'}',
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                'Quantidade Estimada: ${_coletaAtual?['quantidadeOleo'] ?? 'N/A'} Litros',
+                'Quantidade Estimada: ${data['quantidadeOleo'] ?? 'N/A'} Litros',
                 style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 16),

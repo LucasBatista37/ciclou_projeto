@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -55,7 +56,15 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           IconButton(
             icon: const Icon(Icons.notifications, color: Colors.white),
             onPressed: () {
-              Navigator.pushNamed(context, '/notifications');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RequestorNotificationsScreen(
+                    collectorId: widget.user.userId,
+                    user: widget.user,
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -165,7 +174,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
         } else if (label == 'Mapa') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const PaymentScreen ()),
+            MaterialPageRoute(builder: (context) => const PaymentScreen()),
           );
         }
       },
