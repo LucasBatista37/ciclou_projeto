@@ -2,14 +2,14 @@ import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ColetasEmAndamento extends StatefulWidget {
-  const ColetasEmAndamento({super.key});
+class CollectsScreen extends StatefulWidget {
+  const CollectsScreen({super.key, required String collectorId});
 
   @override
-  _ColetasEmAndamentoState createState() => _ColetasEmAndamentoState();
+  _CollectsScreenState createState() => _CollectsScreenState();
 }
 
-class _ColetasEmAndamentoState extends State<ColetasEmAndamento> {
+class _CollectsScreenState extends State<CollectsScreen> {
   bool _carregando = true;
   List<DocumentSnapshot> _coletas = [];
 
@@ -106,7 +106,8 @@ class _ColetasEmAndamentoState extends State<ColetasEmAndamento> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => CollectProcess(coletaAtual: coleta),
+                            builder: (context) =>
+                                CollectProcess(coletaAtual: coleta),
                           ),
                         );
                       },

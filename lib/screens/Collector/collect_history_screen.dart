@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CollectorHistoryScreen extends StatefulWidget {
-  const CollectorHistoryScreen({super.key});
+  final String collectorId;
+
+  const CollectorHistoryScreen({super.key, required this.collectorId});
 
   @override
-  // ignore: library_private_types_in_public_api
   _CollectorHistoryScreenState createState() => _CollectorHistoryScreenState();
 }
 
 class _CollectorHistoryScreenState extends State<CollectorHistoryScreen> {
-  final List<Map<String, String>> _historico = [
-    {'data': '10/11/2024', 'quantidade': '15 Litros', 'status': 'Concluída'},
-    {'data': '05/11/2024', 'quantidade': '20 Litros', 'status': 'Em andamento'},
-    {'data': '01/11/2024', 'quantidade': '10 Litros', 'status': 'Concluída'},
-    {'data': '28/10/2024', 'quantidade': '30 Litros', 'status': 'Cancelada'},
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,25 +33,59 @@ class _CollectorHistoryScreenState extends State<CollectorHistoryScreen> {
   }
 
   Widget _buildHistoryList() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: _historico.isEmpty
-          ? const Center(child: Text('Nenhuma coleta registrada.'))
-          : ListView.builder(
-              itemCount: _historico.length,
-              itemBuilder: (context, index) {
-                final coleta = _historico[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: ListTile(
-                    title: Text('Coleta em: ${coleta['data']}'),
-                    subtitle: Text('Quantidade: ${coleta['quantidade']}'),
-                    trailing: _buildStatusTag(coleta['status']!),
-                    onTap: () {},
-                  ),
-                );
-              },
-            ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('coletas')
+          .where('collectorId', isEqualTo: widget.collectorId)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          print('Erro ao carregar dados: ${snapshot.error}');
+          return const Center(child: Text('Erro ao carregar o histórico.'));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          print(
+              'Nenhuma coleta encontrada para o collectorId: ${widget.collectorId}');
+          return const Center(child: Text('Nenhuma coleta registrada.'));
+        }
+
+        final historico = snapshot.data!.docs;
+
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ListView.builder(
+            itemCount: historico.length,
+            itemBuilder: (context, index) {
+              final coleta = historico[index].data() as Map<String, dynamic>;
+              final createdAt = coleta['createdAt'] is Timestamp
+                  ? (coleta['createdAt'] as Timestamp).toDate()
+                  : null;
+              final formattedDate = createdAt != null
+                  ? "${createdAt.day.toString().padLeft(2, '0')}/"
+                      "${createdAt.month.toString().padLeft(2, '0')}/"
+                      "${createdAt.year}"
+                  : 'Data não disponível';
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                child: ListTile(
+                  title:
+                      Text('Tipo: ${coleta['tipoEstabelecimento'] ?? 'N/A'}'),
+                  subtitle: Text(
+                      'Data: $formattedDate\nQuantidade: ${coleta['quantidadeOleo'] ?? 'N/A'} Litros'),
+                  trailing: _buildStatusTag(coleta['status'] ?? 'Desconhecido'),
+                  onTap: () {},
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -66,6 +95,7 @@ class _CollectorHistoryScreenState extends State<CollectorHistoryScreen> {
 
     switch (status) {
       case 'Concluída':
+      case 'Finalizada':
         statusColor = Colors.green;
         statusIcon = Icons.check_circle;
         break;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SentProposalsScreen extends StatelessWidget {
-  const SentProposalsScreen({super.key});
+  const SentProposalsScreen({super.key, required String collectorId});
 
   @override
   Widget build(BuildContext context) {

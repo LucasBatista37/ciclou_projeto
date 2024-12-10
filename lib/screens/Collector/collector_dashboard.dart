@@ -102,9 +102,13 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       case 0:
         return _buildHomeScreen();
       case 1:
-        return const ColetasEmAndamento();
+        return CollectsScreen(
+          collectorId: widget.user.userId,
+        );
       case 2:
-        return const CollectorHistoryScreen();
+        return CollectorHistoryScreen(
+          collectorId: widget.user.userId,
+        );
       default:
         return _buildHomeScreen();
     }
@@ -213,19 +217,29 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
         if (label == 'Coletas Ativas') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ColetasEmAndamento()),
+            MaterialPageRoute(
+              builder: (context) => CollectsScreen(
+                collectorId: widget.user.userId,
+              ),
+            ),
           );
         } else if (label == 'Propostas Enviadas') {
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => const SentProposalsScreen()),
+              builder: (context) => SentProposalsScreen(
+                collectorId: widget.user.userId,
+              ),
+            ),
           );
         } else if (label == 'Histórico') {
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => const CollectorHistoryScreen()),
+              builder: (context) => CollectorHistoryScreen(
+                collectorId: widget.user.userId,
+              ),
+            ),
           );
         }
       },
@@ -236,7 +250,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
             backgroundColor: color,
             child: Icon(icon, color: Colors.white),
           ),
-          const SizedBox(height: 4.0),
+          const SizedBox(width: 4.0),
           Text(label, style: const TextStyle(fontSize: 12)),
         ],
       ),
