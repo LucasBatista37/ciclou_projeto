@@ -31,6 +31,10 @@ class CollectorBottomNavigationBar extends StatelessWidget {
           icon: Icon(Icons.history),
           label: 'Histórico',
         ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.attach_money_rounded),
+          label: 'Pagamento',
+        ),
       ],
     );
   }

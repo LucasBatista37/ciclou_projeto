@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
 import 'package:ciclou_projeto/components/custom_requestor_navigationbar.dart';
 import 'package:ciclou_projeto/screens/Requestor/create_collection_screen.dart';
-import 'package:ciclou_projeto/screens/Requestor/payment_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_history_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
 
@@ -104,7 +104,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       case 1:
         return CreateCollection(user: widget.user);
       case 2:
-        return RequestorHistoryScreen(user: widget.user);
+        return RequestorHistoryScreen(
+            userId: widget
+                .user.userId); 
       case 3:
         return const PaymentScreen();
       default:

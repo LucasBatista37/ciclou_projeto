@@ -186,6 +186,7 @@ class ProposalsScreen extends StatelessWidget {
       }
 
       final collectorId = proposalData['collectorId'];
+      final collectorName = proposalData['collectorName'];
 
       await FirebaseFirestore.instance
           .collection('coletas')
@@ -200,6 +201,7 @@ class ProposalsScreen extends StatelessWidget {
           .update({
         'status': 'Em andamento',
         'collectorId': collectorId,
+        'collectorName': collectorName,
       });
 
       _sendNotification(

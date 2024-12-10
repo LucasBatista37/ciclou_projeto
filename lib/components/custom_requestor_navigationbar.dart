@@ -23,7 +23,6 @@ class CustomBottomNavigationBar extends StatelessWidget {
         BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline), label: 'Solicitar Coleta'),
         BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Histórico'),
-        BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: 'Pagar'),
       ],
     );
   }

@@ -1,5 +1,6 @@
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collects_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
 import 'package:ciclou_projeto/screens/register_collector_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
@@ -109,6 +110,8 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
         return CollectorHistoryScreen(
           collectorId: widget.user.userId,
         );
+      case 3:
+        return const PaymentScreen();
       default:
         return _buildHomeScreen();
     }

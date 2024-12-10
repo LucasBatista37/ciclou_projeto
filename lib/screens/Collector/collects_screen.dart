@@ -67,6 +67,12 @@ class _CollectsScreenState extends State<CollectsScreen> {
           'Coletas em Andamento',
           style: TextStyle(color: Colors.white),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16.0),
