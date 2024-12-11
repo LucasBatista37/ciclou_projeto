@@ -2,11 +2,13 @@ class UserModel {
   final String userId;
   final String responsible;
   final String email;
+  final String photoUrl;
 
   UserModel({
     required this.userId,
     required this.responsible,
     required this.email,
+    required this.photoUrl,
   });
 
   factory UserModel.fromFirestore(Map<String, dynamic> data, String id) {
@@ -14,6 +16,7 @@ class UserModel {
       userId: id,
       responsible: data['responsible'] ?? 'Usuário',
       email: data['email'] ?? 'Email não disponível',
+      photoUrl: data['photoUrl'] ?? '',
     );
   }
 
@@ -22,6 +25,7 @@ class UserModel {
       'userId': userId,
       'responsible': responsible,
       'email': email,
+      'photoUrl': photoUrl,
     };
   }
 }

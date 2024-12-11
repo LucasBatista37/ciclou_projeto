@@ -1,34 +1,10 @@
-import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class RequestorNotificationsScreen extends StatelessWidget {
-  final List<Map<String, String>> notifications = [
-    {
-      'title': 'Nova Proposta Recebida!',
-      'message':
-          'Um coletor enviou uma proposta para a sua solicitação no Restaurante.',
-      'time': '10 minutos atrás',
-    },
-    {
-      'title': 'Coleta Confirmada',
-      'message':
-          'O coletor confirmou que está a caminho para a coleta agendada.',
-      'time': '30 minutos atrás',
-    },
-    {
-      'title': 'Proposta Aceita',
-      'message': 'Sua proposta foi aceita pelo coletor. Aguarde a coleta.',
-      'time': '1 hora atrás',
-    },
-    {
-      'title': 'Coleta Concluída',
-      'message':
-          'A coleta foi realizada com sucesso. Avalie o serviço do coletor.',
-      'time': '2 horas atrás',
-    },
-  ];
+  final String requestorId;
 
-  RequestorNotificationsScreen({super.key, required String collectorId, required UserModel user});
+  const RequestorNotificationsScreen({super.key, required this.requestorId});
 
   @override
   Widget build(BuildContext context) {
@@ -44,45 +20,88 @@ class RequestorNotificationsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: notifications.length,
-        itemBuilder: (context, index) {
-          final notification = notifications[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 10.0),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0)),
-            child: ListTile(
-              leading: Icon(
-                _getIconForNotification(notification['title']!),
-                color: _getColorForNotification(notification['title']!),
-              ),
-              title: Text(
-                notification['title']!,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(notification['message']!),
-                  const SizedBox(height: 4.0),
-                  Text(
-                    notification['time']!,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-              onTap: () =>
-                  _handleNotificationTap(context, notification['title']!),
-            ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('notifications')
+            .where('requestorId', isEqualTo: requestorId)
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return const Center(child: Text('Erro ao carregar notificações.'));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          final notifications = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16.0),
+            itemCount: notifications.length,
+            itemBuilder: (context, index) {
+              final notification = notifications[index].data()
+                  as Map<String, dynamic>; // Dados da notificação
+              return _buildNotificationCard(context, notification);
+            },
           );
         },
       ),
     );
   }
 
-  IconData _getIconForNotification(String title) {
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.notifications_off,
+            size: 100,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 16.0),
+          const Text(
+            'Nenhuma notificação encontrada.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationCard(
+      BuildContext context, Map<String, dynamic> notification) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: ListTile(
+        leading: Icon(
+          _getIconForNotification(notification['title']),
+          color: _getColorForNotification(notification['title']),
+        ),
+        title: Text(
+          notification['title'] ?? 'Notificação',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(notification['message'] ?? ''),
+        trailing: Text(
+          _formatTimestamp(notification['timestamp']),
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+      ),
+    );
+  }
+
+  IconData _getIconForNotification(String? title) {
     switch (title) {
       case 'Nova Proposta Recebida!':
         return Icons.email;
@@ -97,7 +116,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
     }
   }
 
-  Color _getColorForNotification(String title) {
+  Color _getColorForNotification(String? title) {
     switch (title) {
       case 'Nova Proposta Recebida!':
         return Colors.blue;
@@ -112,18 +131,9 @@ class RequestorNotificationsScreen extends StatelessWidget {
     }
   }
 
-  void _handleNotificationTap(BuildContext context, String title) {
-    switch (title) {
-      case 'Nova Proposta Recebida!':
-        break;
-      case 'Coleta Confirmada':
-        break;
-      case 'Proposta Aceita':
-        break;
-      case 'Coleta Concluída':
-        break;
-      default:
-        break;
-    }
+  String _formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return 'Agora';
+    final dateTime = timestamp.toDate();
+    return '${dateTime.hour}:${dateTime.minute}';
   }
 }

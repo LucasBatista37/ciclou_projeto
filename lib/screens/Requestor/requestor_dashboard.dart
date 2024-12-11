@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
@@ -127,8 +126,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => RequestorNotificationsScreen(
-                    collectorId: widget.user.userId,
-                    user: widget.user,
+                    requestorId: widget.user.userId,
                   ),
                 ),
               );

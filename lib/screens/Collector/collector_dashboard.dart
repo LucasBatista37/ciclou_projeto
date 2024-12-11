@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/collects_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
@@ -125,7 +126,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => RequestorNotificationsScreen(
+                  builder: (context) => CollectorNotificationsScreen(
                     collectorId: widget.user.userId,
                     user: widget.user,
                   ),
@@ -369,11 +370,14 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
 
   Widget _buildSolicitationCard(String title, String quantity, String prazo,
       String comentarios, String documentId) {
+    final formattedPrazo =
+        DateTime.tryParse(prazo)?.toLocal().toString().split(' ')[0] ?? prazo;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: ListTile(
         title: Text(title),
-        subtitle: Text('$quantity - Prazo: $prazo'),
+        subtitle: Text('$quantity - Prazo: $formattedPrazo'),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16.0),
         onTap: () {
           Navigator.push(

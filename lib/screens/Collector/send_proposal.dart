@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 
 class SendProposal extends StatefulWidget {
-  final String documentId; 
+  final String documentId;
   final UserModel user;
 
   const SendProposal({super.key, required this.documentId, required this.user});
@@ -23,17 +23,42 @@ class _SendProposalState extends State<SendProposal> {
       final comentarios = _comentariosController.text.trim();
 
       try {
+        final coletaDoc = await FirebaseFirestore.instance
+            .collection('coletas')
+            .doc(widget.documentId)
+            .get();
+
+        if (!coletaDoc.exists) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro: Coleta não encontrada.')),
+          );
+          return;
+        }
+
+        final requestorId =
+            coletaDoc.data()?['userId']; 
+
         await FirebaseFirestore.instance
             .collection('coletas')
             .doc(widget.documentId)
-            .collection('propostas') 
+            .collection('propostas')
             .add({
           'precoPorLitro': preco,
           'comentarios': comentarios,
           'status': 'Pendente',
           'criadoEm': FieldValue.serverTimestamp(),
           'collectorName': widget.user.responsible,
-          'collectorId': widget.user.userId, 
+          'collectorId': widget.user.userId,
+          'photoUrl': widget.user.photoUrl,
+        });
+
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'title': 'Nova Proposta Recebida!',
+          'message':
+              '${widget.user.responsible} enviou uma proposta para sua solicitação.',
+          'timestamp': FieldValue.serverTimestamp(),
+          'requestorId': requestorId, 
+          'solicitationId': widget.documentId,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

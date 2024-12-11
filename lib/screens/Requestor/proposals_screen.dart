@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -85,6 +86,9 @@ class ProposalsScreen extends StatelessWidget {
 
   Widget _buildProposalCard(
       BuildContext context, Map<String, dynamic> proposal, String proposalId) {
+    final photoUrl = proposal['photoUrl'];
+    final displayInitial = proposal['collectorName']?[0]?.toUpperCase() ?? 'A';
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       shape: RoundedRectangleBorder(
@@ -92,79 +96,111 @@ class ProposalsScreen extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              proposal['collectorName'] ?? 'Desconhecido',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            CircleAvatar(
+              radius: 24,
+              backgroundImage: _getImageProvider(photoUrl),
+              backgroundColor: Colors.grey,
+              child: (photoUrl == null || photoUrl.isEmpty)
+                  ? Text(
+                      displayInitial,
+                      style: const TextStyle(fontSize: 20, color: Colors.white),
+                    )
+                  : null,
             ),
-            const SizedBox(height: 8.0),
-            Text(
-              'Preço por Litro: ${proposal['precoPorLitro'] ?? 'N/A'}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8.0),
-            Text(
-              'Comentários: ${proposal['comentarios'] ?? 'Nenhum comentário'}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8.0),
-            Text(
-              'Status: ${proposal['status'] ?? 'Indefinido'}',
-              style: TextStyle(
-                fontSize: 16,
-                color: proposal['status'] == 'Aceito'
-                    ? Colors.green
-                    : proposal['status'] == 'Rejeitado'
-                        ? Colors.red
-                        : Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _rejectProposal(context, proposalId);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+            const SizedBox(width: 16.0),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    proposal['collectorName'] ?? 'Desconhecido',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: const Text(
-                    'Rejeitar',
-                    style: TextStyle(color: Colors.white),
+                  const SizedBox(height: 8.0),
+                  Text(
+                    'Preço por Litro: ${proposal['precoPorLitro'] ?? 'N/A'}',
+                    style: const TextStyle(fontSize: 16),
                   ),
-                ),
-                const SizedBox(width: 8.0),
-                ElevatedButton(
-                  onPressed: () {
-                    _acceptProposal(context, proposalId);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+                  const SizedBox(height: 8.0),
+                  Text(
+                    'Comentários: ${proposal['comentarios'] ?? 'Nenhum comentário'}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8.0),
+                  Text(
+                    'Status: ${proposal['status'] ?? 'Indefinido'}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: proposal['status'] == 'Aceito'
+                          ? Colors.green
+                          : proposal['status'] == 'Rejeitado'
+                              ? Colors.red
+                              : Colors.grey,
                     ),
                   ),
-                  child: const Text(
-                    'Aceitar',
-                    style: TextStyle(color: Colors.white),
+                  const SizedBox(height: 16.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          _rejectProposal(context, proposalId);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        child: const Text(
+                          'Rejeitar',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      ElevatedButton(
+                        onPressed: () {
+                          _acceptProposal(context, proposalId);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        child: const Text(
+                          'Aceitar',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  ImageProvider? _getImageProvider(String? photoUrl) {
+    if (photoUrl == null || photoUrl.isEmpty) {
+      return null;
+    }
+    if (photoUrl.startsWith('http')) {
+      return NetworkImage(photoUrl);
+    }
+    if (photoUrl.startsWith('/')) {
+      return FileImage(File(photoUrl));
+    }
+    return null;
   }
 
   void _acceptProposal(BuildContext context, String proposalId) async {
@@ -269,4 +305,4 @@ class ProposalsScreen extends StatelessWidget {
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
-}
+} 
