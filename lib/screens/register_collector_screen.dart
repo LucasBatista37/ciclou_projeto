@@ -8,7 +8,6 @@ class RegisterCollectorScreen extends StatefulWidget {
   const RegisterCollectorScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _RegisterCollectorScreenState createState() =>
       _RegisterCollectorScreenState();
 }
@@ -56,7 +55,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
 
       if (userId != null) {
         await FirebaseFirestore.instance
-            .collection('collector')
+            .collection('collectors')
             .doc(userId)
             .set({
           'businessName': _businessNameController.text.trim(),
@@ -68,6 +67,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'licenseExpiry': _licenseExpiryController.text.trim(),
           'email': _emailController.text.trim(),
           'userType': 'Coletor',
+          'photoUrl': null, 
           'createdAt': FieldValue.serverTimestamp(),
         });
 
@@ -120,7 +120,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                 children: [
                   Image.asset(
                     'assets/ciclou.png',
-                    height: 300,
+                    height: 200,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(

@@ -1,14 +1,16 @@
+import 'dart:io';
+
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collects_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
-import 'package:ciclou_projeto/screens/register_collector_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
+import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_history_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/sent_proposals_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/request_details.dart';
-import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -23,6 +25,8 @@ class CollectorDashboard extends StatefulWidget {
 
 class _CollectorDashboardState extends State<CollectorDashboard> {
   int _selectedIndex = 0;
+  bool _showAll = false;
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _onItemTapped(int index) {
@@ -42,10 +46,71 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           onTap: () {
             _scaffoldKey.currentState?.openDrawer();
           },
-          child: const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              backgroundImage: AssetImage('assets/user_profile.jpg'),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('collector')
+                  .doc(widget.user.userId)
+                  .get(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey,
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  print('Erro no snapshot: ${snapshot.error}');
+                  return const CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey,
+                    child: Icon(Icons.error, color: Colors.white),
+                  );
+                }
+
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  print('Documento não encontrado ou vazio.');
+                  return const CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey,
+                    child: Icon(Icons.person, color: Colors.white),
+                  );
+                }
+
+                final data = snapshot.data!.data() as Map<String, dynamic>;
+                final profileImageUrl = data['photoUrl'];
+                final responsibleName = data['responsible'] ?? '';
+
+                ImageProvider? imageProvider;
+
+                if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
+                  if (profileImageUrl.startsWith('http')) {
+                    imageProvider = NetworkImage(profileImageUrl);
+                  } else {
+                    imageProvider = FileImage(File(profileImageUrl));
+                  }
+                }
+
+                return CircleAvatar(
+                  radius: 24,
+                  backgroundImage: imageProvider,
+                  backgroundColor: Colors.grey.shade300,
+                  child: imageProvider == null
+                      ? Text(
+                          responsibleName.isNotEmpty
+                              ? responsibleName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            color: Colors.black,
+                          ),
+                        )
+                      : null,
+                );
+              },
             ),
           ),
         ),
@@ -60,7 +125,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CollectorNotificationsScreen(
+                  builder: (context) => RequestorNotificationsScreen(
                     collectorId: widget.user.userId,
                     user: widget.user,
                   ),
@@ -70,24 +135,49 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           ),
         ],
       ),
-      drawer: CustomDrawer(
-        userName: widget.user.responsible,
-        userEmail: widget.user.email,
-        profileImageUrl: 'assets/user_profile.jpg',
-        onEditProfile: () {},
-        onSettings: () {},
-        onLogout: () {
-          FirebaseAuth.instance.signOut().then((_) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const RegisterCollectorScreen()),
+      drawer: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance
+            .collection('collector')
+            .doc(widget.user.userId)
+            .get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Drawer(
+              child: Center(child: CircularProgressIndicator()),
             );
-          }).catchError((error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erro ao fazer logout: $error')),
+          }
+
+          if (snapshot.hasError ||
+              !snapshot.hasData ||
+              !snapshot.data!.exists) {
+            return const Drawer(
+              child: Center(child: Text('Erro ao carregar o perfil.')),
             );
-          });
+          }
+
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final profileImageUrl = data['photoUrl'];
+
+          return CustomDrawer(
+            userName: widget.user.responsible,
+            userEmail: widget.user.email,
+            profileImageUrl: profileImageUrl,
+            onEditProfile: () {},
+            onSettings: () {},
+            onLogout: () {
+              FirebaseAuth.instance.signOut().then((_) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const RegisterRequestorScreen()),
+                );
+              }).catchError((error) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erro ao fazer logout: $error')),
+                );
+              });
+            },
+          );
         },
       ),
       body: _getBodyContent(),
@@ -193,22 +283,39 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
         }
 
         final documents = snapshot.data!.docs;
+        final int itemCount = _showAll
+            ? documents.length
+            : (documents.length < 3 ? documents.length : 3);
 
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: documents.length,
-          itemBuilder: (context, index) {
-            final data = documents[index].data() as Map<String, dynamic>;
+        return Column(
+          children: [
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: itemCount,
+              itemBuilder: (context, index) {
+                final data = documents[index].data() as Map<String, dynamic>;
+                final documentId = documents[index].id;
 
-            return _buildSolicitationCard(
-              data['tipoEstabelecimento'] ?? 'N/A',
-              '${data['quantidadeOleo'] ?? 'N/A'} Litros',
-              data['prazo'] ?? 'N/A',
-              data['comentarios'] ?? 'Sem observações',
-              documents[index].id,
-            );
-          },
+                return _buildSolicitationCard(
+                  data['tipoEstabelecimento'] ?? 'N/A',
+                  '${data['quantidadeOleo'] ?? 'N/A'} Litros',
+                  data['prazo'] ?? 'N/A',
+                  data['comentarios'] ?? 'Sem observações',
+                  documentId,
+                );
+              },
+            ),
+            if (documents.length > 3)
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _showAll = !_showAll;
+                  });
+                },
+                child: Text(_showAll ? 'Ver Menos' : 'Ver Mais'),
+              ),
+          ],
         );
       },
     );

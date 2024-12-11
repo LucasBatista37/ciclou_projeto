@@ -19,6 +19,7 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
   final TextEditingController _quantidadeOleoGeradoController =
       TextEditingController();
   XFile? _profileImage;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -26,41 +27,75 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
     _loadUserData();
   }
 
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _emailController.dispose();
+    _telefoneController.dispose();
+    _enderecoController.dispose();
+    _quantidadeOleoGeradoController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadUserData() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection('requestor')
-          .doc(uid)
-          .get();
-      if (doc.exists) {
-        final data = doc.data()!;
-        setState(() {
-          _nomeController.text = data['responsible'] ?? '';
-          _emailController.text = data['email'] ?? '';
-          _telefoneController.text = data['phone'] ?? '';
-          _enderecoController.text = data['address'] ?? '';
-          _quantidadeOleoGeradoController.text =
-              data['quantidade_oleo_gerado'] ?? '';
-        });
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('requestor')
+            .doc(uid)
+            .get();
+        if (doc.exists) {
+          final data = doc.data()!;
+          setState(() {
+            _nomeController.text = data['responsible'] ?? '';
+            _emailController.text = data['email'] ?? '';
+            _telefoneController.text = data['phone'] ?? '';
+            _enderecoController.text = data['address'] ?? '';
+            _quantidadeOleoGeradoController.text =
+                data['quantidade_oleo_gerado'] ?? '';
+          });
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao carregar dados: $e')),
+        );
       }
     }
   }
 
   Future<void> _saveUserData() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário não autenticado.')),
+      );
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    try {
       await FirebaseFirestore.instance.collection('requestor').doc(uid).update({
-        'responsible': _nomeController.text,
-        'email': _emailController.text,
-        'phone': _telefoneController.text,
-        'address': _enderecoController.text,
-        'quantidade_oleo_gerado': _quantidadeOleoGeradoController.text,
+        'responsible': _nomeController.text.trim(),
+        'email': _emailController.text.trim(),
+        'phone': _telefoneController.text.trim(),
+        'address': _enderecoController.text.trim(),
+        'quantidade_oleo_gerado': _quantidadeOleoGeradoController.text.trim(),
+        'photoUrl': _profileImage != null ? _profileImage!.path : null,
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Dados salvos com sucesso!')),
       );
       Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar os dados: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -90,89 +125,94 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Stack(
-                children: [
-                  _profileImage == null
-                      ? CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.grey.shade300,
-                          child: Text(
-                            _nomeController.text.isNotEmpty
-                                ? _nomeController.text[0].toUpperCase()
-                                : '',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              color: Colors.black,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Stack(
+                    children: [
+                      _profileImage == null
+                          ? CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Colors.grey.shade300,
+                              child: Text(
+                                _nomeController.text.isNotEmpty
+                                    ? _nomeController.text[0].toUpperCase()
+                                    : '',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            )
+                          : CircleAvatar(
+                              radius: 50,
+                              backgroundImage:
+                                  FileImage(File(_profileImage!.path)),
+                            ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: const CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Colors.green,
+                            child: Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 20,
                             ),
                           ),
-                        )
-                      : CircleAvatar(
-                          radius: 50,
-                          backgroundImage: FileImage(File(_profileImage!.path)),
-                        ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: _pickImage,
-                      child: const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Colors.green,
-                        child: Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildTextField(label: 'Nome', controller: _nomeController),
-            const SizedBox(height: 16),
-            _buildTextField(label: 'E-mail', controller: _emailController),
-            const SizedBox(height: 16),
-            _buildTextField(label: 'Telefone', controller: _telefoneController),
-            const SizedBox(height: 16),
-            _buildTextField(label: 'Endereço', controller: _enderecoController),
-            const SizedBox(height: 16),
-            _buildTextField(
-              label: 'Quantidade de óleo gerada mensalmente',
-              controller: _quantidadeOleoGeradoController,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveUserData,
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.green,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-              ),
-              child: const Text(
-                'Salvar Alterações',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+                const SizedBox(height: 24),
+                _buildTextField(label: 'Nome', controller: _nomeController),
+                const SizedBox(height: 16),
+                _buildTextField(label: 'E-mail', controller: _emailController),
+                const SizedBox(height: 16),
+                _buildTextField(
+                    label: 'Telefone', controller: _telefoneController),
+                const SizedBox(height: 16),
+                _buildTextField(
+                    label: 'Endereço', controller: _enderecoController),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  label: 'Quantidade de óleo gerada mensalmente',
+                  controller: _quantidadeOleoGeradoController,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _saveUserData,
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  ),
+                  child: const Text(
+                    'Salvar Alterações',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
+        ],
       ),
     );
   }

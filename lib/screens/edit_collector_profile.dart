@@ -12,9 +12,16 @@ class EditCollectorProfile extends StatefulWidget {
 }
 
 class _EditCollectorProfileState extends State<EditCollectorProfile> {
-  final TextEditingController _nomeController = TextEditingController();
+  final TextEditingController _businessNameController = TextEditingController();
+  final TextEditingController _cnpjController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _responsibleController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _licenseNumberController =
+      TextEditingController();
+  final TextEditingController _licenseExpiryController =
+      TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _telefoneController = TextEditingController();
   XFile? _profileImage;
 
   @override
@@ -33,9 +40,14 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
       if (doc.exists) {
         final data = doc.data()!;
         setState(() {
-          _nomeController.text = data['responsible'] ?? '';
+          _businessNameController.text = data['businessName'] ?? '';
+          _cnpjController.text = data['cnpj'] ?? '';
+          _addressController.text = data['address'] ?? '';
+          _responsibleController.text = data['responsible'] ?? '';
+          _phoneController.text = data['phone'] ?? '';
+          _licenseNumberController.text = data['licenseNumber'] ?? '';
+          _licenseExpiryController.text = data['licenseExpiry'] ?? '';
           _emailController.text = data['email'] ?? '';
-          _telefoneController.text = data['phone'] ?? '';
         });
       }
     }
@@ -49,9 +61,15 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
             .collection('collector')
             .doc(uid)
             .update({
-          'responsible': _nomeController.text,
-          'email': _emailController.text,
-          'phone': _telefoneController.text,
+          'businessName': _businessNameController.text.trim(),
+          'cnpj': _cnpjController.text.trim(),
+          'address': _addressController.text.trim(),
+          'responsible': _responsibleController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'licenseNumber': _licenseNumberController.text.trim(),
+          'licenseExpiry': _licenseExpiryController.text.trim(),
+          'email': _emailController.text.trim(),
+          'photoUrl': _profileImage != null ? _profileImage!.path : null,
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Dados salvos com sucesso!')),
@@ -95,12 +113,6 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -115,8 +127,8 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
                           radius: 50,
                           backgroundColor: Colors.grey.shade300,
                           child: Text(
-                            _nomeController.text.isNotEmpty
-                                ? _nomeController.text[0].toUpperCase()
+                            _responsibleController.text.isNotEmpty
+                                ? _responsibleController.text[0].toUpperCase()
                                 : '',
                             style: const TextStyle(
                               fontSize: 20,
@@ -148,11 +160,14 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
               ),
             ),
             const SizedBox(height: 24),
-            _buildTextField(label: 'Nome', controller: _nomeController),
+            _buildTextField(
+                label: 'Responsável', controller: _responsibleController),
             const SizedBox(height: 16),
-            _buildTextField(label: 'E-mail', controller: _emailController),
+            _buildTextField(label: 'Email', controller: _emailController),
             const SizedBox(height: 16),
-            _buildTextField(label: 'Telefone', controller: _telefoneController),
+            _buildTextField(label: 'Telefone', controller: _phoneController),
+            const SizedBox(height: 16),
+            _buildTextField(label: 'Endereço', controller: _addressController),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _saveUserData,

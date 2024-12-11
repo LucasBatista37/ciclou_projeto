@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'register_collector_screen.dart'; 
+import 'register_collector_screen.dart';
 import 'login_screen.dart';
 
 class RegisterRequestorScreen extends StatefulWidget {
@@ -61,6 +61,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'phone': _phoneController.text.trim(),
           'email': _emailController.text.trim(),
           'userType': 'Solicitante',
+          'photoUrl': null,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
