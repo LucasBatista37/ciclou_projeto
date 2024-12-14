@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:io';
@@ -31,9 +33,43 @@ class _CollectProcessState extends State<CollectProcess> {
   }
 
   Future<void> _confirmarColeta() async {
-    if (_coletaAtual == null) return;
+    print("Iniciando processo de confirmação da coleta.");
+    if (_coletaAtual == null) {
+      print("Erro: Coleta não encontrada.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Coleta não encontrada.')),
+      );
+      return;
+    }
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      print("Erro: Usuário não autenticado.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário não autenticado.')),
+      );
+      return;
+    }
+
+    final data = _coletaAtual.data() as Map<String, dynamic>;
+
+    print("Dados do Firestore: $data");
+    print("UID do usuário autenticado: ${currentUser.uid}");
+
+    print("Verificando permissões...");
+    if (data['collectorId'] != currentUser.uid) {
+      print(
+          "Erro: Permissão negada. UID Firestore (collectorId): ${data['collectorId']}, UID atual: ${currentUser.uid}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Permissão negada para atualizar esta coleta.')),
+      );
+      return;
+    }
 
     try {
+      print("Atualizando o status da coleta no Firestore...");
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -41,18 +77,22 @@ class _CollectProcessState extends State<CollectProcess> {
         'status': 'Finalizada',
         'quantidadeReal': _quantidadeReal,
       });
+      print("Status da coleta atualizado com sucesso.");
 
-      final requestorId = _coletaAtual['userId'];
+      final requestorId = data['userId'];
       if (requestorId != null) {
+        print("Enviando notificação para o solicitante...");
         await FirebaseFirestore.instance.collection('notifications').add({
           'title': 'Coleta Finalizada',
           'message': 'A coleta foi finalizada com sucesso.',
           'timestamp': FieldValue.serverTimestamp(),
-          'requestorId': requestorId, 
+          'requestorId': requestorId,
           'coletaId': _coletaAtual.id,
         });
+        print("Notificação enviada.");
       }
 
+      print("Gerando certificado...");
       await _gerarCertificado();
 
       setState(() {
@@ -63,6 +103,7 @@ class _CollectProcessState extends State<CollectProcess> {
         const SnackBar(content: Text('Coleta confirmada com sucesso!')),
       );
     } catch (e) {
+      print("Erro ao confirmar coleta: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao confirmar coleta: $e')),
       );
@@ -70,28 +111,43 @@ class _CollectProcessState extends State<CollectProcess> {
   }
 
   Future<void> _gerarCertificado() async {
+    print("Iniciando geração do certificado...");
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      print("Erro: Usuário não autenticado para gerar certificado.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário não autenticado.')),
+      );
+      return;
+    }
+
     final pdf = pw.Document();
+
+    final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+    final ttf = pw.Font.ttf(fontData.buffer.asByteData());
+
     pdf.addPage(
       pw.Page(
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text('Certificado de Destinação Final',
-                style:
-                    pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                style: pw.TextStyle(
+                    font: ttf, fontSize: 20, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 16),
-            pw.Text('Coletor: João da Silva',
-                style: const pw.TextStyle(fontSize: 16)),
+            pw.Text('Coletor: ${currentUser.displayName ?? 'Coletor Anônimo'}',
+                style: pw.TextStyle(font: ttf, fontSize: 16)),
             pw.Text('Data: ${DateTime.now().toString().split(' ')[0]}',
-                style: const pw.TextStyle(fontSize: 16)),
+                style: pw.TextStyle(font: ttf, fontSize: 16)),
             pw.Text(
                 'Quantidade Coletada: ${_quantidadeReal.toStringAsFixed(2)} Litros',
-                style: const pw.TextStyle(fontSize: 16)),
+                style: pw.TextStyle(font: ttf, fontSize: 16)),
             pw.SizedBox(height: 16),
             pw.Text(
               'Este certificado comprova que o óleo coletado foi devidamente destinado, contribuindo para a sustentabilidade ambiental.',
-              style: const pw.TextStyle(
-                  fontSize: 14, color: PdfColor.fromInt(0xFF888888)),
+              style: pw.TextStyle(
+                  font: ttf, fontSize: 14, color: PdfColor.fromInt(0xFF888888)),
             ),
           ],
         ),
@@ -99,18 +155,31 @@ class _CollectProcessState extends State<CollectProcess> {
     );
 
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/certificado.pdf');
+    final file = File('${directory.path}/certificado_${_coletaAtual.id}.pdf');
     await file.writeAsBytes(await pdf.save());
+
+    print("Salvando certificado no Firestore...");
+    await FirebaseFirestore.instance
+        .collection('certificados')
+        .doc(_coletaAtual.id)
+        .set({
+      'coletaId': _coletaAtual.id,
+      'userId': currentUser.uid,
+      'filePath': file.path,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
 
     setState(() {
       _caminhoCertificado = file.path;
     });
 
+    print("Certificado gerado e salvo com sucesso.");
     _abrirCertificado();
   }
 
   void _abrirCertificado() {
     if (_caminhoCertificado != null) {
+      print("Abrindo o certificado gerado...");
       OpenFile.open(_caminhoCertificado!);
     }
   }

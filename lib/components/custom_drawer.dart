@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:ciclou_projeto/screens/Requestor/certificates_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/certificates_screen.dart';
 import 'package:ciclou_projeto/screens/configuration_screen.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
