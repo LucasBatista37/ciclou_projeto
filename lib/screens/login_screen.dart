@@ -109,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 40),
                 Image.asset(
                   'assets/ciclou.png',
-                  height: 300,
+                  height: 400,
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(

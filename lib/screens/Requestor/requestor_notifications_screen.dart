@@ -45,8 +45,8 @@ class RequestorNotificationsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             itemCount: notifications.length,
             itemBuilder: (context, index) {
-              final notification = notifications[index].data()
-                  as Map<String, dynamic>; // Dados da notificação
+              final notification =
+                  notifications[index].data() as Map<String, dynamic>;
               return _buildNotificationCard(context, notification);
             },
           );
@@ -56,17 +56,17 @@ class RequestorNotificationsScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.notifications_off,
             size: 100,
             color: Colors.grey,
           ),
-          const SizedBox(height: 16.0),
-          const Text(
+          SizedBox(height: 16.0),
+          Text(
             'Nenhuma notificação encontrada.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, color: Colors.grey),
@@ -124,7 +124,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
         return Colors.green;
       case 'Proposta Aceita':
         return Colors.orange;
-      case 'Coleta Concluída':
+      case 'Coleta Finalizada':
         return Colors.teal;
       default:
         return Colors.grey;

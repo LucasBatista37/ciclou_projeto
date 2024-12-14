@@ -1,6 +1,9 @@
+import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
+import 'package:intl/intl.dart';
 
 class SendProposal extends StatefulWidget {
   final String documentId;
@@ -15,12 +18,54 @@ class SendProposal extends StatefulWidget {
 class _SendProposalState extends State<SendProposal> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _precoController = TextEditingController();
-  final TextEditingController _comentariosController = TextEditingController();
+  String _tempoRestante = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _calcularTempoRestante();
+  }
+
+  Future<void> _calcularTempoRestante() async {
+    try {
+      final coletaDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(widget.documentId)
+          .get();
+
+      if (coletaDoc.exists) {
+        final prazoString = coletaDoc.data()?['prazo'];
+        if (prazoString != null) {
+          final prazo = DateTime.parse(prazoString);
+          final agora = DateTime.now();
+          final duracao = prazo.difference(agora);
+
+          if (duracao.isNegative) {
+            setState(() {
+              _tempoRestante = 'Tempo expirado';
+            });
+          } else {
+            final minutosRestantes = duracao.inMinutes;
+            setState(() {
+              _tempoRestante = '$minutosRestantes min faltando';
+            });
+          }
+        } else {
+          setState(() {
+            _tempoRestante = 'Prazo não definido';
+          });
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _tempoRestante = 'Erro ao calcular tempo';
+      });
+    }
+  }
 
   void _enviarProposta() async {
     if (_formKey.currentState!.validate()) {
       final preco = _precoController.text.trim();
-      final comentarios = _comentariosController.text.trim();
 
       try {
         final coletaDoc = await FirebaseFirestore.instance
@@ -35,8 +80,7 @@ class _SendProposalState extends State<SendProposal> {
           return;
         }
 
-        final requestorId =
-            coletaDoc.data()?['userId']; 
+        final requestorId = coletaDoc.data()?['userId'];
 
         await FirebaseFirestore.instance
             .collection('coletas')
@@ -44,7 +88,6 @@ class _SendProposalState extends State<SendProposal> {
             .collection('propostas')
             .add({
           'precoPorLitro': preco,
-          'comentarios': comentarios,
           'status': 'Pendente',
           'criadoEm': FieldValue.serverTimestamp(),
           'collectorName': widget.user.responsible,
@@ -57,14 +100,19 @@ class _SendProposalState extends State<SendProposal> {
           'message':
               '${widget.user.responsible} enviou uma proposta para sua solicitação.',
           'timestamp': FieldValue.serverTimestamp(),
-          'requestorId': requestorId, 
+          'requestorId': requestorId,
           'solicitationId': widget.documentId,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Proposta enviada com sucesso!')),
         );
-        Navigator.pop(context);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => CollectorDashboard(user: widget.user)),
+        );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao enviar proposta: $e')),
@@ -80,7 +128,7 @@ class _SendProposalState extends State<SendProposal> {
         backgroundColor: Colors.green,
         centerTitle: true,
         title: const Text(
-          'Enviar Proposta',
+          'Enviar Proposta (Coletor)',
           style: TextStyle(color: Colors.white),
         ),
         leading: IconButton(
@@ -120,18 +168,10 @@ class _SendProposalState extends State<SendProposal> {
                 },
               ),
               const SizedBox(height: 16.0),
-              const Text(
-                'Comentários ou Condições Especiais',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8.0),
-              TextFormField(
-                controller: _comentariosController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Adicione comentários ou condições (opcional)',
-                ),
+              Text(
+                'Tempo disponível para enviar a proposta: $_tempoRestante',
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24.0),
               Center(

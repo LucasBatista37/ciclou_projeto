@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CreateCollection extends StatefulWidget {
   final UserModel user;
@@ -18,26 +19,17 @@ class CreateCollection extends StatefulWidget {
 
 class _CreateCollectionState extends State<CreateCollection> {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedTipoEstabelecimento;
   double? _quantidadeOleo;
-  DateTime? _prazo;
   final _comentariosController = TextEditingController();
-  LatLng _localizacaoSelecionada = LatLng(-24.0924, -46.6213);
+  LatLng? _localizacaoAtual;
   late GoogleMapController _mapController;
   bool _isLoading = false;
-
-  final List<String> _tiposEstabelecimento = [
-    'Restaurante',
-    'Residência',
-    'Escola',
-    'Condomínio',
-    'Associação'
-  ];
 
   @override
   void initState() {
     super.initState();
     _verificarPermissoes();
+    _obterLocalizacaoAtual();
   }
 
   Future<void> _verificarPermissoes() async {
@@ -47,21 +39,24 @@ class _CreateCollectionState extends State<CreateCollection> {
     }
   }
 
-  Future<void> _selecionarData() async {
-    DateTime? dataSelecionada = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-    );
-    setState(() {
-      _prazo = dataSelecionada;
-    });
+  Future<void> _obterLocalizacaoAtual() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      setState(() {
+        _localizacaoAtual = LatLng(position.latitude, position.longitude);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao obter localização: $e')),
+      );
+    }
   }
 
   void _selecionarLocalizacao(LatLng localizacao) {
     setState(() {
-      _localizacaoSelecionada = localizacao;
+      _localizacaoAtual = localizacao;
       _mapController.animateCamera(
         CameraUpdate.newLatLng(localizacao),
       );
@@ -76,12 +71,13 @@ class _CreateCollectionState extends State<CreateCollection> {
 
       try {
         await FirebaseFirestore.instance.collection('coletas').add({
-          'tipoEstabelecimento': _selectedTipoEstabelecimento,
+          'tipoEstabelecimento': widget.user.establishmentType,
           'quantidadeOleo': _quantidadeOleo,
-          'prazo': _prazo?.toIso8601String(),
+          'prazo':
+              DateTime.now().add(const Duration(minutes: 15)).toIso8601String(),
           'localizacao': {
-            'latitude': _localizacaoSelecionada.latitude,
-            'longitude': _localizacaoSelecionada.longitude,
+            'latitude': _localizacaoAtual?.latitude,
+            'longitude': _localizacaoAtual?.longitude,
           },
           'comentarios': _comentariosController.text.trim(),
           'status': 'Pendente',
@@ -120,7 +116,7 @@ class _CreateCollectionState extends State<CreateCollection> {
         backgroundColor: Colors.green,
         centerTitle: true,
         title: const Text(
-          'Criar Solicitação',
+          'Criar Solicitação (Solicitante)',
           style: TextStyle(color: Colors.white),
         ),
         leading: IconButton(
@@ -156,24 +152,12 @@ class _CreateCollectionState extends State<CreateCollection> {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8.0),
-                    DropdownButtonFormField<String>(
-                      value: _selectedTipoEstabelecimento,
-                      hint: const Text('Selecione o tipo'),
-                      items: _tiposEstabelecimento.map((tipo) {
-                        return DropdownMenuItem(
-                          value: tipo,
-                          child: Text(tipo),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTipoEstabelecimento = value;
-                        });
-                      },
-                      validator: (value) =>
-                          value == null ? 'Campo obrigatório' : null,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                    Text(
+                      widget.user.establishmentType ?? 'Tipo não definido',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 16.0),
@@ -206,19 +190,12 @@ class _CreateCollectionState extends State<CreateCollection> {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8.0),
-                    InkWell(
-                      onTap: _selecionarData,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'Selecione uma data',
-                        ),
-                        child: Text(
-                          _prazo != null
-                              ? _prazo.toString().split(' ')[0]
-                              : 'Selecione uma data',
-                          style: const TextStyle(fontSize: 16),
-                        ),
+                    Text(
+                      '15 minutos',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 16.0),
@@ -228,32 +205,34 @@ class _CreateCollectionState extends State<CreateCollection> {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8.0),
-                    Container(
-                      height: 300,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: _localizacaoSelecionada,
-                          zoom: 15,
-                        ),
-                        onMapCreated: (controller) {
-                          _mapController = controller;
-                        },
-                        onTap: _selecionarLocalizacao,
-                        markers: {
-                          Marker(
-                            markerId: const MarkerId('localSelecionado'),
-                            position: _localizacaoSelecionada,
+                    _localizacaoAtual == null
+                        ? const Center(child: CircularProgressIndicator())
+                        : Container(
+                            height: 300,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: GoogleMap(
+                              initialCameraPosition: CameraPosition(
+                                target: _localizacaoAtual!,
+                                zoom: 15,
+                              ),
+                              onMapCreated: (controller) {
+                                _mapController = controller;
+                              },
+                              onTap: _selecionarLocalizacao,
+                              markers: {
+                                Marker(
+                                  markerId: const MarkerId('localSelecionado'),
+                                  position: _localizacaoAtual!,
+                                ),
+                              },
+                              gestureRecognizers: Set()
+                                ..add(Factory<PanGestureRecognizer>(
+                                    () => PanGestureRecognizer())),
+                            ),
                           ),
-                        },
-                        gestureRecognizers: Set()
-                          ..add(Factory<PanGestureRecognizer>(
-                              () => PanGestureRecognizer())),
-                      ),
-                    ),
                     const SizedBox(height: 16.0),
                     const Text(
                       'Comentários ou Informações Adicionais',

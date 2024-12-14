@@ -64,17 +64,17 @@ class ProposalsScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline,
             size: 100,
             color: Colors.grey,
           ),
-          const SizedBox(height: 16.0),
-          const Text(
+          SizedBox(height: 16.0),
+          Text(
             'Nenhuma proposta encontrada.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, color: Colors.grey),
@@ -125,11 +125,6 @@ class ProposalsScreen extends StatelessWidget {
                   const SizedBox(height: 8.0),
                   Text(
                     'Preço por Litro: ${proposal['precoPorLitro'] ?? 'N/A'}',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    'Comentários: ${proposal['comentarios'] ?? 'Nenhum comentário'}',
                     style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 8.0),
@@ -305,4 +300,4 @@ class ProposalsScreen extends StatelessWidget {
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
-} 
+}

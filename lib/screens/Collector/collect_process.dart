@@ -37,7 +37,21 @@ class _CollectProcessState extends State<CollectProcess> {
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
-          .update({'status': 'Finalizada', 'quantidadeReal': _quantidadeReal});
+          .update({
+        'status': 'Finalizada',
+        'quantidadeReal': _quantidadeReal,
+      });
+
+      final requestorId = _coletaAtual['userId'];
+      if (requestorId != null) {
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'title': 'Coleta Finalizada',
+          'message': 'A coleta foi finalizada com sucesso.',
+          'timestamp': FieldValue.serverTimestamp(),
+          'requestorId': requestorId, 
+          'coletaId': _coletaAtual.id,
+        });
+      }
 
       await _gerarCertificado();
 

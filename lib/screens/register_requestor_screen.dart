@@ -25,6 +25,8 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
+  String? _selectedEstablishmentType;
+
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
@@ -63,6 +65,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'userType': 'Solicitante',
           'photoUrl': null,
           'createdAt': FieldValue.serverTimestamp(),
+          'establishmentType': _selectedEstablishmentType,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,7 +123,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                 children: [
                   Image.asset(
                     'assets/ciclou.png',
-                    height: 300,
+                    height: 400,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -142,6 +145,8 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                       return null;
                     },
                   ),
+                  const SizedBox(height: 16),
+                  _buildDropdownField(),
                   const SizedBox(height: 16),
                   _buildTextField(
                     'Endereço',
@@ -253,6 +258,40 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
         ),
       ),
       validator: validator,
+    );
+  }
+
+  Widget _buildDropdownField() {
+    return DropdownButtonFormField<String>(
+      value: _selectedEstablishmentType,
+      onChanged: (value) {
+        setState(() {
+          _selectedEstablishmentType = value;
+        });
+      },
+      decoration: InputDecoration(
+        hintText: 'Selecione o tipo de estabelecimento',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+      validator: (value) => value == null
+          ? 'Por favor, selecione o tipo de estabelecimento.'
+          : null,
+      items: const [
+        DropdownMenuItem(
+          value: 'Restaurante',
+          child: Text('Restaurante'),
+        ),
+        DropdownMenuItem(
+          value: 'Hotel',
+          child: Text('Hotel'),
+        ),
+        DropdownMenuItem(
+          value: 'Condomínio',
+          child: Text('Condomínio'),
+        ),
+      ],
     );
   }
 
