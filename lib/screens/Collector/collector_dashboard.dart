@@ -274,12 +274,38 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
         }
 
         if (snapshot.hasError) {
-          return const Center(child: Text('Erro ao carregar solicitações.'));
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, size: 80, color: Colors.red),
+                SizedBox(height: 16),
+                Text(
+                  'Erro ao carregar solicitações.',
+                  style: TextStyle(fontSize: 16, color: Colors.red),
+                ),
+              ],
+            ),
+          );
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
-            child: Text('Nenhuma solicitação disponível no momento.'),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.hourglass_empty, // Ícone de lista vazia
+                  size: 80,
+                  color: Colors.grey,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Nenhuma solicitação disponível no momento.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
           );
         }
 

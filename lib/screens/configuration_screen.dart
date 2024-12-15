@@ -116,13 +116,6 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
             onTap: null,
           ),
           const Divider(),
-          const ListTile(
-            leading: Icon(Icons.bar_chart, color: Colors.grey),
-            title: Text('Estatísticas Pessoais',
-                style: TextStyle(fontSize: 16, color: Colors.grey)),
-            onTap: null,
-          ),
-          const Divider(),
           ListTile(
             leading: const Icon(Icons.exit_to_app, color: Colors.red),
             title: const Text('Sair',

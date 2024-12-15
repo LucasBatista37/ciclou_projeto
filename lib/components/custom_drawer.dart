@@ -111,9 +111,7 @@ class CustomDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const CertificatesScreen(
-                    filePath: '/path/to/default/certificate.pdf',
-                  ),
+                  builder: (context) => const CertificatesScreen(),
                 ),
               );
             },

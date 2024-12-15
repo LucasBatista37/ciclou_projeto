@@ -301,12 +301,27 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
-            child: Text('Nenhuma solicitação ativa no momento.'),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.hourglass_empty,
+                  size: 80,
+                  color: Colors.grey,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Nenhuma solicitação ativa no momento.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
           );
         }
 
         final documents = snapshot.data!.docs;
-        final int itemCount = _showAll ? documents.length : 3;
+        final itemCount =
+            documents.length < 3 || _showAll ? documents.length : 3;
 
         return Column(
           children: [
@@ -356,6 +371,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
               builder: (context) => ProposalsScreen(
                 solicitationTitle: title,
                 documentId: documentId,
+                user: widget.user,
               ),
             ),
           );

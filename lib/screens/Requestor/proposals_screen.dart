@@ -1,15 +1,19 @@
 import 'dart:io';
+import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ProposalsScreen extends StatelessWidget {
   final String solicitationTitle;
   final String documentId;
+  final UserModel user; 
 
   const ProposalsScreen({
     super.key,
     required this.solicitationTitle,
     required this.documentId,
+    required this.user, 
   });
 
   @override
@@ -124,7 +128,7 @@ class ProposalsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8.0),
                   Text(
-                    'Preço por Litro: ${proposal['precoPorLitro'] ?? 'N/A'}',
+                    'Preço por Litro: R\$ ${proposal['precoPorLitro'] ?? 'N/A'}',
                     style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 8.0),
@@ -243,7 +247,14 @@ class ProposalsScreen extends StatelessWidget {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Proposta aceita com sucesso! Coleta em andamento.')),
+          content: Text('Proposta aceita com sucesso! Coleta em andamento.'),
+        ),
+      );
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => RequestorDashboard(user: user)),
+        (Route<dynamic> route) => false,
       );
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
