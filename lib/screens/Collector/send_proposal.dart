@@ -2,8 +2,6 @@ import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
-import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
-import 'package:intl/intl.dart';
 
 class SendProposal extends StatefulWidget {
   final String documentId;
@@ -102,6 +100,7 @@ class _SendProposalState extends State<SendProposal> {
           'timestamp': FieldValue.serverTimestamp(),
           'requestorId': requestorId,
           'solicitationId': widget.documentId,
+          'isRead': false,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

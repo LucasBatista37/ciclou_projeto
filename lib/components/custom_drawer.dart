@@ -25,6 +25,16 @@ class CustomDrawer extends StatelessWidget {
     required this.onLogout,
   });
 
+  Future<bool> _isCollector() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return false;
+
+    final collectorDoc =
+        await FirebaseFirestore.instance.collection('collector').doc(uid).get();
+
+    return collectorDoc.exists;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -104,16 +114,33 @@ class CustomDrawer extends StatelessWidget {
               }
             },
           ),
-          _buildDrawerItem(
-            icon: Icons.card_membership_rounded,
-            text: 'Certificados',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CertificatesScreen(),
-                ),
-              );
+          FutureBuilder<bool>(
+            future: _isCollector(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const ListTile(
+                  leading: CircularProgressIndicator(),
+                  title: Text('Carregando...'),
+                );
+              }
+
+              if (snapshot.hasData && snapshot.data == true) {
+                return _buildDrawerItem(
+                  icon: Icons.card_membership_rounded,
+                  text: 'Certificados',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CertificatesScreen(),
+                      ),
+                    );
+                  },
+                );
+              }
+
+              return const SizedBox
+                  .shrink(); 
             },
           ),
           _buildDrawerItem(
@@ -198,8 +225,9 @@ class CustomDrawer extends StatelessWidget {
         if (File(profileImageUrl).existsSync()) {
           return FileImage(File(profileImageUrl));
         }
-        // ignore: empty_catches
-      } catch (e) {}
+      } catch (e) {
+        // Ignorar erros ao carregar a imagem local
+      }
       return NetworkImage(profileImageUrl);
     }
   }

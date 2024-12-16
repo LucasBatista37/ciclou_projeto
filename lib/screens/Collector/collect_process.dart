@@ -88,6 +88,7 @@ class _CollectProcessState extends State<CollectProcess> {
           'timestamp': FieldValue.serverTimestamp(),
           'requestorId': requestorId,
           'coletaId': _coletaAtual.id,
+          'isRead': false,
         });
         print("Notificação enviada.");
       }

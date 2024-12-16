@@ -60,8 +60,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                   );
                 }
 
-                if (snapshot.hasError) {
-                  print('Erro no snapshot: ${snapshot.error}');
+                if (snapshot.hasError ||
+                    !snapshot.hasData ||
+                    !snapshot.data!.exists) {
                   return const CircleAvatar(
                     radius: 24,
                     backgroundColor: Colors.grey,
@@ -69,20 +70,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                   );
                 }
 
-                if (!snapshot.hasData || !snapshot.data!.exists) {
-                  print('Documento não encontrado ou vazio.');
-                  return const CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.grey,
-                    child: Icon(Icons.person, color: Colors.white),
-                  );
-                }
-
                 final data = snapshot.data!.data() as Map<String, dynamic>;
                 final profileImageUrl = data['photoUrl'];
                 final responsibleName = data['responsible'] ?? '';
-
-                print('Dados recebidos: $data');
 
                 ImageProvider? imageProvider;
 
@@ -119,16 +109,66 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           style: const TextStyle(color: Colors.white),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RequestorNotificationsScreen(
-                    requestorId: widget.user.userId,
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('notifications')
+                .where('requestorId', isEqualTo: widget.user.userId)
+                .where('isRead', isEqualTo: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return IconButton(
+                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RequestorNotificationsScreen(
+                          requestorId: widget.user.userId,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+
+              final unreadCount = snapshot.data!.docs.length;
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RequestorNotificationsScreen(
+                            requestorId: widget.user.userId,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
             },
           ),

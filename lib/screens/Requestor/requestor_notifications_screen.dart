@@ -6,12 +6,26 @@ class RequestorNotificationsScreen extends StatelessWidget {
 
   const RequestorNotificationsScreen({super.key, required this.requestorId});
 
+  void _markNotificationsAsRead() {
+    FirebaseFirestore.instance
+        .collection('notifications')
+        .where('requestorId', isEqualTo: requestorId)
+        .where('isRead', isEqualTo: false)
+        .get()
+        .then((querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        doc.reference.update({'isRead': true});
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _markNotificationsAsRead());
+
     return Scaffold(
       appBar: AppBar(
-        title:
-            const Text('Notificações', style: TextStyle(color: Colors.white)),
+        title: const Text('Notificações', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: Colors.green,
         elevation: 0,
@@ -45,9 +59,32 @@ class RequestorNotificationsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             itemCount: notifications.length,
             itemBuilder: (context, index) {
-              final notification =
-                  notifications[index].data() as Map<String, dynamic>;
-              return _buildNotificationCard(context, notification);
+              final notification = notifications[index];
+              final data = notification.data() as Map<String, dynamic>;
+              final isRead = data['isRead'] ?? false;
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10.0),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0)),
+                color: isRead ? Colors.white : Colors.green.shade50,
+                child: ListTile(
+                  leading: Icon(
+                    _getIconForNotification(data['title']),
+                    color: _getColorForNotification(data['title']),
+                  ),
+                  title: Text(
+                    data['title'] ?? 'Notificação',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(data['message'] ?? ''),
+                  trailing: Text(
+                    _formatTimestamp(data['timestamp'] as Timestamp?),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  onTap: () => _handleNotificationTap(context, data),
+                ),
+              );
             },
           );
         },
@@ -72,31 +109,6 @@ class RequestorNotificationsScreen extends StatelessWidget {
             style: TextStyle(fontSize: 18, color: Colors.grey),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationCard(
-      BuildContext context, Map<String, dynamic> notification) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: ListTile(
-        leading: Icon(
-          _getIconForNotification(notification['title']),
-          color: _getColorForNotification(notification['title']),
-        ),
-        title: Text(
-          notification['title'] ?? 'Notificação',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(notification['message'] ?? ''),
-        trailing: Text(
-          _formatTimestamp(notification['timestamp']),
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-        ),
       ),
     );
   }
@@ -135,5 +147,23 @@ class RequestorNotificationsScreen extends StatelessWidget {
     if (timestamp == null) return 'Agora';
     final dateTime = timestamp.toDate();
     return '${dateTime.hour}:${dateTime.minute}';
+  }
+
+  void _handleNotificationTap(BuildContext context, Map<String, dynamic> data) {
+    // Lógica para lidar com notificações específicas
+    final title = data['title'];
+    switch (title) {
+      case 'Nova Proposta Recebida!':
+        // Adicione a navegação ou lógica necessária aqui
+        break;
+      case 'Coleta Confirmada':
+        // Adicione a navegação ou lógica necessária aqui
+        break;
+      case 'Proposta Aceita':
+        // Adicione a navegação ou lógica necessária aqui
+        break;
+      default:
+        break;
+    }
   }
 }
