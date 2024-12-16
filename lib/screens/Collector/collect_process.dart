@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,12 +31,13 @@ class _CollectProcessState extends State<CollectProcess> {
     super.initState();
     _coletaAtual = widget.coletaAtual;
     _carregando = false;
+    developer.log("Coleta inicializada com ID: ${_coletaAtual.id}");
   }
 
   Future<void> _confirmarColeta() async {
-    print("Iniciando processo de confirmação da coleta.");
+    developer.log("Iniciando confirmação da coleta...");
     if (_coletaAtual == null) {
-      print("Erro: Coleta não encontrada.");
+      developer.log("Erro: Coleta não encontrada.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Coleta não encontrada.')),
       );
@@ -45,7 +47,7 @@ class _CollectProcessState extends State<CollectProcess> {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      print("Erro: Usuário não autenticado.");
+      developer.log("Erro: Usuário não autenticado.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Usuário não autenticado.')),
       );
@@ -54,13 +56,9 @@ class _CollectProcessState extends State<CollectProcess> {
 
     final data = _coletaAtual.data() as Map<String, dynamic>;
 
-    print("Dados do Firestore: $data");
-    print("UID do usuário autenticado: ${currentUser.uid}");
-
-    print("Verificando permissões...");
     if (data['collectorId'] != currentUser.uid) {
-      print(
-          "Erro: Permissão negada. UID Firestore (collectorId): ${data['collectorId']}, UID atual: ${currentUser.uid}");
+      developer.log(
+          "Erro: Permissão negada. UID do coletor: ${data['collectorId']}, UID atual: ${currentUser.uid}");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Permissão negada para atualizar esta coleta.')),
@@ -69,7 +67,7 @@ class _CollectProcessState extends State<CollectProcess> {
     }
 
     try {
-      print("Atualizando o status da coleta no Firestore...");
+      developer.log("Atualizando Firestore...");
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -77,11 +75,10 @@ class _CollectProcessState extends State<CollectProcess> {
         'status': 'Finalizada',
         'quantidadeReal': _quantidadeReal,
       });
-      print("Status da coleta atualizado com sucesso.");
 
+      developer.log("Notificando o solicitante...");
       final requestorId = data['userId'];
       if (requestorId != null) {
-        print("Enviando notificação para o solicitante...");
         await FirebaseFirestore.instance.collection('notifications').add({
           'title': 'Coleta Finalizada',
           'message': 'A coleta foi finalizada com sucesso.',
@@ -90,21 +87,22 @@ class _CollectProcessState extends State<CollectProcess> {
           'coletaId': _coletaAtual.id,
           'isRead': false,
         });
-        print("Notificação enviada.");
       }
 
-      print("Gerando certificado...");
+      developer.log("Gerando certificado...");
       await _gerarCertificado();
 
       setState(() {
         _coletaFinalizada = true;
       });
 
+      developer.log("Coleta confirmada com sucesso.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Coleta confirmada com sucesso!')),
       );
-    } catch (e) {
-      print("Erro ao confirmar coleta: $e");
+    } catch (e, stack) {
+      developer.log("Erro ao confirmar coleta: $e",
+          error: e, stackTrace: stack);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao confirmar coleta: $e')),
       );
@@ -112,76 +110,110 @@ class _CollectProcessState extends State<CollectProcess> {
   }
 
   Future<void> _gerarCertificado() async {
-    print("Iniciando geração do certificado...");
+    developer.log("Iniciando geração do certificado...");
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      print("Erro: Usuário não autenticado para gerar certificado.");
+      developer.log("Erro: Usuário não autenticado para gerar certificado.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Usuário não autenticado.')),
       );
       return;
     }
 
-    final pdf = pw.Document();
+    final data = _coletaAtual.data() as Map<String, dynamic>;
 
-    final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
-    final ttf = pw.Font.ttf(fontData.buffer.asByteData());
+    try {
+      developer.log("Dados da coleta: $data");
 
-    pdf.addPage(
-      pw.Page(
-        build: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text('Certificado de Destinação Final',
-                style: pw.TextStyle(
-                    font: ttf, fontSize: 20, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 16),
-            pw.Text('Coletor: ${currentUser.displayName ?? 'Coletor Anônimo'}',
-                style: pw.TextStyle(font: ttf, fontSize: 16)),
-            pw.Text('Data: ${DateTime.now().toString().split(' ')[0]}',
-                style: pw.TextStyle(font: ttf, fontSize: 16)),
-            pw.Text(
-                'Quantidade Coletada: ${_quantidadeReal.toStringAsFixed(2)} Litros',
-                style: pw.TextStyle(font: ttf, fontSize: 16)),
-            pw.SizedBox(height: 16),
-            pw.Text(
-              'Este certificado comprova que o óleo coletado foi devidamente destinado, contribuindo para a sustentabilidade ambiental.',
-              style: pw.TextStyle(
-                  font: ttf, fontSize: 14, color: PdfColor.fromInt(0xFF888888)),
-            ),
-          ],
+      final templatePdf = await rootBundle.load('assets/certificado.png');
+      developer.log("Imagem do certificado carregada com sucesso.");
+
+      final outputPdf = pw.Document();
+
+      final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+      final ttf = pw.Font.ttf(fontData.buffer.asByteData());
+
+      final pdfImage = pw.MemoryImage(templatePdf.buffer.asUint8List());
+
+      outputPdf.addPage(
+        pw.Page(
+          pageFormat: const PdfPageFormat(792, 612),
+          margin: pw.EdgeInsets.zero,
+          build: (context) {
+            return pw.Stack(
+              children: [
+                pw.Image(pdfImage, fit: pw.BoxFit.cover),
+                pw.Positioned(
+                  left: 140,
+                  top: 270,
+                  child: pw.Text(
+                    '${data['tipoEstabelecimento'] ?? 'N/A'}',
+                    style: pw.TextStyle(font: ttf, fontSize: 18),
+                  ),
+                ),
+                pw.Positioned(
+                  left: 140,
+                  top: 310,
+                  child: pw.Text(
+                    '${data['cnpj'] ?? 'N/A'}',
+                    style: pw.TextStyle(font: ttf, fontSize: 18),
+                  ),
+                ),
+                pw.Positioned(
+                  left: 200,
+                  top: 350,
+                  child: pw.Text(
+                    '${_quantidadeReal.toStringAsFixed(2)} Litros',
+                    style: pw.TextStyle(font: ttf, fontSize: 18),
+                  ),
+                ),
+                pw.Positioned(
+                  left: 430,
+                  top: 350,
+                  child: pw.Text(
+                    '${DateTime.now().toString().split(' ')[0]}',
+                    style: pw.TextStyle(font: ttf, fontSize: 18),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
-      ),
-    );
+      );
 
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/certificado_${_coletaAtual.id}.pdf');
-    await file.writeAsBytes(await pdf.save());
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/certificado_${_coletaAtual.id}.pdf');
+      await file.writeAsBytes(await outputPdf.save());
 
-    print("Salvando certificado no Firestore...");
-    await FirebaseFirestore.instance
-        .collection('certificados')
-        .doc(_coletaAtual.id)
-        .set({
-      'coletaId': _coletaAtual.id,
-      'userId': currentUser.uid,
-      'filePath': file.path,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+      await FirebaseFirestore.instance
+          .collection('certificados')
+          .doc(_coletaAtual.id)
+          .set({
+        'coletaId': _coletaAtual.id,
+        'userId': currentUser.uid,
+        'filePath': file.path,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-    setState(() {
-      _caminhoCertificado = file.path;
-    });
+      setState(() {
+        _caminhoCertificado = file.path;
+      });
 
-    print("Certificado gerado e salvo com sucesso.");
-    _abrirCertificado();
+      developer.log("Certificado gerado e salvo com sucesso: ${file.path}");
+      _abrirCertificado();
+    } catch (e, stack) {
+      developer.log("Erro ao gerar certificado: $e",
+          error: e, stackTrace: stack);
+    }
   }
 
   void _abrirCertificado() {
     if (_caminhoCertificado != null) {
-      print("Abrindo o certificado gerado...");
+      developer.log("Abrindo certificado: $_caminhoCertificado");
       OpenFile.open(_caminhoCertificado!);
+    } else {
+      developer.log("Erro: Caminho do certificado está vazio.");
     }
   }
 
