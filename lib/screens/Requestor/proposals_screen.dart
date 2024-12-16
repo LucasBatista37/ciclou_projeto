@@ -7,13 +7,13 @@ import 'package:flutter/material.dart';
 class ProposalsScreen extends StatelessWidget {
   final String solicitationTitle;
   final String documentId;
-  final UserModel user; 
+  final UserModel user;
 
   const ProposalsScreen({
     super.key,
     required this.solicitationTitle,
     required this.documentId,
-    required this.user, 
+    required this.user,
   });
 
   @override
@@ -309,6 +309,7 @@ class ProposalsScreen extends StatelessWidget {
       'message': message,
       'collectorId': collectorId,
       'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,
     });
   }
 }

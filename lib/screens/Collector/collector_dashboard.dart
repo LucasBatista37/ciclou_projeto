@@ -120,17 +120,68 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           style: const TextStyle(color: Colors.white),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CollectorNotificationsScreen(
-                    collectorId: widget.user.userId,
-                    user: widget.user,
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('notifications')
+                .where('collectorId', isEqualTo: widget.user.userId)
+                .where('isRead', isEqualTo: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return IconButton(
+                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CollectorNotificationsScreen(
+                          collectorId: widget.user.userId,
+                          user: widget.user,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+
+              final unreadCount = snapshot.data!.docs.length;
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CollectorNotificationsScreen(
+                            collectorId: widget.user.userId,
+                            user: widget.user,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -295,7 +346,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.hourglass_empty, // Ícone de lista vazia
+                  Icons.hourglass_empty,
                   size: 80,
                   color: Colors.grey,
                 ),

@@ -14,8 +14,24 @@ class CollectorNotificationsScreen extends StatelessWidget {
     required this.user,
   });
 
+  void _markNotificationsAsRead() {
+    FirebaseFirestore.instance
+        .collection('notifications')
+        .where('collectorId', isEqualTo: collectorId)
+        .where('isRead', isEqualTo: false)
+        .get()
+        .then((querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        doc.reference.update({'isRead': true});
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _markNotificationsAsRead());
+
     return Scaffold(
       appBar: AppBar(
         title:
@@ -57,10 +73,13 @@ class CollectorNotificationsScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final notification = notifications[index];
               final data = notification.data() as Map<String, dynamic>;
+              final isRead = data['isRead'] ?? false;
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 10.0),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0)),
+                color: isRead ? Colors.white : Colors.green.shade50,
                 child: ListTile(
                   leading: Icon(
                     _getIconForNotification(data['title'] ?? ''),
