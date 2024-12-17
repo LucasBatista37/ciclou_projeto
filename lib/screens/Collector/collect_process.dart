@@ -145,32 +145,32 @@ class _CollectProcessState extends State<CollectProcess> {
               children: [
                 pw.Image(pdfImage, fit: pw.BoxFit.cover),
                 pw.Positioned(
-                  left: 140,
-                  top: 270,
+                  left: 125,
+                  top: 273,
                   child: pw.Text(
                     '${data['tipoEstabelecimento'] ?? 'N/A'}',
                     style: pw.TextStyle(font: ttf, fontSize: 18),
                   ),
                 ),
                 pw.Positioned(
-                  left: 140,
-                  top: 310,
+                  left: 94,
+                  top: 312,
                   child: pw.Text(
                     '${data['cnpj'] ?? 'N/A'}',
                     style: pw.TextStyle(font: ttf, fontSize: 18),
                   ),
                 ),
                 pw.Positioned(
-                  left: 200,
-                  top: 350,
+                  left: 260,
+                  top: 360,
                   child: pw.Text(
-                    '${_quantidadeReal.toStringAsFixed(2)} Litros',
+                    '${_quantidadeReal.toStringAsFixed(2)} L',
                     style: pw.TextStyle(font: ttf, fontSize: 18),
                   ),
                 ),
                 pw.Positioned(
-                  left: 430,
-                  top: 350,
+                  left: 390,
+                  top: 360,
                   child: pw.Text(
                     '${DateTime.now().toString().split(' ')[0]}',
                     style: pw.TextStyle(font: ttf, fontSize: 18),
