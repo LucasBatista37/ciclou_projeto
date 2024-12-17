@@ -93,99 +93,121 @@ class ProposalsScreen extends StatelessWidget {
     final photoUrl = proposal['photoUrl'];
     final displayInitial = proposal['collectorName']?[0]?.toUpperCase() ?? 'A';
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundImage: _getImageProvider(photoUrl),
-              backgroundColor: Colors.grey,
-              child: (photoUrl == null || photoUrl.isEmpty)
-                  ? Text(
-                      displayInitial,
-                      style: const TextStyle(fontSize: 20, color: Colors.white),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 16.0),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    proposal['collectorName'] ?? 'Desconhecido',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    'Preço por Litro: R\$ ${proposal['precoPorLitro'] ?? 'N/A'}',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    'Status: ${proposal['status'] ?? 'Indefinido'}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: proposal['status'] == 'Aceito'
-                          ? Colors.green
-                          : proposal['status'] == 'Rejeitado'
-                              ? Colors.red
-                              : Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 16.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+
+        final coletaData = snapshot.data!.data() as Map<String, dynamic>?;
+
+        final isEmAndamento = coletaData?['status'] == 'Em andamento';
+
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundImage: _getImageProvider(photoUrl),
+                  backgroundColor: Colors.grey,
+                  child: (photoUrl == null || photoUrl.isEmpty)
+                      ? Text(
+                          displayInitial,
+                          style: const TextStyle(
+                              fontSize: 20, color: Colors.white),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 16.0),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          _rejectProposal(context, proposalId);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                        child: const Text(
-                          'Rejeitar',
-                          style: TextStyle(color: Colors.white),
+                      Text(
+                        proposal['collectorName'] ?? 'Desconhecido',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 8.0),
-                      ElevatedButton(
-                        onPressed: () {
-                          _acceptProposal(context, proposalId);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                        child: const Text(
-                          'Aceitar',
-                          style: TextStyle(color: Colors.white),
+                      const SizedBox(height: 8.0),
+                      Text(
+                        'Preço por Litro: R\$ ${proposal['precoPorLitro'] ?? 'N/A'}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 8.0),
+                      Text(
+                        'Status: ${proposal['status'] ?? 'Indefinido'}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: proposal['status'] == 'Aceita'
+                              ? Colors.green
+                              : proposal['status'] == 'Rejeitada'
+                                  ? Colors.red
+                                  : Colors.grey,
                         ),
                       ),
+                      const SizedBox(height: 16.0),
+                      if (!isEmAndamento) // Se não estiver em andamento, mostra os botões
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                _rejectProposal(context, proposalId);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              child: const Text(
+                                'Rejeitar',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            const SizedBox(width: 8.0),
+                            ElevatedButton(
+                              onPressed: () {
+                                _acceptProposal(context, proposalId);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              child: const Text(
+                                'Aceitar',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        const Text(
+                          'Propostas desativadas (coleta em andamento)',
+                          style: TextStyle(
+                              color: Colors.red, fontWeight: FontWeight.bold),
+                        ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

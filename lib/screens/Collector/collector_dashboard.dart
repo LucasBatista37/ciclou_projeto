@@ -445,32 +445,64 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
 
   Widget _buildSolicitationCard(String title, String quantity, String prazo,
       String comentarios, String documentId) {
-    final formattedPrazo =
-        DateTime.tryParse(prazo)?.toLocal().toString().split(' ')[0] ?? prazo;
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .collection('propostas')
+          .snapshots(),
+      builder: (context, snapshot) {
+        final numPropostas = snapshot.hasData ? snapshot.data!.docs.length : 0;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      child: ListTile(
-        title: Text(title),
-        subtitle: Text('$quantity - Prazo: $formattedPrazo'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16.0),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RequestDetails(
-                tipoEstabelecimento: title,
-                quantidadeOleo: quantity,
-                prazo: prazo,
-                endereco: 'Endereço não disponível',
-                observacoes: comentarios,
-                documentId: documentId,
-                user: widget.user,
-              ),
+        final formattedPrazo =
+            DateTime.tryParse(prazo)?.toLocal() ?? DateTime.now();
+        final tempoRestante = formattedPrazo.difference(DateTime.now());
+
+        final tempoRestanteStr = tempoRestante.isNegative
+            ? 'Tempo esgotado'
+            : '${tempoRestante.inMinutes} minutos restantes';
+
+        final bool isPrazoEsgotado = tempoRestante.isNegative;
+
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8.0),
+          child: ListTile(
+            title: Text(title),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                    '$quantity - Prazo: ${formattedPrazo.toString().split(' ')[0]}'),
+                Text('Propostas: $numPropostas'),
+                Text('Tempo restante: $tempoRestanteStr',
+                    style: TextStyle(
+                        color: isPrazoEsgotado ? Colors.red : Colors.black)),
+              ],
             ),
-          );
-        },
-      ),
+            trailing: isPrazoEsgotado
+                ? const Icon(Icons.lock, color: Colors.grey, size: 20.0)
+                : const Icon(Icons.arrow_forward_ios, size: 16.0),
+            onTap: isPrazoEsgotado
+                ? null
+                : () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RequestDetails(
+                          tipoEstabelecimento: title,
+                          quantidadeOleo: quantity,
+                          prazo: prazo,
+                          endereco: 'Endereço não disponível',
+                          observacoes: comentarios,
+                          documentId: documentId,
+                          user: widget.user,
+                        ),
+                      ),
+                    );
+                  },
+          ),
+        );
+      },
     );
   }
 

@@ -34,6 +34,32 @@ class _CollectProcessState extends State<CollectProcess> {
     developer.log("Coleta inicializada com ID: ${_coletaAtual.id}");
   }
 
+  Future<void> _atualizarQuantidadeOleo(String requestorId) async {
+    developer.log("Atualizando quantidade de óleo do usuário...");
+    try {
+      final userDocRef =
+          FirebaseFirestore.instance.collection('requestor').doc(requestorId);
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userDocRef);
+
+        final currentAmount = (snapshot.data()?[' '] ?? 0.0) as double;
+
+        final newAmount = currentAmount + _quantidadeReal;
+
+        transaction.update(userDocRef, {'amountOil': newAmount});
+      });
+
+      developer.log("Quantidade de óleo atualizada com sucesso.");
+    } catch (e, stack) {
+      developer.log("Erro ao atualizar quantidade de óleo: $e",
+          error: e, stackTrace: stack);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao atualizar quantidade de óleo: $e')),
+      );
+    }
+  }
+
   Future<void> _confirmarColeta() async {
     developer.log("Iniciando confirmação da coleta...");
     if (_coletaAtual == null) {
@@ -87,6 +113,8 @@ class _CollectProcessState extends State<CollectProcess> {
           'coletaId': _coletaAtual.id,
           'isRead': false,
         });
+
+        await _atualizarQuantidadeOleo(requestorId);
       }
 
       developer.log("Gerando certificado...");

@@ -398,25 +398,59 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
 
   Widget _buildSolicitationCard(
       String title, String quantity, String status, String documentId) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      child: ListTile(
-        title: Text(title),
-        subtitle: Text('$quantity - $status'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16.0),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProposalsScreen(
-                solicitationTitle: title,
-                documentId: documentId,
-                user: widget.user,
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .collection('propostas')
+          .snapshots(),
+      builder: (context, snapshot) {
+        final numPropostas = snapshot.hasData ? snapshot.data!.docs.length : 0;
+
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('coletas')
+              .doc(documentId)
+              .get(),
+          builder: (context, futureSnapshot) {
+            if (futureSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final data = futureSnapshot.data!.data() as Map<String, dynamic>;
+            final prazo = DateTime.parse(
+                data['prazo'] ?? DateTime.now().toIso8601String());
+            final tempoRestante = prazo.difference(DateTime.now());
+
+            final tempoRestanteStr = tempoRestante.isNegative
+                ? 'Tempo esgotado'
+                : '${tempoRestante.inMinutes} minutos restantes';
+
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: ListTile(
+                title: Text(title),
+                subtitle: Text(
+                  '$quantity - $status\nPropostas Feitas: $numPropostas\n$tempoRestanteStr',
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16.0),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProposalsScreen(
+                        solicitationTitle: title,
+                        documentId: documentId,
+                        user: widget.user,
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        );
+      },
     );
   }
 

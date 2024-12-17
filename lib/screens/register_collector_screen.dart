@@ -67,7 +67,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'licenseExpiry': _licenseExpiryController.text.trim(),
           'email': _emailController.text.trim(),
           'userType': 'Coletor',
-          'photoUrl': null, 
+          'photoUrl': null,
+          'amountOil': 0,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
