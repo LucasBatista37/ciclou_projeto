@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_stats_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -260,6 +261,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             ),
           ),
           const SizedBox(height: 16.0),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -271,21 +273,70 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             ],
           ),
           const SizedBox(height: 16.0),
+
           const Text('Minhas Solicitações Ativas',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8.0),
           _buildSolicitationsList(),
           const SizedBox(height: 16.0),
+
           const Text('Estatísticas de Sustentabilidade',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStatCard('Coletado', '50 Litros', Colors.teal),
-              _buildStatCard('Impacto', '20 Árvores Salvas', Colors.green),
-            ],
-          ),
+
+          FutureBuilder<QuerySnapshot>(
+            future: FirebaseFirestore.instance
+                .collection('coletas')
+                .where('userId', isEqualTo: widget.user.userId)
+                .get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError || !snapshot.hasData) {
+                return const Center(
+                  child: Text(
+                    'Erro ao carregar estatísticas.',
+                    style: TextStyle(fontSize: 16, color: Colors.red),
+                  ),
+                );
+              }
+
+              final coletas = snapshot.data!.docs;
+              double totalOil = 0.0;
+
+              for (var doc in coletas) {
+                final data = doc.data() as Map<String, dynamic>;
+                if (data.containsKey('quantidadeReal') &&
+                    data['quantidadeReal'] != null) {
+                  totalOil += (data['quantidadeReal'] ?? 0).toDouble();
+                }
+              }
+
+              final double avoidedCO2 = totalOil * 5.24;
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Óleo Coletado',
+                      '${totalOil.toStringAsFixed(1)} L',
+                      Colors.teal,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'CO₂ Evitado',
+                      '${avoidedCO2.toStringAsFixed(0)} Kg',
+                      Colors.green,
+                    ),
+                  ),
+                ],
+              );
+            },
+          )
         ],
       ),
     );
@@ -299,6 +350,14 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             context,
             MaterialPageRoute(
               builder: (context) => CreateCollection(user: widget.user),
+            ),
+          );
+        } else if (label == 'Relatórios') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  RequesterStatsScreen(userId: widget.user.userId),
             ),
           );
         } else if (label == 'Mapa') {
