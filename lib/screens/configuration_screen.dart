@@ -11,7 +11,6 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
   void navigateToProfile(BuildContext context) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-      print('UID do usuário autenticado: $uid');
 
       final requestorDoc = await FirebaseFirestore.instance
           .collection('requestor')
@@ -19,7 +18,6 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
           .get();
       if (requestorDoc.exists) {
         final userType = requestorDoc.data()?['userType'];
-        print('Usuário encontrado na coleção "requestor": userType=$userType');
         if (userType == 'Solicitante') {
           Navigator.push(
             context,
@@ -37,7 +35,6 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
           .get();
       if (collectorDoc.exists) {
         final userType = collectorDoc.data()?['userType'];
-        print('Usuário encontrado na coleção "collector": userType=$userType');
         if (userType == 'Coletor') {
           Navigator.push(
             context,
@@ -49,12 +46,10 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
         }
       }
 
-      print('Usuário não encontrado em nenhuma coleção.');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erro: Usuário não encontrado.')),
       );
     } else {
-      print('Usuário não autenticado.');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Usuário não autenticado.')),
       );

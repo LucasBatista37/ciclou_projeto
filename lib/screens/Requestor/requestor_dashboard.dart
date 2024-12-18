@@ -237,7 +237,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       case 2:
         return RequestorHistoryScreen(userId: widget.user.userId);
       case 3:
-        return const PaymentScreen();
+        return PaymentScreen(user: widget.user);
       default:
         return _buildHomeScreen();
     }
@@ -261,7 +261,6 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             ),
           ),
           const SizedBox(height: 16.0),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -273,17 +272,14 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             ],
           ),
           const SizedBox(height: 16.0),
-
           const Text('Minhas Solicitações Ativas',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8.0),
           _buildSolicitationsList(),
           const SizedBox(height: 16.0),
-
           const Text('Estatísticas de Sustentabilidade',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8.0),
-
           FutureBuilder<QuerySnapshot>(
             future: FirebaseFirestore.instance
                 .collection('coletas')
@@ -363,7 +359,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
         } else if (label == 'Mapa') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const PaymentScreen()),
+            MaterialPageRoute(
+              builder: (context) => PaymentScreen(user: widget.user), 
+            ),
           );
         }
       },

@@ -251,7 +251,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           collectorId: widget.user.userId,
         );
       case 3:
-        return const PaymentScreen();
+        return PaymentScreen(user: widget.user);
       default:
         return _buildHomeScreen();
     }

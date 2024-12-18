@@ -165,9 +165,10 @@ class CollectorNotificationsScreen extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PaymentScreen(),
+            builder: (context) => PaymentScreen(user: user),
           ),
         );
+
         break;
       case 'Solicitação Cancelada':
         Navigator.push(
