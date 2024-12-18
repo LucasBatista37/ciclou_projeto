@@ -8,7 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/components/custom_drawer.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_history_screen.dart';
-import 'package:ciclou_projeto/screens/Collector/sent_proposals_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/collector_stats_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/request_details.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -281,7 +281,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
               _buildQuickActionButton(
                   Icons.local_shipping, 'Coletas Ativas', Colors.blue),
               _buildQuickActionButton(
-                  Icons.send, 'Propostas Enviadas', Colors.orange),
+                  Icons.bar_chart, 'Estatísticas', Colors.orange),
               _buildQuickActionButton(Icons.history, 'Histórico', Colors.green),
             ],
           ),
@@ -298,12 +298,51 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStatCard('Coletado', '120 Litros', Colors.teal),
-              _buildStatCard('Ganhos', 'R\$ 1,200', Colors.green),
-            ],
+          FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance
+                .collection('collector')
+                .doc(widget.user.userId)
+                .get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError ||
+                  !snapshot.hasData ||
+                  !snapshot.data!.exists) {
+                return const Center(
+                  child: Text(
+                    'Erro ao carregar estatísticas.',
+                    style: TextStyle(fontSize: 16, color: Colors.red),
+                  ),
+                );
+              }
+
+              final data = snapshot.data!.data() as Map<String, dynamic>;
+              final double totalLiters = (data['amountOil'] ?? 0).toDouble();
+              final double avoidedCO2 = totalLiters * 5.24;
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Óleo Coletado',
+                      '${totalLiters.toStringAsFixed(1)} L',
+                      Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'CO₂ Evitado',
+                      '${avoidedCO2.toStringAsFixed(0)} Kg',
+                      Colors.teal,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -409,11 +448,11 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
               ),
             ),
           );
-        } else if (label == 'Propostas Enviadas') {
+        } else if (label == 'Estatísticas') {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => SentProposalsScreen(
+              builder: (context) => CollectorStatsScreen(
                 collectorId: widget.user.userId,
               ),
             ),
@@ -506,7 +545,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, Color color) {
+  Widget _buildStatCard(String title, String value, Color color) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -516,13 +555,24 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(color: Colors.white, fontSize: 14)),
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w400,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

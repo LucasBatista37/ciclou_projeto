@@ -34,44 +34,42 @@ class _CollectProcessState extends State<CollectProcess> {
     developer.log("Coleta inicializada com ID: ${_coletaAtual.id}");
   }
 
-  Future<void> _atualizarQuantidadeOleo(String requestorId) async {
-    developer.log("Atualizando quantidade de óleo do usuário...");
+  Future<void> _atualizarQuantidadeOleo(String collectorId) async {
+    developer.log("Atualizando quantidade de óleo pelo coletor...");
     try {
-      final userDocRef =
-          FirebaseFirestore.instance.collection('requestor').doc(requestorId);
+      final collectorDocRef =
+          FirebaseFirestore.instance.collection('collector').doc(collectorId);
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final snapshot = await transaction.get(userDocRef);
+        final snapshot = await transaction.get(collectorDocRef);
 
-        final currentAmount = (snapshot.data()?[' '] ?? 0.0) as double;
+        final currentAmountRaw = snapshot.data()?['amountOil'] ?? 0.0;
+        final double currentAmount = currentAmountRaw is double
+            ? currentAmountRaw
+            : double.tryParse(currentAmountRaw.toString()) ?? 0.0;
 
         final newAmount = currentAmount + _quantidadeReal;
 
-        transaction.update(userDocRef, {'amountOil': newAmount});
+        transaction.update(collectorDocRef, {'amountOil': newAmount});
       });
 
-      developer.log("Quantidade de óleo atualizada com sucesso.");
+      developer.log(
+          "Quantidade de óleo coletada foi atualizada com sucesso pelo coletor.");
     } catch (e, stack) {
-      developer.log("Erro ao atualizar quantidade de óleo: $e",
+      developer.log("Erro ao atualizar quantidade de óleo pelo coletor: $e",
           error: e, stackTrace: stack);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao atualizar quantidade de óleo: $e')),
+        SnackBar(
+            content:
+                Text('Erro ao atualizar quantidade de óleo pelo coletor: $e')),
       );
     }
   }
 
   Future<void> _confirmarColeta() async {
     developer.log("Iniciando confirmação da coleta...");
-    if (_coletaAtual == null) {
-      developer.log("Erro: Coleta não encontrada.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coleta não encontrada.')),
-      );
-      return;
-    }
 
     final currentUser = FirebaseAuth.instance.currentUser;
-
     if (currentUser == null) {
       developer.log("Erro: Usuário não autenticado.");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,50 +82,38 @@ class _CollectProcessState extends State<CollectProcess> {
 
     if (data['collectorId'] != currentUser.uid) {
       developer.log(
-          "Erro: Permissão negada. UID do coletor: ${data['collectorId']}, UID atual: ${currentUser.uid}");
+          "Erro: Permissão negada. O coletor não corresponde ao usuário atual.");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Permissão negada para atualizar esta coleta.')),
+        const SnackBar(content: Text('Permissão negada para esta coleta.')),
       );
       return;
     }
 
     try {
-      developer.log("Atualizando Firestore...");
+      developer.log("Atualizando coleta no Firestore...");
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
           .update({
         'status': 'Finalizada',
         'quantidadeReal': _quantidadeReal,
+        'dataConclusao': FieldValue.serverTimestamp(),
       });
 
-      developer.log("Notificando o solicitante...");
-      final requestorId = data['userId'];
-      if (requestorId != null) {
-        await FirebaseFirestore.instance.collection('notifications').add({
-          'title': 'Coleta Finalizada',
-          'message': 'A coleta foi finalizada com sucesso.',
-          'timestamp': FieldValue.serverTimestamp(),
-          'requestorId': requestorId,
-          'coletaId': _coletaAtual.id,
-          'isRead': false,
-        });
-
-        await _atualizarQuantidadeOleo(requestorId);
-      }
-
-      developer.log("Gerando certificado...");
-      await _gerarCertificado();
+      developer
+          .log("Atualizando a quantidade de óleo no registro do coletor...");
+      await _atualizarQuantidadeOleo(currentUser.uid);
 
       setState(() {
         _coletaFinalizada = true;
       });
 
-      developer.log("Coleta confirmada com sucesso.");
+      developer.log("Coleta confirmada com sucesso pelo coletor.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Coleta confirmada com sucesso!')),
       );
+
+      await _gerarCertificado();
     } catch (e, stack) {
       developer.log("Erro ao confirmar coleta: $e",
           error: e, stackTrace: stack);
@@ -174,15 +160,15 @@ class _CollectProcessState extends State<CollectProcess> {
                 pw.Image(pdfImage, fit: pw.BoxFit.cover),
                 pw.Positioned(
                   left: 125,
-                  top: 273,
+                  top: 272,
                   child: pw.Text(
                     '${data['tipoEstabelecimento'] ?? 'N/A'}',
                     style: pw.TextStyle(font: ttf, fontSize: 18),
                   ),
                 ),
                 pw.Positioned(
-                  left: 94,
-                  top: 312,
+                  left: 98,
+                  top: 314,
                   child: pw.Text(
                     '${data['cnpj'] ?? 'N/A'}',
                     style: pw.TextStyle(font: ttf, fontSize: 18),
