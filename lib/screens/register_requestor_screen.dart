@@ -149,7 +149,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                   _buildDropdownField(),
                   const SizedBox(height: 16),
                   _buildTextField(
-                    'Endereço',
+                    'Endereço, Cidade e Estado',
                     _addressController,
                     (value) =>
                         value!.isEmpty ? 'Por favor, insira o endereço.' : null,

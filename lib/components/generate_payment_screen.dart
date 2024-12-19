@@ -126,19 +126,23 @@ Future<void> generateFixedPixPayment({
       final data = jsonDecode(response.body);
 
       final qrCodeBase64 = data['qrCodeBase64'];
-      if (qrCodeBase64 != null) {
+      final paymentId = data['paymentId']; 
+      if (qrCodeBase64 != null && paymentId != null) {
         await FirebaseFirestore.instance
             .collection('coletas')
             .doc(documentId)
             .collection('propostas')
             .doc(proposalId)
             .update({
-          'paymentId': data['paymentId'],
+          'paymentId': paymentId.toString(), 
           'qrCodeBase64': qrCodeBase64,
           'statusPagamento': 'Pendente',
         });
+
+        print(
+            'Payment ID salvo como String no Firestore: ${paymentId.toString()}');
       } else {
-        throw Exception('QR Code não encontrado na resposta.');
+        throw Exception('QR Code ou Payment ID não encontrados na resposta.');
       }
     } else {
       throw Exception('Erro ao gerar pagamento PIX: ${response.body}');

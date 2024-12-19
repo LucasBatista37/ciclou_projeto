@@ -55,7 +55,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
 
       if (userId != null) {
         await FirebaseFirestore.instance
-            .collection('collectors')
+            .collection('collector')
             .doc(userId)
             .set({
           'businessName': _businessNameController.text.trim(),

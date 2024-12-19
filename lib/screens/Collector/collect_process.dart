@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:ciclou_projeto/components/generate_manualqr_payment.dart';
+import 'package:ciclou_projeto/components/payment_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,14 +29,55 @@ class _CollectProcessState extends State<CollectProcess> {
 
   double _quantidadeReal = 0.0;
   bool _coletaFinalizada = false;
+  String? _paymentStatus;
 
   @override
   void initState() {
     super.initState();
     _coletaAtual = widget.coletaAtual;
     _carregando = false;
-    _buscarQrCode(); // Buscar o QR Code ao inicializar
+    _buscarQrCode();
+    _verificarPagamento();
     developer.log("Coleta inicializada com ID: ${_coletaAtual.id}");
+  }
+
+  Future<void> _verificarPagamento() async {
+    try {
+      final proposalSnapshot = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .collection('propostas')
+          .where('status', isEqualTo: 'Aceita')
+          .get();
+
+      if (proposalSnapshot.docs.isNotEmpty) {
+        final proposalData = proposalSnapshot.docs.first.data();
+        final paymentId =
+            proposalData['paymentId']; // Certifique-se de que paymentId existe
+
+        if (paymentId != null) {
+          final paymentService = PaymentService(paymentId);
+
+          // Valida o pagamento usando o serviço
+          final status = await paymentService.validatePayment();
+
+          setState(() {
+            _paymentStatus = status;
+          });
+
+          developer.log("Status do pagamento: $status");
+        } else {
+          developer.log("Nenhum ID de pagamento encontrado na proposta.");
+        }
+      }
+    } catch (e, stack) {
+      developer.log("Erro ao verificar status do pagamento: $e",
+          error: e, stackTrace: stack);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao verificar status do pagamento: $e')),
+      );
+    }
   }
 
   Future<void> _atualizarQuantidadeOleo(String collectorId) async {
@@ -71,12 +114,11 @@ class _CollectProcessState extends State<CollectProcess> {
 
   Future<void> _buscarQrCode() async {
     try {
-      // Obter a proposta aceita na subcoleção 'propostas'
       final proposalSnapshot = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
           .collection('propostas')
-          .where('status', isEqualTo: 'Aceita') // Filtrar pela proposta aceita
+          .where('status', isEqualTo: 'Aceita')
           .get();
 
       if (proposalSnapshot.docs.isNotEmpty) {
@@ -122,6 +164,65 @@ class _CollectProcessState extends State<CollectProcess> {
         );
       },
     );
+  }
+
+  Future<void> substituirQrCodeAposPagamento({
+    required String documentId,
+    required String proposalId,
+    required String solicitantePixKey,
+    required double amount,
+    required String description,
+  }) async {
+    try {
+      final proposalSnapshot = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .collection('propostas')
+          .doc(proposalId)
+          .get();
+
+      if (proposalSnapshot.exists) {
+        final proposalData = proposalSnapshot.data();
+        final paymentId = proposalData?['paymentId'];
+
+        if (paymentId != null) {
+          // Verifica o status do pagamento
+          final paymentService = PaymentService(paymentId);
+          final paymentStatus = await paymentService.validatePayment();
+
+          if (paymentStatus == 'approved') {
+            // Gera o novo QR Code para o solicitante
+            final novoQrCode = await generateManualQr(
+              pixKey: solicitantePixKey,
+              amount: amount,
+              description: description,
+            );
+
+            // Atualiza o QR Code no Firestore
+            await FirebaseFirestore.instance
+                .collection('coletas')
+                .doc(documentId)
+                .collection('propostas')
+                .doc(proposalId)
+                .update({
+              'qrCodeBase64': novoQrCode['qrCodeBase64'],
+              'statusPagamento': 'Concluído',
+            });
+
+            developer.log(
+                'QR Code substituído com sucesso após pagamento aprovado!');
+          } else {
+            developer.log('Pagamento ainda não foi aprovado.');
+          }
+        } else {
+          developer.log('paymentId não encontrado na proposta.');
+        }
+      } else {
+        developer.log('Proposta não encontrada.');
+      }
+    } catch (e) {
+      developer.log('Erro ao substituir QR Code após pagamento: $e');
+    }
   }
 
   Future<void> _confirmarColeta() async {
@@ -358,6 +459,21 @@ class _CollectProcessState extends State<CollectProcess> {
                       width: 200,
                       height: 200,
                     ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () async {
+                        await _verificarPagamento();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Revalidando status do pagamento...'),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                      ),
+                      child: const Text('Já Paguei'),
+                    ),
                   ],
                 )
               else
@@ -368,40 +484,63 @@ class _CollectProcessState extends State<CollectProcess> {
                   ),
                 ),
               const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 16),
-              const Text(
-                'Registrar Quantidade Real Coletada',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Quantidade em Litros',
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _quantidadeReal = double.tryParse(value) ?? 0.0;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24.0, vertical: 12.0),
-                  ),
-                  onPressed: _coletaFinalizada ? null : _confirmarColeta,
-                  child: const Text(
-                    'Confirmar Coleta',
-                    style: TextStyle(color: Colors.white),
+              if (_paymentStatus == 'pending') ...[
+                const Center(
+                  child: Text(
+                    'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
+                    style: TextStyle(fontSize: 16, color: Colors.red),
                   ),
                 ),
-              ),
+              ] else if (_paymentStatus == 'approved') ...[
+                const Divider(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Registrar Quantidade Real Coletada',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Quantidade em Litros',
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _quantidadeReal = double.tryParse(value) ?? 0.0;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 12.0),
+                    ),
+                    onPressed: _coletaFinalizada ? null : _confirmarColeta,
+                    child: const Text(
+                      'Confirmar Coleta',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ] else if (_paymentStatus == 'rejected') ...[
+                const Center(
+                  child: Text(
+                    'Pagamento rejeitado. Entre em contato com o suporte.',
+                    style: TextStyle(fontSize: 16, color: Colors.red),
+                  ),
+                ),
+              ] else ...[
+                const Center(
+                  child: Text(
+                    'Status de pagamento desconhecido. Verifique novamente mais tarde.',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:ciclou_projeto/components/generate_manualqr_payment.dart';
 import 'package:ciclou_projeto/components/generate_payment_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:ciclou_projeto/models/user_model.dart';
@@ -228,10 +229,43 @@ class ProposalsScreen extends StatelessWidget {
     return null;
   }
 
+  Future<void> _generateSolicitanteQrCode({
+    required String documentId,
+    required String proposalId,
+    required String solicitantePixKey,
+    required double precoPorLitro,
+  }) async {
+    try {
+      // Gera o QR Code para o solicitante
+      final novoQrCode = await generateManualQr(
+        pixKey: solicitantePixKey,
+        amount: precoPorLitro,
+        description: 'Pagamento para solicitante',
+      );
+
+      // Atualiza o Firestore com o novo QR Code
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .collection('propostas')
+          .doc(proposalId)
+          .update({
+        'qrCodeSolicitanteBase64': novoQrCode[
+            'qrCodeBase64'], // Novo campo para o QR Code do solicitante
+        'statusPagamentoSolicitante':
+            'Pendente', // Indica que o pagamento ainda não foi realizado
+      });
+
+      print('QR Code do solicitante gerado e salvo com sucesso.');
+    } catch (e) {
+      print('Erro ao gerar QR Code para o solicitante: $e');
+    }
+  }
+
   Future<void> _acceptProposal(BuildContext context, String proposalId,
       Map<String, dynamic> proposal) async {
     try {
-      // Buscar dados do documento de coleta
+      // Recupera os dados da coleta
       final coletaDoc = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -239,14 +273,13 @@ class ProposalsScreen extends StatelessWidget {
 
       final coletaData = coletaDoc.data();
 
-      // Validar se os dados de coleta existem
       if (coletaData == null || coletaData['quantidadeOleo'] == null) {
         throw Exception('Quantidade de óleo não especificada na coleta.');
       }
 
       final quantityOleo = coletaData['quantidadeOleo'];
 
-      // Buscar dados da proposta
+      // Recupera os dados da proposta
       final proposalDoc = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -256,7 +289,6 @@ class ProposalsScreen extends StatelessWidget {
 
       final proposalData = proposalDoc.data();
 
-      // Validar se os dados da proposta existem
       if (proposalData == null || proposalData['collectorId'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro: coletor não encontrado.')),
@@ -264,15 +296,14 @@ class ProposalsScreen extends StatelessWidget {
         return;
       }
 
-      // Extrair informações da proposta
       final collectorId = proposalData['collectorId'];
       final collectorName = proposalData['collectorName'];
       final precoPorLitro = proposalData['precoPorLitro'];
 
-      // Calcular o valor baseado na quantidade de óleo
+      // Calcula o valor total do pagamento
       final amount = _calculateAmount(double.parse(quantityOleo.toString()));
 
-      // Atualizar status da proposta para "Aceita"
+      // Atualiza o status da proposta para "Aceita"
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -280,7 +311,7 @@ class ProposalsScreen extends StatelessWidget {
           .doc(proposalId)
           .update({'status': 'Aceita'});
 
-      // Atualizar status da coleta para "Em andamento"
+      // Atualiza o status da coleta e outras informações
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -291,14 +322,14 @@ class ProposalsScreen extends StatelessWidget {
         'precoPorLitro': precoPorLitro,
       });
 
-      // Enviar notificação ao coletor
+      // Envia notificação ao coletor
       _sendNotification(
         collectorId,
         'Proposta Aceita!',
         'Sua proposta para $solicitationTitle foi aceita. Prepare-se para a coleta!',
       );
 
-      // Gerar pagamento PIX
+      // Gera o QR Code para pagamento à plataforma
       await generateFixedPixPayment(
         amount: amount.toString(),
         user: user,
@@ -306,21 +337,27 @@ class ProposalsScreen extends StatelessWidget {
         proposalId: proposalId,
       );
 
-      // Exibir mensagem de sucesso
+      // Gera automaticamente o QR Code para o solicitante
+      await _generateSolicitanteQrCode(
+        documentId: documentId,
+        proposalId: proposalId,
+        solicitantePixKey: user.pixKey,
+        precoPorLitro: double.parse(precoPorLitro.toString()),
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Proposta aceita com sucesso! Coleta em andamento.'),
         ),
       );
 
-      // Navegar para o painel do solicitante
+      // Redireciona para o dashboard do solicitante
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => RequestorDashboard(user: user)),
         (Route<dynamic> route) => false,
       );
     } catch (error) {
-      // Exibir mensagem de erro
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao aceitar a proposta: $error')),
       );
