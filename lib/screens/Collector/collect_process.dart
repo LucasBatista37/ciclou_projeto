@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,7 @@ class _CollectProcessState extends State<CollectProcess> {
   late DocumentSnapshot _coletaAtual;
   bool _carregando = true;
   String? _caminhoCertificado;
+  String? _qrCodeBase64;
 
   double _quantidadeReal = 0.0;
   bool _coletaFinalizada = false;
@@ -31,6 +33,7 @@ class _CollectProcessState extends State<CollectProcess> {
     super.initState();
     _coletaAtual = widget.coletaAtual;
     _carregando = false;
+    _buscarQrCode(); // Buscar o QR Code ao inicializar
     developer.log("Coleta inicializada com ID: ${_coletaAtual.id}");
   }
 
@@ -64,6 +67,61 @@ class _CollectProcessState extends State<CollectProcess> {
                 Text('Erro ao atualizar quantidade de óleo pelo coletor: $e')),
       );
     }
+  }
+
+  Future<void> _buscarQrCode() async {
+    try {
+      // Obter a proposta aceita na subcoleção 'propostas'
+      final proposalSnapshot = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .collection('propostas')
+          .where('status', isEqualTo: 'Aceita') // Filtrar pela proposta aceita
+          .get();
+
+      if (proposalSnapshot.docs.isNotEmpty) {
+        final proposalData = proposalSnapshot.docs.first.data();
+        if (proposalData.containsKey('qrCodeBase64')) {
+          setState(() {
+            _qrCodeBase64 = proposalData['qrCodeBase64'];
+          });
+          developer.log("QR Code encontrado e carregado com sucesso.");
+        } else {
+          developer.log("QR Code não encontrado na proposta aceita.");
+        }
+      } else {
+        developer.log("Nenhuma proposta aceita encontrada.");
+      }
+    } catch (e) {
+      developer.log("Erro ao buscar QR Code da proposta: $e");
+    }
+  }
+
+  void _exibirQrCode() {
+    if (_qrCodeBase64 == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('QR Code não disponível.')),
+      );
+      return;
+    }
+
+    final Uint8List qrCodeBytes = base64Decode(_qrCodeBase64!);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('QR Code para Pagamento'),
+          content: Image.memory(qrCodeBytes),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _confirmarColeta() async {
@@ -283,6 +341,32 @@ class _CollectProcessState extends State<CollectProcess> {
                 'Quantidade Estimada: ${data['quantidadeOleo'] ?? 'N/A'} Litros',
                 style: const TextStyle(fontSize: 16),
               ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+              if (_qrCodeBase64 != null)
+                Column(
+                  children: [
+                    const Text(
+                      'QR Code para Pagamento',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    Image.memory(
+                      base64Decode(_qrCodeBase64!),
+                      width: 200,
+                      height: 200,
+                    ),
+                  ],
+                )
+              else
+                const Center(
+                  child: Text(
+                    'QR Code não disponível.',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ),
               const SizedBox(height: 16),
               const Divider(),
               const SizedBox(height: 16),

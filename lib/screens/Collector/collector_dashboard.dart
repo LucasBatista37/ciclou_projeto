@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/collects_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/manual_qr_payment_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -461,9 +462,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CollectorHistoryScreen(
-                collectorId: widget.user.userId,
-              ),
+              builder: (context) => ManualQrPaymentScreen(),
             ),
           );
         }

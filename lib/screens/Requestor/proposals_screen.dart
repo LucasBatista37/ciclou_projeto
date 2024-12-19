@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:ciclou_projeto/components/generate_payment_screen.dart';
+import 'package:http/http.dart' as http;
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -178,8 +181,9 @@ class ProposalsScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 8.0),
                             ElevatedButton(
-                              onPressed: () {
-                                _acceptProposal(context, proposalId);
+                              onPressed: () async {
+                                await _acceptProposal(
+                                    context, proposalId, proposal);
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
@@ -224,8 +228,25 @@ class ProposalsScreen extends StatelessWidget {
     return null;
   }
 
-  void _acceptProposal(BuildContext context, String proposalId) async {
+  Future<void> _acceptProposal(BuildContext context, String proposalId,
+      Map<String, dynamic> proposal) async {
     try {
+      // Buscar dados do documento de coleta
+      final coletaDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .get();
+
+      final coletaData = coletaDoc.data();
+
+      // Validar se os dados de coleta existem
+      if (coletaData == null || coletaData['quantidadeOleo'] == null) {
+        throw Exception('Quantidade de óleo não especificada na coleta.');
+      }
+
+      final quantityOleo = coletaData['quantidadeOleo'];
+
+      // Buscar dados da proposta
       final proposalDoc = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -235,6 +256,7 @@ class ProposalsScreen extends StatelessWidget {
 
       final proposalData = proposalDoc.data();
 
+      // Validar se os dados da proposta existem
       if (proposalData == null || proposalData['collectorId'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro: coletor não encontrado.')),
@@ -242,9 +264,15 @@ class ProposalsScreen extends StatelessWidget {
         return;
       }
 
+      // Extrair informações da proposta
       final collectorId = proposalData['collectorId'];
       final collectorName = proposalData['collectorName'];
+      final precoPorLitro = proposalData['precoPorLitro'];
 
+      // Calcular o valor baseado na quantidade de óleo
+      final amount = _calculateAmount(double.parse(quantityOleo.toString()));
+
+      // Atualizar status da proposta para "Aceita"
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -252,6 +280,7 @@ class ProposalsScreen extends StatelessWidget {
           .doc(proposalId)
           .update({'status': 'Aceita'});
 
+      // Atualizar status da coleta para "Em andamento"
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -259,30 +288,52 @@ class ProposalsScreen extends StatelessWidget {
         'status': 'Em andamento',
         'collectorId': collectorId,
         'collectorName': collectorName,
+        'precoPorLitro': precoPorLitro,
       });
 
+      // Enviar notificação ao coletor
       _sendNotification(
         collectorId,
         'Proposta Aceita!',
         'Sua proposta para $solicitationTitle foi aceita. Prepare-se para a coleta!',
       );
 
+      // Gerar pagamento PIX
+      await generateFixedPixPayment(
+        amount: amount.toString(),
+        user: user,
+        documentId: documentId,
+        proposalId: proposalId,
+      );
+
+      // Exibir mensagem de sucesso
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Proposta aceita com sucesso! Coleta em andamento.'),
         ),
       );
 
+      // Navegar para o painel do solicitante
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => RequestorDashboard(user: user)),
         (Route<dynamic> route) => false,
       );
     } catch (error) {
+      // Exibir mensagem de erro
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao aceitar a proposta: $error')),
       );
     }
+  }
+
+  double _calculateAmount(double liters) {
+    if (liters >= 20 && liters <= 30) return 7.5;
+    if (liters > 30 && liters <= 45) return 10.0;
+    if (liters > 45 && liters <= 60) return 12.0;
+    if (liters > 60 && liters <= 75) return 14.0;
+    if (liters > 75 && liters <= 100) return 16.0;
+    throw Exception('Quantidade de litros fora do intervalo permitido.');
   }
 
   void _rejectProposal(BuildContext context, String proposalId) {
