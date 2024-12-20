@@ -161,7 +161,7 @@ class ProposalsScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16.0),
-                      if (!isEmAndamento) // Se não estiver em andamento, mostra os botões
+                      if (!isEmAndamento)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -236,24 +236,20 @@ class ProposalsScreen extends StatelessWidget {
     required double precoPorLitro,
   }) async {
     try {
-      // Gera o QR Code para o solicitante
       final novoQrCode = await generateManualQr(
         pixKey: solicitantePixKey,
         amount: precoPorLitro,
         description: 'Pagamento para solicitante',
       );
 
-      // Atualiza o Firestore com o novo QR Code
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
           .collection('propostas')
           .doc(proposalId)
           .update({
-        'qrCodeSolicitanteBase64': novoQrCode[
-            'qrCodeBase64'], // Novo campo para o QR Code do solicitante
-        'statusPagamentoSolicitante':
-            'Pendente', // Indica que o pagamento ainda não foi realizado
+        'qrCodeSolicitanteBase64': novoQrCode['qrCodeBase64'],
+        'statusPagamentoSolicitante': 'Pendente',
       });
 
       print('QR Code do solicitante gerado e salvo com sucesso.');
@@ -265,7 +261,6 @@ class ProposalsScreen extends StatelessWidget {
   Future<void> _acceptProposal(BuildContext context, String proposalId,
       Map<String, dynamic> proposal) async {
     try {
-      // Recupera os dados da coleta
       final coletaDoc = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -279,7 +274,6 @@ class ProposalsScreen extends StatelessWidget {
 
       final quantityOleo = coletaData['quantidadeOleo'];
 
-      // Recupera os dados da proposta
       final proposalDoc = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -300,10 +294,8 @@ class ProposalsScreen extends StatelessWidget {
       final collectorName = proposalData['collectorName'];
       final precoPorLitro = proposalData['precoPorLitro'];
 
-      // Calcula o valor total do pagamento
       final amount = _calculateAmount(double.parse(quantityOleo.toString()));
 
-      // Atualiza o status da proposta para "Aceita"
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -311,7 +303,6 @@ class ProposalsScreen extends StatelessWidget {
           .doc(proposalId)
           .update({'status': 'Aceita'});
 
-      // Atualiza o status da coleta e outras informações
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -322,14 +313,13 @@ class ProposalsScreen extends StatelessWidget {
         'precoPorLitro': precoPorLitro,
       });
 
-      // Envia notificação ao coletor
       _sendNotification(
         collectorId,
         'Proposta Aceita!',
         'Sua proposta para $solicitationTitle foi aceita. Prepare-se para a coleta!',
+        documentId, 
       );
 
-      // Gera o QR Code para pagamento à plataforma
       await generateFixedPixPayment(
         amount: amount.toString(),
         user: user,
@@ -337,7 +327,6 @@ class ProposalsScreen extends StatelessWidget {
         proposalId: proposalId,
       );
 
-      // Gera automaticamente o QR Code para o solicitante
       await _generateSolicitanteQrCode(
         documentId: documentId,
         proposalId: proposalId,
@@ -351,7 +340,6 @@ class ProposalsScreen extends StatelessWidget {
         ),
       );
 
-      // Redireciona para o dashboard do solicitante
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => RequestorDashboard(user: user)),
@@ -391,11 +379,17 @@ class ProposalsScreen extends StatelessWidget {
             .collection('propostas')
             .doc(proposalId)
             .update({'status': 'Rejeitada '}).then((_) {
-          _sendNotification(
-            collectorId,
-            'Proposta Rejeitada',
-            'Sua proposta para $solicitationTitle foi rejeitada.',
-          );
+          void _sendNotification(String collectorId, String title,
+              String message, String coletaId) {
+            FirebaseFirestore.instance.collection('notifications').add({
+              'title': title,
+              'message': message,
+              'collectorId': collectorId,
+              'coletaId': coletaId,
+              'timestamp': FieldValue.serverTimestamp(),
+              'isRead': false,
+            });
+          }
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Proposta rejeitada com sucesso!')),
@@ -413,11 +407,13 @@ class ProposalsScreen extends StatelessWidget {
     });
   }
 
-  void _sendNotification(String collectorId, String title, String message) {
+  void _sendNotification(
+      String collectorId, String title, String message, String coletaId) {
     FirebaseFirestore.instance.collection('notifications').add({
       'title': title,
       'message': message,
       'collectorId': collectorId,
+      'coletaId': coletaId, 
       'timestamp': FieldValue.serverTimestamp(),
       'isRead': false,
     });

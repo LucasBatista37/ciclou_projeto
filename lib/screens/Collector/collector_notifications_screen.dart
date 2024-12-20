@@ -149,39 +149,51 @@ class CollectorNotificationsScreen extends StatelessWidget {
   }
 
   void _handleNotificationTap(
-      BuildContext context, String title, DocumentSnapshot notification) {
-    switch (title) {
-      case 'Proposta Aceita!':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CollectProcess(
-              coletaAtual: notification,
-            ),
-          ),
-        );
-        break;
-      case 'Pagamento Recebido':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PaymentScreen(user: user),
-          ),
-        );
+      BuildContext context, String title, DocumentSnapshot notification) async {
+    if (title == 'Proposta Aceita!') {
+      final data = notification.data() as Map<String, dynamic>;
+      final coletaId =
+          data['coletaId']; 
 
-        break;
-      case 'Solicitação Cancelada':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CollectProcess(
-              coletaAtual: notification,
-            ),
-          ),
+      if (coletaId != null) {
+        try {
+          final coletaDoc = await FirebaseFirestore.instance
+              .collection('coletas')
+              .doc(coletaId)
+              .get();
+
+          if (coletaDoc.exists) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CollectProcess(
+                  coletaAtual: coletaDoc,
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Coleta não encontrada.')),
+            );
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao buscar coleta: $e')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('ID da coleta não encontrado na notificação.')),
         );
-        break;
-      default:
-        break;
+      }
+    } else if (title == 'Pagamento Recebido') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentScreen(user: user),
+        ),
+      );
     }
   }
 }
