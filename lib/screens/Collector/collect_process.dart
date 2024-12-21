@@ -52,8 +52,7 @@ class _CollectProcessState extends State<CollectProcess> {
 
       if (proposalSnapshot.docs.isNotEmpty) {
         final proposalData = proposalSnapshot.docs.first.data();
-        final paymentId =
-            proposalData['paymentId'];
+        final paymentId = proposalData['paymentId'];
 
         if (paymentId != null) {
           final paymentService = PaymentService(paymentId);
@@ -163,65 +162,6 @@ class _CollectProcessState extends State<CollectProcess> {
         );
       },
     );
-  }
-
-  Future<void> substituirQrCodeAposPagamento({
-    required String documentId,
-    required String proposalId,
-    required String solicitantePixKey,
-    required double amount,
-    required String description,
-  }) async {
-    try {
-      final proposalSnapshot = await FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(documentId)
-          .collection('propostas')
-          .doc(proposalId)
-          .get();
-
-      if (proposalSnapshot.exists) {
-        final proposalData = proposalSnapshot.data();
-        final paymentId = proposalData?['paymentId'];
-
-        if (paymentId != null) {
-          // Verifica o status do pagamento
-          final paymentService = PaymentService(paymentId);
-          final paymentStatus = await paymentService.validatePayment();
-
-          if (paymentStatus == 'approved') {
-            // Gera o novo QR Code para o solicitante
-            final novoQrCode = await generateManualQr(
-              pixKey: solicitantePixKey,
-              amount: amount,
-              description: description,
-            );
-
-            // Atualiza o QR Code no Firestore
-            await FirebaseFirestore.instance
-                .collection('coletas')
-                .doc(documentId)
-                .collection('propostas')
-                .doc(proposalId)
-                .update({
-              'qrCodeBase64': novoQrCode['qrCodeBase64'],
-              'statusPagamento': 'Concluído',
-            });
-
-            developer.log(
-                'QR Code substituído com sucesso após pagamento aprovado!');
-          } else {
-            developer.log('Pagamento ainda não foi aprovado.');
-          }
-        } else {
-          developer.log('paymentId não encontrado na proposta.');
-        }
-      } else {
-        developer.log('Proposta não encontrada.');
-      }
-    } catch (e) {
-      developer.log('Erro ao substituir QR Code após pagamento: $e');
-    }
   }
 
   Future<void> _confirmarColeta() async {
