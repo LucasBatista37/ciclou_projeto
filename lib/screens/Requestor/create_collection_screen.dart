@@ -1,7 +1,9 @@
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CreateCollection extends StatefulWidget {
   final UserModel user;
@@ -16,9 +18,57 @@ class _CreateCollectionState extends State<CreateCollection> {
   final _formKey = GlobalKey<FormState>();
   double? _quantidadeOleo;
   final _comentariosController = TextEditingController();
-  final _chavePixController =
-      TextEditingController(); // Controller para o campo de chave Pix
+  final _chavePixController = TextEditingController();
+  String? _tipoChavePix;
+  final _bancoController = TextEditingController();
   bool _isLoading = false;
+  List<String> _bancos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarBancos();
+  }
+
+  Future<void> _carregarBancos() async {
+    try {
+      final csvData = await rootBundle.loadString('assets/banco.csv');
+      final List<List<dynamic>> csvTable =
+          const CsvToListConverter().convert(csvData, eol: '\n');
+
+      setState(() {
+        _bancos = csvTable
+            .skip(1)
+            .map((row) => row[3]?.toString() ?? '')
+            .where((name) => name.isNotEmpty)
+            .toList();
+      });
+
+      print("Bancos carregados: $_bancos");
+    } catch (e) {
+      print("Erro ao carregar bancos: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar bancos: $e')),
+      );
+    }
+  }
+
+  String? _validarChavePix(String? value) {
+    if (_tipoChavePix == null) return 'Selecione o tipo de chave Pix';
+    if (_tipoChavePix == 'CPF' && (value == null || value.length != 11)) {
+      return 'Digite um CPF válido com 11 dígitos';
+    } else if (_tipoChavePix == 'CNPJ' &&
+        (value == null || value.length != 14)) {
+      return 'Digite um CNPJ válido com 14 dígitos';
+    } else if (_tipoChavePix == 'E-mail' &&
+        (value == null || !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value))) {
+      return 'Digite um e-mail válido';
+    } else if (_tipoChavePix == 'Chave Aleatória' &&
+        (value == null || value.isEmpty)) {
+      return 'Digite uma chave válida';
+    }
+    return null;
+  }
 
   Future<void> _enviarSolicitacao() async {
     if (_formKey.currentState!.validate()) {
@@ -33,8 +83,9 @@ class _CreateCollectionState extends State<CreateCollection> {
           'prazo':
               DateTime.now().add(const Duration(minutes: 15)).toIso8601String(),
           'comentarios': _comentariosController.text.trim(),
-          'chavePix':
-              _chavePixController.text.trim(), // Adicionando a chave Pix
+          'tipoChavePix': _tipoChavePix,
+          'chavePix': _chavePixController.text.trim(),
+          'banco': _bancoController.text.trim(),
           'address': widget.user.address,
           'status': 'Pendente',
           'userId': widget.user.userId,
@@ -72,7 +123,7 @@ class _CreateCollectionState extends State<CreateCollection> {
         backgroundColor: Colors.green,
         centerTitle: true,
         title: const Text(
-          'Criar Solicitação (Solicitante)',
+          'Criar Solicitação',
           style: TextStyle(color: Colors.white),
         ),
         leading: IconButton(
@@ -84,7 +135,13 @@ class _CreateCollectionState extends State<CreateCollection> {
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content:
+                        Text('Entre em contato com o suporte para ajuda!')),
+              );
+            },
           ),
         ],
       ),
@@ -156,17 +213,87 @@ class _CreateCollectionState extends State<CreateCollection> {
                     ),
                     const SizedBox(height: 16.0),
                     const Text(
-                      'Chave Pix (Opcional)',
+                      'Tipo de Chave Pix',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8.0),
+                    DropdownButtonFormField<String>(
+                      value: _tipoChavePix,
+                      items: ['CPF', 'CNPJ', 'E-mail', 'Chave Aleatória']
+                          .map((tipo) => DropdownMenuItem(
+                                value: tipo,
+                                child: Text(tipo),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _tipoChavePix = value;
+                          _chavePixController.clear();
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Selecione o tipo de chave Pix',
+                      ),
+                      validator: (value) => value == null
+                          ? 'Selecione o tipo de chave Pix'
+                          : null,
+                    ),
+                    const SizedBox(height: 16.0),
+                    const Text(
+                      'Chave Pix',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8.0),
                     TextFormField(
                       controller: _chavePixController,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Digite sua chave Pix',
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        hintText: _tipoChavePix == null
+                            ? 'Digite a chave Pix'
+                            : 'Digite sua $_tipoChavePix',
                       ),
+                      keyboardType:
+                          _tipoChavePix == 'CPF' || _tipoChavePix == 'CNPJ'
+                              ? TextInputType.number
+                              : TextInputType.text,
+                      validator: _validarChavePix,
+                    ),
+                    const SizedBox(height: 16.0),
+                    const Text(
+                      'Banco',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<String>.empty();
+                        }
+                        return _bancos.where((banco) => banco
+                            .toLowerCase()
+                            .contains(textEditingValue.text.toLowerCase()));
+                      },
+                      onSelected: (String selection) {
+                        _bancoController.text = selection;
+                      },
+                      fieldViewBuilder: (BuildContext context,
+                          TextEditingController fieldController,
+                          FocusNode focusNode,
+                          VoidCallback onFieldSubmitted) {
+                        _bancoController.text = fieldController.text;
+                        return TextFormField(
+                          controller: fieldController,
+                          focusNode: focusNode,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'Digite ou selecione o banco',
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 16.0),
                     const Text(
@@ -175,9 +302,9 @@ class _CreateCollectionState extends State<CreateCollection> {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8.0),
-                    Text(
+                    const Text(
                       '15 minutos',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey,

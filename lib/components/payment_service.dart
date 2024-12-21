@@ -26,8 +26,6 @@ class PaymentService {
           throw Exception(
               'Tipo inesperado para paymentStatus: ${paymentStatus.runtimeType}');
         }
-
-        // Retorna o status como string diretamente
         return paymentStatus;
       } else {
         throw Exception('Erro ao validar pagamento: ${response.body}');

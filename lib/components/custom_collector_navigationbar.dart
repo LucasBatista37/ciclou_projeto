@@ -54,8 +54,7 @@ class CollectorBottomNavigationBar extends StatelessWidget {
                         ),
                       );
                     }
-                    return const SizedBox
-                        .shrink(); 
+                    return const SizedBox.shrink();
                   },
                 ),
             ],
@@ -67,8 +66,8 @@ class CollectorBottomNavigationBar extends StatelessWidget {
           label: 'Histórico',
         ),
         const BottomNavigationBarItem(
-          icon: Icon(Icons.attach_money_rounded),
-          label: 'Pagamento',
+          icon: Icon(Icons.support_agent_rounded),
+          label: 'Suporte',
         ),
       ],
     );

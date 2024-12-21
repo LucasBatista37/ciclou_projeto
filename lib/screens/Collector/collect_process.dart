@@ -78,38 +78,6 @@ class _CollectProcessState extends State<CollectProcess> {
     }
   }
 
-  Future<void> _atualizarQuantidadeOleo(String collectorId) async {
-    developer.log("Atualizando quantidade de óleo pelo coletor...");
-    try {
-      final collectorDocRef =
-          FirebaseFirestore.instance.collection('collector').doc(collectorId);
-
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final snapshot = await transaction.get(collectorDocRef);
-
-        final currentAmountRaw = snapshot.data()?['amountOil'] ?? 0.0;
-        final double currentAmount = currentAmountRaw is double
-            ? currentAmountRaw
-            : double.tryParse(currentAmountRaw.toString()) ?? 0.0;
-
-        final newAmount = currentAmount + _quantidadeReal;
-
-        transaction.update(collectorDocRef, {'amountOil': newAmount});
-      });
-
-      developer.log(
-          "Quantidade de óleo coletada foi atualizada com sucesso pelo coletor.");
-    } catch (e, stack) {
-      developer.log("Erro ao atualizar quantidade de óleo pelo coletor: $e",
-          error: e, stackTrace: stack);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Erro ao atualizar quantidade de óleo pelo coletor: $e')),
-      );
-    }
-  }
-
   Future<void> _buscarQrCode() async {
     try {
       final proposalSnapshot = await FirebaseFirestore.instance
@@ -217,6 +185,38 @@ class _CollectProcessState extends State<CollectProcess> {
           error: e, stackTrace: stack);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao confirmar coleta: $e')),
+      );
+    }
+  }
+
+  Future<void> _atualizarQuantidadeOleo(String collectorId) async {
+    developer.log("Atualizando quantidade de óleo pelo coletor...");
+    try {
+      final collectorDocRef =
+          FirebaseFirestore.instance.collection('collector').doc(collectorId);
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(collectorDocRef);
+
+        final currentAmountRaw = snapshot.data()?['amountOil'] ?? 0.0;
+        final double currentAmount = currentAmountRaw is double
+            ? currentAmountRaw
+            : double.tryParse(currentAmountRaw.toString()) ?? 0.0;
+
+        final newAmount = currentAmount + _quantidadeReal;
+
+        transaction.update(collectorDocRef, {'amountOil': newAmount});
+      });
+
+      developer.log(
+          "Quantidade de óleo coletada foi atualizada com sucesso pelo coletor.");
+    } catch (e, stack) {
+      developer.log("Erro ao atualizar quantidade de óleo pelo coletor: $e",
+          error: e, stackTrace: stack);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('Erro ao atualizar quantidade de óleo pelo coletor: $e')),
       );
     }
   }
