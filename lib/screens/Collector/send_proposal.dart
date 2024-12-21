@@ -127,7 +127,7 @@ class _SendProposalState extends State<SendProposal> {
         backgroundColor: Colors.green,
         centerTitle: true,
         title: const Text(
-          'Enviar Proposta (Coletor)',
+          'Enviar Proposta',
           style: TextStyle(color: Colors.white),
         ),
         leading: IconButton(

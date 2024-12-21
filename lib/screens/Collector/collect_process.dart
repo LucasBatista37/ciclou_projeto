@@ -445,11 +445,13 @@ class _CollectProcessState extends State<CollectProcess> {
                           children: [
                             const Icon(Icons.key, color: Colors.grey, size: 20),
                             const SizedBox(width: 8),
-                            Flexible(
+                            Expanded(
                               child: Text(
                                 '${data['tipoChavePix'] ?? 'N/A'} / ${data['chavePix'] ?? 'N/A'}',
                                 style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -461,8 +463,9 @@ class _CollectProcessState extends State<CollectProcess> {
                                     text: data['chavePix'] ?? ''));
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                      content: Text(
-                                          'Chave Pix copiada para a área de transferência!')),
+                                    content: Text(
+                                        'Chave Pix copiada para a área de transferência!'),
+                                  ),
                                 );
                               },
                             ),
@@ -474,10 +477,15 @@ class _CollectProcessState extends State<CollectProcess> {
                             const Icon(Icons.account_balance,
                                 color: Colors.grey, size: 20),
                             const SizedBox(width: 8),
-                            Text(
-                              'Banco: ${data['banco'] ?? 'N/A'}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            Expanded(
+                              child: Text(
+                                'Banco: ${data['banco'] ?? 'N/A'}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -541,7 +549,7 @@ class _CollectProcessState extends State<CollectProcess> {
                         ),
                         onPressed: _coletaFinalizada ? null : _confirmarColeta,
                         child: const Text(
-                          'Confirmar Coleta',
+                          'Finalizar Coleta',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),

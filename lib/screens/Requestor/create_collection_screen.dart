@@ -19,7 +19,7 @@ class _CreateCollectionState extends State<CreateCollection> {
   double? _quantidadeOleo;
   final _comentariosController = TextEditingController();
   final _chavePixController = TextEditingController();
-  String? _tipoChavePix;
+  String? _formaRecebimento;
   final _bancoController = TextEditingController();
   bool _isLoading = false;
   List<String> _bancos = [];
@@ -54,16 +54,16 @@ class _CreateCollectionState extends State<CreateCollection> {
   }
 
   String? _validarChavePix(String? value) {
-    if (_tipoChavePix == null) return 'Selecione o tipo de chave Pix';
-    if (_tipoChavePix == 'CPF' && (value == null || value.length != 11)) {
+    if (_formaRecebimento == null) return 'Selecione a forma de recebimento';
+    if (_formaRecebimento == 'CPF' && (value == null || value.length != 11)) {
       return 'Digite um CPF válido com 11 dígitos';
-    } else if (_tipoChavePix == 'CNPJ' &&
+    } else if (_formaRecebimento == 'CNPJ' &&
         (value == null || value.length != 14)) {
       return 'Digite um CNPJ válido com 14 dígitos';
-    } else if (_tipoChavePix == 'E-mail' &&
+    } else if (_formaRecebimento == 'E-mail' &&
         (value == null || !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value))) {
       return 'Digite um e-mail válido';
-    } else if (_tipoChavePix == 'Chave Aleatória' &&
+    } else if (_formaRecebimento == 'Chave Aleatória' &&
         (value == null || value.isEmpty)) {
       return 'Digite uma chave válida';
     }
@@ -83,12 +83,13 @@ class _CreateCollectionState extends State<CreateCollection> {
           'prazo':
               DateTime.now().add(const Duration(minutes: 15)).toIso8601String(),
           'comentarios': _comentariosController.text.trim(),
-          'tipoChavePix': _tipoChavePix,
+          'tipoChavePix': _formaRecebimento,
           'chavePix': _chavePixController.text.trim(),
           'banco': _bancoController.text.trim(),
           'address': widget.user.address,
           'status': 'Pendente',
           'userId': widget.user.userId,
+          'requestorName': widget.user.responsible,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
@@ -231,14 +232,20 @@ class _CreateCollectionState extends State<CreateCollection> {
                           ),
                           const SizedBox(height: 16.0),
                           const Text(
-                            'Tipo de Chave Pix',
+                            'Forma de recebimento',
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8.0),
                           DropdownButtonFormField<String>(
-                            value: _tipoChavePix,
-                            items: ['CPF', 'CNPJ', 'E-mail', 'Chave Aleatória']
+                            value: _formaRecebimento,
+                            items: [
+                              'CPF',
+                              'CNPJ',
+                              'E-mail',
+                              'Chave Aleatória',
+                              'Dinheiro',
+                            ]
                                 .map((tipo) => DropdownMenuItem(
                                       value: tipo,
                                       child: Text(tipo),
@@ -246,81 +253,84 @@ class _CreateCollectionState extends State<CreateCollection> {
                                 .toList(),
                             onChanged: (value) {
                               setState(() {
-                                _tipoChavePix = value;
+                                _formaRecebimento = value;
                                 _chavePixController.clear();
+                                _bancoController.clear();
                               });
                             },
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              hintText: 'Selecione o tipo de chave Pix',
+                              hintText: 'Selecione a forma de recebimento',
                             ),
                             validator: (value) => value == null
-                                ? 'Selecione o tipo de chave Pix'
+                                ? 'Selecione a forma de recebimento'
                                 : null,
                           ),
-                          const SizedBox(height: 16.0),
-                          const Text(
-                            'Chave Pix',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8.0),
-                          TextFormField(
-                            controller: _chavePixController,
-                            decoration: InputDecoration(
-                              border: const OutlineInputBorder(),
-                              hintText: _tipoChavePix == null
-                                  ? 'Digite a chave Pix'
-                                  : 'Digite sua $_tipoChavePix',
+                          if (_formaRecebimento != 'Dinheiro') ...[
+                            const SizedBox(height: 16.0),
+                            const Text(
+                              'Chave Pix',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
                             ),
-                            keyboardType: _tipoChavePix == 'CPF' ||
-                                    _tipoChavePix == 'CNPJ'
-                                ? TextInputType.number
-                                : TextInputType.text,
-                            validator: _validarChavePix,
-                          ),
-                          const SizedBox(height: 16.0),
-                          const Text(
-                            'Banco',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8.0),
-                          Autocomplete<String>(
-                            optionsBuilder:
-                                (TextEditingValue textEditingValue) {
-                              if (textEditingValue.text.isEmpty) {
-                                return const Iterable<String>.empty();
-                              }
-                              return _bancos.where((banco) => banco
-                                  .toLowerCase()
-                                  .contains(
-                                      textEditingValue.text.toLowerCase()));
-                            },
-                            onSelected: (String selection) {
-                              _bancoController.text = selection;
-                            },
-                            fieldViewBuilder: (BuildContext context,
-                                TextEditingController fieldController,
-                                FocusNode focusNode,
-                                VoidCallback onFieldSubmitted) {
-                              _bancoController.text = fieldController.text;
-                              return TextFormField(
-                                controller: fieldController,
-                                focusNode: focusNode,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  hintText: 'Digite ou selecione o banco',
-                                ),
-                              );
-                            },
-                          ),
+                            const SizedBox(height: 8.0),
+                            TextFormField(
+                              controller: _chavePixController,
+                              decoration: InputDecoration(
+                                border: const OutlineInputBorder(),
+                                hintText: _formaRecebimento == null
+                                    ? 'Digite a chave Pix'
+                                    : 'Digite sua $_formaRecebimento',
+                              ),
+                              keyboardType: _formaRecebimento == 'CPF' ||
+                                      _formaRecebimento == 'CNPJ'
+                                  ? TextInputType.number
+                                  : TextInputType.text,
+                              validator: _validarChavePix,
+                            ),
+                            const SizedBox(height: 16.0),
+                            const Text(
+                              'Banco',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8.0),
+                            Autocomplete<String>(
+                              optionsBuilder:
+                                  (TextEditingValue textEditingValue) {
+                                if (textEditingValue.text.isEmpty) {
+                                  return const Iterable<String>.empty();
+                                }
+                                return _bancos.where((banco) => banco
+                                    .toLowerCase()
+                                    .contains(
+                                        textEditingValue.text.toLowerCase()));
+                              },
+                              onSelected: (String selection) {
+                                _bancoController.text = selection;
+                              },
+                              fieldViewBuilder: (BuildContext context,
+                                  TextEditingController fieldController,
+                                  FocusNode focusNode,
+                                  VoidCallback onFieldSubmitted) {
+                                _bancoController.text = fieldController.text;
+                                return TextFormField(
+                                  controller: fieldController,
+                                  focusNode: focusNode,
+                                  decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: 'Digite ou selecione o banco',
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                           const SizedBox(height: 16.0),
                           Container(
                             color: Colors.green.shade50,
                             padding: const EdgeInsets.all(8.0),
                             child: const Text(
-                              'Por favor, revise CUIDADOSAMENTE todas as informações aqui preenchidas.',
+                              'Por favor, revise cuidadosamente todas as informações aqui preenchidas.',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.green,

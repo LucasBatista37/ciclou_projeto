@@ -4,8 +4,8 @@ class UserModel {
   final String email;
   final String photoUrl;
   final String? establishmentType;
-  final String pixKey; // Agora o pixKey é obrigatório
-  final String address; // Adicionando o campo address
+  final String pixKey; 
+  final String address; 
 
   UserModel({
     required this.userId,

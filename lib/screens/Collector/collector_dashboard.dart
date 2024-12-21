@@ -503,42 +503,120 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
 
         final bool isPrazoEsgotado = tempoRestante.isNegative;
 
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8.0),
-          child: ListTile(
-            title: Text(title),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                    '$quantity - Prazo: ${formattedPrazo.toString().split(' ')[0]}'),
-                Text('Propostas: $numPropostas'),
-                Text('Tempo restante: $tempoRestanteStr',
-                    style: TextStyle(
-                        color: isPrazoEsgotado ? Colors.red : Colors.black)),
-              ],
+        return GestureDetector(
+          onTap: isPrazoEsgotado
+              ? null
+              : () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RequestDetails(
+                        tipoEstabelecimento: title,
+                        quantidadeOleo: quantity,
+                        prazo: prazo,
+                        endereco: 'Endereço não disponível',
+                        observacoes: comentarios,
+                        documentId: documentId,
+                        user: widget.user,
+                      ),
+                    ),
+                  );
+                },
+          child: Card(
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
             ),
-            trailing: isPrazoEsgotado
-                ? const Icon(Icons.lock, color: Colors.grey, size: 20.0)
-                : const Icon(Icons.arrow_forward_ios, size: 16.0),
-            onTap: isPrazoEsgotado
-                ? null
-                : () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RequestDetails(
-                          tipoEstabelecimento: title,
-                          quantidadeOleo: quantity,
-                          prazo: prazo,
-                          endereco: 'Endereço não disponível',
-                          observacoes: comentarios,
-                          documentId: documentId,
-                          user: widget.user,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  },
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8.0, vertical: 4.0),
+                        decoration: BoxDecoration(
+                          color: isPrazoEsgotado
+                              ? Colors.red.withOpacity(0.2)
+                              : Colors.green.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Text(
+                          isPrazoEsgotado ? 'Esgotado' : 'Ativo',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isPrazoEsgotado ? Colors.red : Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8.0),
+                  Row(
+                    children: [
+                      const Icon(Icons.oil_barrel,
+                          size: 18, color: Colors.grey),
+                      const SizedBox(width: 4.0),
+                      Text(quantity),
+                    ],
+                  ),
+                  const SizedBox(height: 8.0),
+                  Row(
+                    children: [
+                      const Icon(Icons.timer, size: 18, color: Colors.grey),
+                      const SizedBox(width: 4.0),
+                      Text(
+                        'Prazo: ${formattedPrazo.toString().split(' ')[0]}',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8.0),
+                  Row(
+                    children: [
+                      const Icon(Icons.group, size: 18, color: Colors.grey),
+                      const SizedBox(width: 4.0),
+                      Text('Propostas: $numPropostas'),
+                    ],
+                  ),
+                  const SizedBox(height: 8.0),
+                  Row(
+                    children: [
+                      const Icon(Icons.comment, size: 18, color: Colors.grey),
+                      const SizedBox(width: 4.0),
+                      Expanded(
+                        child: Text(
+                          comentarios.isNotEmpty
+                              ? comentarios
+                              : 'Nenhum comentário.',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16.0),
+                  LinearProgressIndicator(
+                    value: isPrazoEsgotado
+                        ? 1.0
+                        : 1.0 - (tempoRestante.inSeconds / (24 * 60 * 60)),
+                    backgroundColor: Colors.grey.shade300,
+                    color: isPrazoEsgotado ? Colors.red : Colors.green,
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },

@@ -360,7 +360,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PaymentScreen(user: widget.user), 
+              builder: (context) => PaymentScreen(user: widget.user),
             ),
           );
         }
@@ -483,26 +483,110 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                 ? 'Tempo esgotado'
                 : '${tempoRestante.inMinutes} minutos restantes';
 
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 8.0),
-              child: ListTile(
-                title: Text(title),
-                subtitle: Text(
-                  '$quantity - $status\nPropostas Feitas: $numPropostas\n$tempoRestanteStr',
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16.0),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProposalsScreen(
-                        solicitationTitle: title,
-                        documentId: documentId,
-                        user: widget.user,
-                      ),
+            double progress = tempoRestante.isNegative
+                ? 1.0
+                : 1.0 - (tempoRestante.inSeconds / (24 * 60 * 60));
+
+            Color statusColor;
+            switch (status) {
+              case 'Pendente':
+                statusColor = Colors.amber; // Amarelo
+                break;
+              case 'Em andamento':
+                statusColor = Colors.green; // Verde
+                break;
+              case 'Concluído':
+                statusColor = Colors.blue; // Azul
+                break;
+              default:
+                statusColor = Colors.grey;
+            }
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProposalsScreen(
+                      solicitationTitle: title,
+                      documentId: documentId,
+                      user: widget.user,
                     ),
-                  );
-                },
+                  ),
+                );
+              },
+              child: Card(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0, vertical: 4.0),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: statusColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8.0),
+                      Row(
+                        children: [
+                          const Icon(Icons.oil_barrel,
+                              size: 18, color: Colors.grey),
+                          const SizedBox(width: 4.0),
+                          Text(quantity),
+                        ],
+                      ),
+                      const SizedBox(height: 8.0),
+                      Row(
+                        children: [
+                          const Icon(Icons.timer, size: 18, color: Colors.grey),
+                          const SizedBox(width: 4.0),
+                          Text(tempoRestanteStr),
+                        ],
+                      ),
+                      const SizedBox(height: 8.0),
+                      Row(
+                        children: [
+                          const Icon(Icons.group, size: 18, color: Colors.grey),
+                          const SizedBox(width: 4.0),
+                          Text('Propostas: $numPropostas'),
+                        ],
+                      ),
+                      const SizedBox(height: 16.0),
+                      LinearProgressIndicator(
+                        value: progress.clamp(0.0, 1.0),
+                        backgroundColor: Colors.grey.shade300,
+                        color: statusColor,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             );
           },

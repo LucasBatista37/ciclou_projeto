@@ -1,16 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
-class CollectorHistoryScreen extends StatefulWidget {
+class CollectorHistoryScreen extends StatelessWidget {
   final String collectorId;
 
   const CollectorHistoryScreen({super.key, required this.collectorId});
 
-  @override
-  _CollectorHistoryScreenState createState() => _CollectorHistoryScreenState();
-}
-
-class _CollectorHistoryScreenState extends State<CollectorHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,15 +23,15 @@ class _CollectorHistoryScreenState extends State<CollectorHistoryScreen> {
           },
         ),
       ),
-      body: _buildHistoryList(),
+      body: _buildHistoryList(context),
     );
   }
 
-  Widget _buildHistoryList() {
+  Widget _buildHistoryList(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('coletas')
-          .where('collectorId', isEqualTo: widget.collectorId)
+          .where('collectorId', isEqualTo: collectorId)
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
@@ -45,83 +40,145 @@ class _CollectorHistoryScreenState extends State<CollectorHistoryScreen> {
         }
 
         if (snapshot.hasError) {
-          print('Erro ao carregar dados: ${snapshot.error}');
           return const Center(child: Text('Erro ao carregar o histórico.'));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          print(
-              'Nenhuma coleta encontrada para o collectorId: ${widget.collectorId}');
-          return const Center(child: Text('Nenhuma coleta registrada.'));
+          return const Center(
+            child: Text(
+              'Nenhuma coleta registrada.',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          );
         }
 
-        final historico = snapshot.data!.docs;
+        final history = snapshot.data!.docs;
 
         return Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: ListView.builder(
-            itemCount: historico.length,
+            itemCount: history.length,
             itemBuilder: (context, index) {
-              final coleta = historico[index].data() as Map<String, dynamic>;
-              final createdAt = coleta['createdAt'] is Timestamp
-                  ? (coleta['createdAt'] as Timestamp).toDate()
+              final record = history[index].data() as Map<String, dynamic>;
+              final createdAt = record['createdAt'] is Timestamp
+                  ? (record['createdAt'] as Timestamp).toDate()
                   : null;
               final formattedDate = createdAt != null
                   ? "${createdAt.day.toString().padLeft(2, '0')}/"
                       "${createdAt.month.toString().padLeft(2, '0')}/"
                       "${createdAt.year}"
                   : 'Data não disponível';
+
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
-                child: ListTile(
-                  title:
-                      Text('Tipo: ${coleta['tipoEstabelecimento'] ?? 'N/A'}'),
-                  subtitle: Text(
-                      'Data: $formattedDate\nQuantidade: ${coleta['quantidadeOleo'] ?? 'N/A'} Litros'),
-                  trailing: _buildStatusTag(coleta['status'] ?? 'Desconhecido'),
-                  onTap: () {},
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    // Optional: Add details page navigation or action
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              formattedDate,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16.0,
+                                color: Colors.green,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                                vertical: 4.0,
+                              ),
+                              decoration: BoxDecoration(
+                                color: record['status'] == 'Finalizada'
+                                    ? Colors.green.withOpacity(0.1)
+                                    : Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Text(
+                                record['status'] ?? 'Desconhecido',
+                                style: TextStyle(
+                                  color: record['status'] == 'Finalizada'
+                                      ? Colors.green
+                                      : Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14.0,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(),
+                        const SizedBox(height: 8.0),
+                        Row(
+                          children: [
+                            const Icon(Icons.store,
+                                color: Colors.grey, size: 20),
+                            const SizedBox(width: 8.0),
+                            Expanded(
+                              child: Text(
+                                'Estabelecimento: ${record['tipoEstabelecimento'] ?? 'N/A'}',
+                                style: const TextStyle(
+                                  fontSize: 14.0,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8.0),
+                        Row(
+                          children: [
+                            const Icon(Icons.local_drink,
+                                color: Colors.grey, size: 20),
+                            const SizedBox(width: 8.0),
+                            Expanded(
+                              child: Text(
+                                'Quantidade: ${record['quantidadeOleo'] ?? 'N/A'} Litros',
+                                style: const TextStyle(
+                                  fontSize: 14.0,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8.0),
+                        Row(
+                          children: [
+                            const Icon(Icons.person,
+                                color: Colors.grey, size: 20),
+                            const SizedBox(width: 8.0),
+                            Expanded(
+                              child: Text(
+                                'Solicitante: ${record['requestorName'] ?? 'Não informado'}',
+                                style: const TextStyle(
+                                  fontSize: 14.0,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
           ),
         );
       },
-    );
-  }
-
-  Widget _buildStatusTag(String status) {
-    Color statusColor;
-    IconData statusIcon;
-
-    switch (status) {
-      case 'Concluída':
-      case 'Finalizada':
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle;
-        break;
-      case 'Em andamento':
-        statusColor = Colors.orange;
-        statusIcon = Icons.access_time;
-        break;
-      case 'Cancelada':
-        statusColor = Colors.red;
-        statusIcon = Icons.cancel;
-        break;
-      default:
-        statusColor = Colors.grey;
-        statusIcon = Icons.help_outline;
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(statusIcon, color: statusColor, size: 18.0),
-        const SizedBox(width: 4.0),
-        Text(
-          status,
-          style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
-        ),
-      ],
     );
   }
 }
