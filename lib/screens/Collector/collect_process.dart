@@ -265,7 +265,7 @@ class _CollectProcessState extends State<CollectProcess> {
                   ),
                 ),
                 pw.Positioned(
-                  left: 99,
+                  left: 99.5,
                   top: 314.2,
                   child: pw.Text(
                     '${data['cnpj'] ?? 'N/A'}',
@@ -371,6 +371,7 @@ class _CollectProcessState extends State<CollectProcess> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Informações da Coleta
               Card(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0),
@@ -395,82 +396,105 @@ class _CollectProcessState extends State<CollectProcess> {
                         'Quantidade Estimada: ${data['quantidadeOleo'] ?? 'N/A'} Litros',
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
+                      if (_paymentStatus == 'approved') ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Endereço: ${data['address'] ?? 'N/A'}',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
-              if (_qrCodeBase64 != null && _paymentStatus != 'approved')
-                Center(
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    elevation: 3,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'QR Code para Pagamento da Plataforma',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+
+              // Informações de Pagamento
+              if (_paymentStatus == 'approved')
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  elevation: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Pagamento para o Solicitante',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[700],
+                              ),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          Image.memory(
-                            base64Decode(_qrCodeBase64!),
-                            width: 200,
-                            height: 200,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await _verificarPagamento();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Revalidando status do pagamento...'),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
+                            const Icon(
+                              Icons.attach_money,
+                              color: Colors.green,
+                              size: 24,
                             ),
-                            child: const Text('Já Paguei'),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(Icons.key, color: Colors.grey, size: 20),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                '${data['tipoChavePix'] ?? 'N/A'} / ${data['chavePix'] ?? 'N/A'}',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.copy,
+                                  color: Colors.grey, size: 20),
+                              onPressed: () {
+                                Clipboard.setData(ClipboardData(
+                                    text: data['chavePix'] ?? ''));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Chave Pix copiada para a área de transferência!')),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(Icons.account_balance,
+                                color: Colors.grey, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Banco: ${data['banco'] ?? 'N/A'}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Por favor, revise cuidadosamente as informações.',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              if (_qrCodeBase64 == null && _paymentStatus != 'approved')
-                const Center(
-                  child: Text(
-                    'QR Code não disponível.',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ),
+
               const SizedBox(height: 16),
-              if (_paymentStatus == 'pending')
-                Center(
-                  child: Card(
-                    color: Colors.red[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: const Text(
-                        'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
-                        style: TextStyle(fontSize: 16, color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                )
-              else if (_paymentStatus == 'approved')
+
+              // Pagamento Aprovado e Registro da Coleta
+              if (_paymentStatus == 'approved')
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -523,8 +547,81 @@ class _CollectProcessState extends State<CollectProcess> {
                       ),
                     ),
                   ],
-                )
-              else if (_paymentStatus == 'rejected')
+                ),
+
+              if (_qrCodeBase64 != null && _paymentStatus != 'approved')
+                Center(
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    elevation: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'QR Code para Pagamento da Plataforma',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          Image.memory(
+                            base64Decode(_qrCodeBase64!),
+                            width: 200,
+                            height: 200,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await _verificarPagamento();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Revalidando status do pagamento...'),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                            ),
+                            child: const Text('Já Paguei'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+              if (_qrCodeBase64 == null && _paymentStatus != 'approved')
+                const Center(
+                  child: Text(
+                    'QR Code não disponível.',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ),
+
+              if (_paymentStatus == 'pending')
+                Center(
+                  child: Card(
+                    color: Colors.red[50],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: const Text(
+                        'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
+                        style: TextStyle(fontSize: 16, color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+
+              if (_paymentStatus == 'rejected')
                 Center(
                   child: Card(
                     color: Colors.red[50],
@@ -533,20 +630,6 @@ class _CollectProcessState extends State<CollectProcess> {
                       child: const Text(
                         'Pagamento rejeitado. Entre em contato com o suporte.',
                         style: TextStyle(fontSize: 16, color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                )
-              else
-                Center(
-                  child: Card(
-                    color: Colors.grey[200],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: const Text(
-                        'Status de pagamento desconhecido. Verifique novamente mais tarde.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
                         textAlign: TextAlign.center,
                       ),
                     ),
