@@ -400,7 +400,7 @@ class _CollectProcessState extends State<CollectProcess> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (_qrCodeBase64 != null)
+              if (_qrCodeBase64 != null && _paymentStatus != 'approved')
                 Center(
                   child: Card(
                     shape: RoundedRectangleBorder(
@@ -414,7 +414,7 @@ class _CollectProcessState extends State<CollectProcess> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Text(
-                            'QR Code para Pagamento',
+                            'QR Code para Pagamento da Plataforma',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -447,8 +447,8 @@ class _CollectProcessState extends State<CollectProcess> {
                       ),
                     ),
                   ),
-                )
-              else
+                ),
+              if (_qrCodeBase64 == null && _paymentStatus != 'approved')
                 const Center(
                   child: Text(
                     'QR Code não disponível.',
