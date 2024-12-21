@@ -5,6 +5,7 @@ class UserModel {
   final String photoUrl;
   final String? establishmentType;
   final String pixKey; // Agora o pixKey é obrigatório
+  final String address; // Adicionando o campo address
 
   UserModel({
     required this.userId,
@@ -12,7 +13,8 @@ class UserModel {
     required this.email,
     required this.photoUrl,
     this.establishmentType,
-    this.pixKey = 'Pix não informado', // Valor padrão
+    this.pixKey = 'Pix não informado',
+    this.address = 'Endereço não informado',
   });
 
   factory UserModel.fromFirestore(Map<String, dynamic> data, String id) {
@@ -22,7 +24,8 @@ class UserModel {
       email: data['email'] ?? 'Email não disponível',
       photoUrl: data['photoUrl'] ?? '',
       establishmentType: data['establishmentType'],
-      pixKey: data['pixKey'] ?? 'Pix não informado', // Valor padrão ao criar
+      pixKey: data['pixKey'] ?? 'Pix não informado',
+      address: data['address'] ?? 'Endereço não informado',
     );
   }
 
@@ -33,7 +36,8 @@ class UserModel {
       'email': email,
       'photoUrl': photoUrl,
       'establishmentType': establishmentType,
-      'pixKey': pixKey, // Sempre salva a chave Pix
+      'pixKey': pixKey,
+      'address': address,
     };
   }
 }

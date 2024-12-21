@@ -53,12 +53,11 @@ class _CollectProcessState extends State<CollectProcess> {
       if (proposalSnapshot.docs.isNotEmpty) {
         final proposalData = proposalSnapshot.docs.first.data();
         final paymentId =
-            proposalData['paymentId']; // Certifique-se de que paymentId existe
+            proposalData['paymentId'];
 
         if (paymentId != null) {
           final paymentService = PaymentService(paymentId);
 
-          // Valida o pagamento usando o serviço
           final status = await paymentService.validatePayment();
 
           setState(() {
@@ -326,8 +325,8 @@ class _CollectProcessState extends State<CollectProcess> {
                   ),
                 ),
                 pw.Positioned(
-                  left: 98,
-                  top: 314,
+                  left: 99,
+                  top: 314.2,
                   child: pw.Text(
                     '${data['cnpj'] ?? 'N/A'}',
                     style: pw.TextStyle(font: ttf, fontSize: 18),
@@ -432,49 +431,82 @@ class _CollectProcessState extends State<CollectProcess> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Tipo de Estabelecimento: ${data['tipoEstabelecimento'] ?? 'N/A'}',
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                elevation: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Informações da Coleta',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tipo de Estabelecimento: ${data['tipoEstabelecimento'] ?? 'N/A'}',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Quantidade Estimada: ${data['quantidadeOleo'] ?? 'N/A'} Litros',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Quantidade Estimada: ${data['quantidadeOleo'] ?? 'N/A'} Litros',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              const Divider(),
               const SizedBox(height: 16),
               if (_qrCodeBase64 != null)
-                Column(
-                  children: [
-                    const Text(
-                      'QR Code para Pagamento',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Center(
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
                     ),
-                    const SizedBox(height: 16),
-                    Image.memory(
-                      base64Decode(_qrCodeBase64!),
-                      width: 200,
-                      height: 200,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () async {
-                        await _verificarPagamento();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Revalidando status do pagamento...'),
+                    elevation: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'QR Code para Pagamento',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
+                          const SizedBox(height: 16),
+                          Image.memory(
+                            base64Decode(_qrCodeBase64!),
+                            width: 200,
+                            height: 200,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await _verificarPagamento();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Revalidando status do pagamento...'),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                            ),
+                            child: const Text('Já Paguei'),
+                          ),
+                        ],
                       ),
-                      child: const Text('Já Paguei'),
                     ),
-                  ],
+                  ),
                 )
               else
                 const Center(
@@ -484,63 +516,102 @@ class _CollectProcessState extends State<CollectProcess> {
                   ),
                 ),
               const SizedBox(height: 16),
-              if (_paymentStatus == 'pending') ...[
-                const Center(
-                  child: Text(
-                    'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
-                    style: TextStyle(fontSize: 16, color: Colors.red),
-                  ),
-                ),
-              ] else if (_paymentStatus == 'approved') ...[
-                const Divider(),
-                const SizedBox(height: 16),
-                const Text(
-                  'Registrar Quantidade Real Coletada',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Quantidade em Litros',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _quantidadeReal = double.tryParse(value) ?? 0.0;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
+              if (_paymentStatus == 'pending')
                 Center(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24.0, vertical: 12.0),
+                  child: Card(
+                    color: Colors.red[50],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: const Text(
+                        'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
+                        style: TextStyle(fontSize: 16, color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    onPressed: _coletaFinalizada ? null : _confirmarColeta,
-                    child: const Text(
-                      'Confirmar Coleta',
-                      style: TextStyle(color: Colors.white),
+                  ),
+                )
+              else if (_paymentStatus == 'approved')
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Card(
+                        color: Colors.green[50],
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: const Text(
+                            'Pagamento aprovado com sucesso! Você pode prosseguir com a coleta.',
+                            style: TextStyle(fontSize: 16, color: Colors.green),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Registrar Quantidade Real Coletada',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Quantidade em Litros',
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _quantidadeReal = double.tryParse(value) ?? 0.0;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0, vertical: 12.0),
+                        ),
+                        onPressed: _coletaFinalizada ? null : _confirmarColeta,
+                        child: const Text(
+                          'Confirmar Coleta',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else if (_paymentStatus == 'rejected')
+                Center(
+                  child: Card(
+                    color: Colors.red[50],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: const Text(
+                        'Pagamento rejeitado. Entre em contato com o suporte.',
+                        style: TextStyle(fontSize: 16, color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Center(
+                  child: Card(
+                    color: Colors.grey[200],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: const Text(
+                        'Status de pagamento desconhecido. Verifique novamente mais tarde.',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ),
-              ] else if (_paymentStatus == 'rejected') ...[
-                const Center(
-                  child: Text(
-                    'Pagamento rejeitado. Entre em contato com o suporte.',
-                    style: TextStyle(fontSize: 16, color: Colors.red),
-                  ),
-                ),
-              ] else ...[
-                const Center(
-                  child: Text(
-                    'Status de pagamento desconhecido. Verifique novamente mais tarde.',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ),
-              ],
             ],
           ),
         ),

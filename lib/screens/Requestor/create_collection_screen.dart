@@ -1,12 +1,7 @@
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:geolocator/geolocator.dart';
 
 class CreateCollection extends StatefulWidget {
   final UserModel user;
@@ -21,47 +16,9 @@ class _CreateCollectionState extends State<CreateCollection> {
   final _formKey = GlobalKey<FormState>();
   double? _quantidadeOleo;
   final _comentariosController = TextEditingController();
-  LatLng? _localizacaoAtual;
-  late GoogleMapController _mapController;
+  final _chavePixController =
+      TextEditingController(); // Controller para o campo de chave Pix
   bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _verificarPermissoes();
-    _obterLocalizacaoAtual();
-  }
-
-  Future<void> _verificarPermissoes() async {
-    var status = await Permission.location.status;
-    if (!status.isGranted) {
-      await Permission.location.request();
-    }
-  }
-
-  Future<void> _obterLocalizacaoAtual() async {
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      setState(() {
-        _localizacaoAtual = LatLng(position.latitude, position.longitude);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao obter localização: $e')),
-      );
-    }
-  }
-
-  void _selecionarLocalizacao(LatLng localizacao) {
-    setState(() {
-      _localizacaoAtual = localizacao;
-      _mapController.animateCamera(
-        CameraUpdate.newLatLng(localizacao),
-      );
-    });
-  }
 
   Future<void> _enviarSolicitacao() async {
     if (_formKey.currentState!.validate()) {
@@ -75,11 +32,10 @@ class _CreateCollectionState extends State<CreateCollection> {
           'quantidadeOleo': _quantidadeOleo,
           'prazo':
               DateTime.now().add(const Duration(minutes: 15)).toIso8601String(),
-          'localizacao': {
-            'latitude': _localizacaoAtual?.latitude,
-            'longitude': _localizacaoAtual?.longitude,
-          },
           'comentarios': _comentariosController.text.trim(),
+          'chavePix':
+              _chavePixController.text.trim(), // Adicionando a chave Pix
+          'address': widget.user.address,
           'status': 'Pendente',
           'userId': widget.user.userId,
           'createdAt': FieldValue.serverTimestamp(),
@@ -162,6 +118,21 @@ class _CreateCollectionState extends State<CreateCollection> {
                     ),
                     const SizedBox(height: 16.0),
                     const Text(
+                      'Endereço',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Text(
+                      widget.user.address ?? 'Endereço não informado',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    const Text(
                       'Quantidade Estimada de Óleo (em litros)',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -185,6 +156,20 @@ class _CreateCollectionState extends State<CreateCollection> {
                     ),
                     const SizedBox(height: 16.0),
                     const Text(
+                      'Chave Pix (Opcional)',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8.0),
+                    TextFormField(
+                      controller: _chavePixController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Digite sua chave Pix',
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    const Text(
                       'Prazo para Recebimento de Propostas',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -198,41 +183,6 @@ class _CreateCollectionState extends State<CreateCollection> {
                         color: Colors.grey,
                       ),
                     ),
-                    const SizedBox(height: 16.0),
-                    const Text(
-                      'Localização',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8.0),
-                    _localizacaoAtual == null
-                        ? const Center(child: CircularProgressIndicator())
-                        : Container(
-                            height: 300,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            child: GoogleMap(
-                              initialCameraPosition: CameraPosition(
-                                target: _localizacaoAtual!,
-                                zoom: 15,
-                              ),
-                              onMapCreated: (controller) {
-                                _mapController = controller;
-                              },
-                              onTap: _selecionarLocalizacao,
-                              markers: {
-                                Marker(
-                                  markerId: const MarkerId('localSelecionado'),
-                                  position: _localizacaoAtual!,
-                                ),
-                              },
-                              gestureRecognizers: Set()
-                                ..add(Factory<PanGestureRecognizer>(
-                                    () => PanGestureRecognizer())),
-                            ),
-                          ),
                     const SizedBox(height: 16.0),
                     const Text(
                       'Comentários ou Informações Adicionais',
