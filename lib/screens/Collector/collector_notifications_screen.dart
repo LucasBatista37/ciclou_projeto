@@ -1,6 +1,7 @@
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/send_proposal.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -152,8 +153,7 @@ class CollectorNotificationsScreen extends StatelessWidget {
       BuildContext context, String title, DocumentSnapshot notification) async {
     if (title == 'Proposta Aceita!') {
       final data = notification.data() as Map<String, dynamic>;
-      final coletaId =
-          data['coletaId']; 
+      final coletaId = data['coletaId'];
 
       if (coletaId != null) {
         try {
@@ -194,6 +194,26 @@ class CollectorNotificationsScreen extends StatelessWidget {
           builder: (context) => PaymentScreen(user: user),
         ),
       );
+    } else if (title == 'Proposta Rejeitada') {
+      final data = notification.data() as Map<String, dynamic>;
+      final coletaId = data['coletaId'];
+
+      if (coletaId != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SendProposal(
+              documentId: coletaId,
+              user: user,
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('ID da coleta não encontrado na notificação.')),
+        );
+      }
     }
   }
 }

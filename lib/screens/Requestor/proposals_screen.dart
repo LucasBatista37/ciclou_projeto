@@ -317,7 +317,7 @@ class ProposalsScreen extends StatelessWidget {
         collectorId,
         'Proposta Aceita!',
         'Sua proposta para $solicitationTitle foi aceita. Prepare-se para a coleta!',
-        documentId, 
+        documentId,
       );
 
       await generateFixedPixPayment(
@@ -361,50 +361,49 @@ class ProposalsScreen extends StatelessWidget {
     throw Exception('Quantidade de litros fora do intervalo permitido.');
   }
 
-  void _rejectProposal(BuildContext context, String proposalId) {
-    FirebaseFirestore.instance
-        .collection('coletas')
-        .doc(documentId)
-        .collection('propostas')
-        .doc(proposalId)
-        .get()
-        .then((proposalDoc) {
+  Future<void> _rejectProposal(BuildContext context, String proposalId) async {
+    try {
+      final proposalDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .collection('propostas')
+          .doc(proposalId)
+          .get();
+
       final proposalData = proposalDoc.data();
-      if (proposalData != null && proposalData['collectorId'] != null) {
-        final collectorId = proposalData['collectorId'];
 
-        FirebaseFirestore.instance
-            .collection('coletas')
-            .doc(documentId)
-            .collection('propostas')
-            .doc(proposalId)
-            .update({'status': 'Rejeitada '}).then((_) {
-          void _sendNotification(String collectorId, String title,
-              String message, String coletaId) {
-            FirebaseFirestore.instance.collection('notifications').add({
-              'title': title,
-              'message': message,
-              'collectorId': collectorId,
-              'coletaId': coletaId,
-              'timestamp': FieldValue.serverTimestamp(),
-              'isRead': false,
-            });
-          }
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Proposta rejeitada com sucesso!')),
-          );
-        }).catchError((error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao rejeitar proposta: $error')),
-          );
-        });
-      } else {
+      if (proposalData == null || proposalData['collectorId'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro: coletor não encontrado.')),
         );
+        return;
       }
-    });
+
+      final collectorId = proposalData['collectorId'];
+      final collectorName = proposalData['collectorName'];
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .collection('propostas')
+          .doc(proposalId)
+          .update({'status': 'Rejeitada'});
+
+      _sendNotification(
+        collectorId,
+        'Proposta Rejeitada',
+        'Sua proposta para a coleta foi rejeitada.',
+        documentId,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Proposta rejeitada com sucesso!')),
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao rejeitar a proposta: $error')),
+      );
+    }
   }
 
   void _sendNotification(
@@ -413,7 +412,7 @@ class ProposalsScreen extends StatelessWidget {
       'title': title,
       'message': message,
       'collectorId': collectorId,
-      'coletaId': coletaId, 
+      'coletaId': coletaId,
       'timestamp': FieldValue.serverTimestamp(),
       'isRead': false,
     });
