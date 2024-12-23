@@ -79,6 +79,7 @@ class _SendProposalState extends State<SendProposal> {
         }
 
         final requestorId = coletaDoc.data()?['userId'];
+        final solicitationTitle = coletaDoc.data()?['titulo'] ?? 'Coleta';
 
         await FirebaseFirestore.instance
             .collection('coletas')
@@ -99,7 +100,9 @@ class _SendProposalState extends State<SendProposal> {
               '${widget.user.responsible} enviou uma proposta para sua solicitação.',
           'timestamp': FieldValue.serverTimestamp(),
           'requestorId': requestorId,
-          'solicitationId': widget.documentId,
+          'coletaId': widget.documentId,
+          'solicitationTitle': solicitationTitle,
+          'user': widget.user.toMap(),
           'isRead': false,
         });
 

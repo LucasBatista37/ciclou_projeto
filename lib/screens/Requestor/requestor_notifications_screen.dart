@@ -1,3 +1,5 @@
+import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -21,11 +23,13 @@ class RequestorNotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _markNotificationsAsRead());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _markNotificationsAsRead());
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notificações', style: TextStyle(color: Colors.white)),
+        title:
+            const Text('Notificações', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: Colors.green,
         elevation: 0,
@@ -150,20 +154,25 @@ class RequestorNotificationsScreen extends StatelessWidget {
   }
 
   void _handleNotificationTap(BuildContext context, Map<String, dynamic> data) {
-    // Lógica para lidar com notificações específicas
     final title = data['title'];
-    switch (title) {
-      case 'Nova Proposta Recebida!':
-        // Adicione a navegação ou lógica necessária aqui
-        break;
-      case 'Coleta Confirmada':
-        // Adicione a navegação ou lógica necessária aqui
-        break;
-      case 'Proposta Aceita':
-        // Adicione a navegação ou lógica necessária aqui
-        break;
-      default:
-        break;
+    final coletaId = data['coletaId'];
+    final solicitationTitle = data['solicitationTitle'];
+    final userData =
+        data['user'] as Map<String, dynamic>?; 
+
+    if (title == 'Nova Proposta Recebida!' &&
+        coletaId != null &&
+        userData != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProposalsScreen(
+            solicitationTitle: solicitationTitle ?? 'Coleta',
+            documentId: coletaId,
+            user: UserModel.fromFirestore(userData, userData['userId']),
+          ),
+        ),
+      );
     }
   }
 }
