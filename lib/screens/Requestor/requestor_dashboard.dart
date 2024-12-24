@@ -389,7 +389,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       stream: FirebaseFirestore.instance
           .collection('coletas')
           .where('userId', isEqualTo: widget.user.userId)
-          .where('status', whereIn: ['Pendente', 'Em andamento'])
+          .where('status', whereIn: ['Pendente', 'Em andamento', 'Aprovado'])
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
@@ -504,8 +504,8 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
               case 'Em andamento':
                 statusColor = Colors.green;
                 break;
-              case 'Concluído':
-                statusColor = Colors.blue; 
+              case 'Aprovado':
+                statusColor = Colors.blue;
                 break;
               default:
                 statusColor = Colors.grey;
@@ -513,7 +513,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
 
             return GestureDetector(
               onTap: () {
-                if (status == 'Em andamento') {
+                if (status == 'Em andamento' || status == 'Aprovado') {
                   Navigator.push(
                     context,
                     MaterialPageRoute(

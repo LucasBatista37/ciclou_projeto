@@ -26,6 +26,7 @@ class _CollectProcessState extends State<CollectProcess> {
   bool _carregando = true;
   String? _caminhoCertificado;
   String? _qrCodeBase64;
+  String? _confirmationCode;
 
   double _quantidadeReal = 0.0;
   bool _coletaFinalizada = false;
@@ -67,7 +68,9 @@ class _CollectProcessState extends State<CollectProcess> {
 
           if (_paymentStatus == 'approved') {
             final confirmationCode = await _generateConfirmationCode();
-            _exibirCodigoConfirmacao(confirmationCode);
+            setState(() {
+              _confirmationCode = confirmationCode;
+            });
           }
         } else {
           developer.log("Nenhum ID de pagamento encontrado na proposta.");
@@ -97,7 +100,6 @@ class _CollectProcessState extends State<CollectProcess> {
 
       final confirmationCode = result['confirmationCode'] as String;
 
-      // Salva o código de confirmação na coleta no Firestore
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -116,27 +118,6 @@ class _CollectProcessState extends State<CollectProcess> {
       );
       return 'Erro';
     }
-  }
-
-  void _exibirCodigoConfirmacao(String confirmationCode) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Código de Confirmação'),
-          content: Text(
-            confirmationCode,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Fechar'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _buscarQrCode() async {
@@ -543,6 +524,43 @@ class _CollectProcessState extends State<CollectProcess> {
                 ),
 
               const SizedBox(height: 16),
+
+              // Exibe o código de confirmação
+              if (_confirmationCode != null) ...[
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  elevation: 3,
+                  color: Colors.green[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Código de Confirmação da Coleta',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _confirmationCode!,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Pagamento Aprovado e Registro da Coleta
               if (_paymentStatus == 'approved')
