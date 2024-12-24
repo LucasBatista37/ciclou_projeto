@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server.dart';
-import 'dart:developer' as developer;
+import 'package:flutter/services.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 
 class SupportScreen extends StatefulWidget {
-  const SupportScreen({Key? key}) : super(key: key);
-
   @override
-  State<SupportScreen> createState() => _SupportScreenState();
+  _SupportScreenState createState() => _SupportScreenState();
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  final TextEditingController _subjectController = TextEditingController();
-  final TextEditingController _messageController = TextEditingController();
-  bool _isSending = false;
+  final TextEditingController _commentController = TextEditingController();
+  String _selectedType = "Transação";
 
   Future<void> _sendEmail() async {
-    if (_subjectController.text.isEmpty || _messageController.text.isEmpty) {
+    if (_commentController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor, preencha todos os campos.'),
@@ -26,40 +22,32 @@ class _SupportScreenState extends State<SupportScreen> {
       return;
     }
 
-    setState(() {
-      _isSending = true;
-    });
-
-    final String username = 'seuemail@gmail.com'; 
-    final String password =
-        'sua_senha_de_aplicativo'; 
-
-    final smtpServer = gmail(username, password);
-    final message = Message()
-      ..from = Address(username, 'Seu Nome') 
-      ..recipients.add('beyond.business.tech@gmail.com') 
-      ..subject = _subjectController.text 
-      ..text = _messageController.text; 
+    final Email email = Email(
+      body: 'Tipo: $_selectedType\n\nComentário:\n${_commentController.text}',
+      subject: '[$_selectedType] Novo Relato de Suporte',
+      recipients: ['suporteciclou@gmail.com'],
+      isHTML: false,
+    );
 
     try {
-      developer.log("Tentando enviar o e-mail com os seguintes dados:");
-      developer.log("Assunto: ${_subjectController.text}");
-      developer.log("Mensagem: ${_messageController.text}");
-      developer.log("Destinatários: ${message.recipients}");
-
-      final sendReport = await send(message, smtpServer);
-
-      developer.log("E-mail enviado com sucesso: ${sendReport.toString()}");
+      await FlutterEmailSender.send(email);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Mensagem enviada com sucesso!'),
           backgroundColor: Colors.green,
         ),
       );
-      _subjectController.clear();
-      _messageController.clear();
-    } on MailerException catch (e) {
-      developer.log("Erro ao enviar e-mail: $e");
+      _commentController.clear();
+    } on PlatformException catch (e) {
+      print("Erro de PlatformException: ${e.message}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao enviar mensagem: ${e.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      print("Erro desconhecido: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erro ao enviar mensagem: $e'),
@@ -67,81 +55,83 @@ class _SupportScreenState extends State<SupportScreen> {
         ),
       );
     } finally {
-      setState(() {
-        _isSending = false;
-      });
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Suporte'),
-        backgroundColor: Colors.green,
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Envie-nos sua dúvida ou problema',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _subjectController,
-              decoration: const InputDecoration(
-                labelText: 'Assunto',
-                border: OutlineInputBorder(),
+    return WillPopScope(
+      onWillPop: () async {
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Suporte'),
+          backgroundColor: Colors.green,
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Envie-nos sua dúvida ou problema',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _messageController,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Mensagem',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: ElevatedButton(
-                onPressed: _isSending ? null : _sendEmail,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 32.0, vertical: 12.0),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedType,
+                items: const [
+                  DropdownMenuItem(
+                    value: 'Transação',
+                    child: Text('Transação'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Suporte Técnico',
+                    child: Text('Suporte Técnico'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Usabilidade',
+                    child: Text('Usabilidade'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Outro',
+                    child: Text('Outro'),
+                  ),
+                ],
+                decoration: const InputDecoration(
+                  labelText: 'Tipo',
+                  border: OutlineInputBorder(),
                 ),
-                child: _isSending
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Enviar',
-                        style: TextStyle(fontSize: 16, color: Colors.white),
-                      ),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedType = value!;
+                  });
+                },
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: _commentController,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Comentário',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _sendEmail,
+                  child: const Text('Enviar'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _subjectController.dispose();
-    _messageController.dispose();
-    super.dispose();
   }
 }

@@ -64,6 +64,11 @@ class _CollectProcessState extends State<CollectProcess> {
           });
 
           developer.log("Status do pagamento: $status");
+
+          if (_paymentStatus == 'approved') {
+            final confirmationCode = await _generateConfirmationCode();
+            _exibirCodigoConfirmacao(confirmationCode);
+          }
         } else {
           developer.log("Nenhum ID de pagamento encontrado na proposta.");
         }
@@ -76,6 +81,62 @@ class _CollectProcessState extends State<CollectProcess> {
         SnackBar(content: Text('Erro ao verificar status do pagamento: $e')),
       );
     }
+  }
+
+  Future<String> _generateConfirmationCode() async {
+    try {
+      final data = _coletaAtual.data() as Map<String, dynamic>;
+
+      // Gera o código de confirmação usando a função importada
+      final result = await generateManualQr(
+        pixKey: data['chavePix'],
+        amount: data['quantidadeOleo'] ?? 0.0,
+        description:
+            'Confirmação de coleta para ${data['tipoEstabelecimento']}',
+      );
+
+      final confirmationCode = result['confirmationCode'] as String;
+
+      // Salva o código de confirmação na coleta no Firestore
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .update({
+        'confirmationCode': confirmationCode,
+      });
+
+      developer.log(
+          "Código de confirmação salvo com sucesso na coleta ${_coletaAtual.id}");
+
+      return confirmationCode;
+    } catch (e) {
+      developer.log("Erro ao gerar código de confirmação: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao gerar código de confirmação: $e')),
+      );
+      return 'Erro';
+    }
+  }
+
+  void _exibirCodigoConfirmacao(String confirmationCode) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Código de Confirmação'),
+          content: Text(
+            confirmationCode,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _buscarQrCode() async {
