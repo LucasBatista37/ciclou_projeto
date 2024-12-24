@@ -343,7 +343,7 @@ class ProposalsScreen extends StatelessWidget {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => RequestorDashboard(user: user)),
-        (Route<dynamic> route) => false,
+        (Route<dynamic> route) => route.isFirst,
       );
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(

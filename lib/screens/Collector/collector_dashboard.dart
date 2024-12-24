@@ -1,14 +1,16 @@
 import 'dart:io';
+import 'package:ciclou_projeto/components/collector_drawer.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/collects_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/manual_qr_payment_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
+import 'package:ciclou_projeto/screens/register_collector_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:ciclou_projeto/screens/support_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
-import 'package:ciclou_projeto/components/custom_drawer.dart';
+import 'package:ciclou_projeto/components/requestor_drawer.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_history_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_stats_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/request_details.dart';
@@ -210,24 +212,28 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final profileImageUrl = data['photoUrl'];
 
-          return CustomDrawer(
+          return CollectorDrawer(
             userName: widget.user.responsible,
             userEmail: widget.user.email,
             profileImageUrl: profileImageUrl,
             onEditProfile: () {},
             onSettings: () {},
-            onLogout: () {
-              FirebaseAuth.instance.signOut().then((_) {
-                Navigator.pushReplacement(
+            onLogout: () async {
+              try {
+                await FirebaseAuth.instance.signOut();
+
+                Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const RegisterRequestorScreen()),
+                    builder: (context) => const RegisterCollectorScreen(),
+                  ),
+                  (route) => false,
                 );
-              }).catchError((error) {
+              } catch (error) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Erro ao fazer logout: $error')),
                 );
-              });
+              }
             },
           );
         },

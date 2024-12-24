@@ -6,7 +6,7 @@ import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:ciclou_projeto/components/custom_drawer.dart';
+import 'package:ciclou_projeto/components/requestor_drawer.dart';
 import 'package:ciclou_projeto/components/custom_requestor_navigationbar.dart';
 import 'package:ciclou_projeto/screens/Requestor/create_collection_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
@@ -198,24 +198,28 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final profileImageUrl = data['photoUrl'];
 
-          return CustomDrawer(
+          return RequestorDrawer(
             userName: widget.user.responsible,
             userEmail: widget.user.email,
             profileImageUrl: profileImageUrl,
+            user: widget.user,
             onEditProfile: () {},
             onSettings: () {},
-            onLogout: () {
-              FirebaseAuth.instance.signOut().then((_) {
+            onLogout: () async {
+              try {
+                await FirebaseAuth.instance.signOut();
+
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const RegisterRequestorScreen()),
+                    builder: (context) => const RegisterRequestorScreen(),
+                  ),
                 );
-              }).catchError((error) {
+              } catch (error) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Erro ao fazer logout: $error')),
                 );
-              });
+              }
             },
           );
         },

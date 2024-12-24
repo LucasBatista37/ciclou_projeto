@@ -223,15 +223,6 @@ class _CollectProcessState extends State<CollectProcess> {
 
   Future<void> _gerarCertificado() async {
     developer.log("Iniciando geração do certificado...");
-    final currentUser = FirebaseAuth.instance.currentUser;
-
-    if (currentUser == null) {
-      developer.log("Erro: Usuário não autenticado para gerar certificado.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuário não autenticado.')),
-      );
-      return;
-    }
 
     final data = _coletaAtual.data() as Map<String, dynamic>;
 
@@ -303,29 +294,21 @@ class _CollectProcessState extends State<CollectProcess> {
           .doc(_coletaAtual.id)
           .set({
         'coletaId': _coletaAtual.id,
-        'userId': currentUser.uid,
+        'userId': data['userId'],
+        'collectorId': FirebaseAuth.instance.currentUser?.uid,
+        'requestorName': data['requestorName'],
         'filePath': file.path,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      setState(() {
-        _caminhoCertificado = file.path;
-      });
-
-      developer.log("Certificado gerado e salvo com sucesso: ${file.path}");
-      _abrirCertificado();
+      developer.log(
+          "Certificado gerado e associado ao usuário ${data['requestorName']} (ID: ${data['userId']}).");
     } catch (e, stack) {
       developer.log("Erro ao gerar certificado: $e",
           error: e, stackTrace: stack);
-    }
-  }
-
-  void _abrirCertificado() {
-    if (_caminhoCertificado != null) {
-      developer.log("Abrindo certificado: $_caminhoCertificado");
-      OpenFile.open(_caminhoCertificado!);
-    } else {
-      developer.log("Erro: Caminho do certificado está vazio.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao gerar certificado: $e')),
+      );
     }
   }
 
@@ -371,7 +354,6 @@ class _CollectProcessState extends State<CollectProcess> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Informações da Coleta
               Card(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0),

@@ -1,9 +1,13 @@
+import 'dart:io';
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CertificatesScreen extends StatelessWidget {
-  const CertificatesScreen({super.key});
+  final UserModel user;
+
+  const CertificatesScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +27,10 @@ class CertificatesScreen extends StatelessWidget {
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('certificados').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('certificados')
+            .where('userId', isEqualTo: user.userId)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -101,8 +108,8 @@ class PDFViewScreen extends StatelessWidget {
           },
         ),
       ),
-      body: PDFView(
-        filePath: filePath,
+      body: SfPdfViewer.file(
+        File(filePath),
       ),
     );
   }

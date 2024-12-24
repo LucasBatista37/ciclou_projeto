@@ -1,13 +1,10 @@
 import 'dart:io';
-import 'package:ciclou_projeto/screens/Collector/certificates_screen.dart';
 import 'package:ciclou_projeto/screens/configuration_screen.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
-import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class CustomDrawer extends StatelessWidget {
+class CollectorDrawer extends StatelessWidget {
   final String userName;
   final String userEmail;
   final String? profileImageUrl;
@@ -15,7 +12,7 @@ class CustomDrawer extends StatelessWidget {
   final VoidCallback onSettings;
   final VoidCallback onLogout;
 
-  const CustomDrawer({
+  const CollectorDrawer({
     super.key,
     required this.userName,
     required this.userEmail,
@@ -24,16 +21,6 @@ class CustomDrawer extends StatelessWidget {
     required this.onSettings,
     required this.onLogout,
   });
-
-  Future<bool> _isCollector() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return false;
-
-    final collectorDoc =
-        await FirebaseFirestore.instance.collection('collector').doc(uid).get();
-
-    return collectorDoc.exists;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,90 +44,13 @@ class CustomDrawer extends StatelessWidget {
           _buildDrawerItem(
             icon: Icons.edit,
             text: 'Editar Perfil',
-            onTap: () async {
-              final uid = FirebaseAuth.instance.currentUser?.uid;
-
-              if (uid != null) {
-                try {
-                  final collectorDoc = await FirebaseFirestore.instance
-                      .collection('collector')
-                      .doc(uid)
-                      .get();
-
-                  if (collectorDoc.exists) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const EditCollectorProfile(),
-                      ),
-                    );
-                    return;
-                  }
-
-                  final requestorDoc = await FirebaseFirestore.instance
-                      .collection('requestor')
-                      .doc(uid)
-                      .get();
-
-                  if (requestorDoc.exists) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const EditRequestorProfile(),
-                      ),
-                    );
-                    return;
-                  }
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Erro: Usuário não encontrado.'),
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Erro ao verificar usuário: $e'),
-                    ),
-                  );
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content:
-                        Text('Usuário não autenticado. Faça login novamente.'),
-                  ),
-                );
-              }
-            },
-          ),
-          FutureBuilder<bool>(
-            future: _isCollector(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const ListTile(
-                  leading: CircularProgressIndicator(),
-                  title: Text('Carregando...'),
-                );
-              }
-
-              if (snapshot.hasData && snapshot.data == true) {
-                return _buildDrawerItem(
-                  icon: Icons.card_membership_rounded,
-                  text: 'Certificados',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CertificatesScreen(),
-                      ),
-                    );
-                  },
-                );
-              }
-
-              return const SizedBox
-                  .shrink(); 
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EditCollectorProfile(),
+                ),
+              );
             },
           ),
           _buildDrawerItem(
