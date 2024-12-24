@@ -61,7 +61,12 @@ class _CollectsScreenState extends State<CollectsScreen> {
         ),
       ),
       body: _carregando
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Colors.green,
+                strokeWidth: 5.0,
+              ),
+            )
           : _coletas.isEmpty
               ? const Center(
                   child: Text(
@@ -74,34 +79,56 @@ class _CollectsScreenState extends State<CollectsScreen> {
                   itemCount: _coletas.length,
                   itemBuilder: (context, index) {
                     final coleta = _coletas[index];
+                    final coletaData = coleta.data() as Map<String, dynamic>;
+
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Tipo de Estabelecimento: ${coleta['tipoEstabelecimento'] ?? 'N/A'}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              children: [
+                                Icon(Icons.store, color: Colors.green),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Estabelecimento: ${coletaData['tipoEstabelecimento'] ?? 'N/A'}',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              'Quantidade Estimada: ${coleta['quantidadeOleo'] ?? 'N/A'} Litros',
-                              style: const TextStyle(fontSize: 16),
+                            Row(
+                              children: [
+                                Icon(Icons.oil_barrel, color: Colors.green),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Quantidade: ${coletaData['quantidadeOleo'] ?? 'N/A'} Litros',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 16),
                             Align(
                               alignment: Alignment.centerRight,
-                              child: ElevatedButton(
+                              child: ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0, vertical: 8.0),
+                                      horizontal: 16.0, vertical: 10.0),
                                 ),
                                 onPressed: () {
                                   Navigator.push(
@@ -113,7 +140,9 @@ class _CollectsScreenState extends State<CollectsScreen> {
                                     ),
                                   );
                                 },
-                                child: const Text(
+                                icon: const Icon(Icons.open_in_new,
+                                    color: Colors.white),
+                                label: const Text(
                                   'Ver Detalhes',
                                   style: TextStyle(color: Colors.white),
                                 ),

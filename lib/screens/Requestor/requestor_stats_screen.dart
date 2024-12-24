@@ -31,7 +31,6 @@ class _RequesterStatsScreenState extends State<RequesterStatsScreen> {
       print('Documentos retornados: ${querySnapshot.docs.length}');
 
       for (var doc in querySnapshot.docs) {
-        // Verifica se o campo existe antes de tentar acessá-lo
         if (doc.data().containsKey('quantidadeReal')) {
           totalOil += double.tryParse(doc['quantidadeReal'].toString()) ?? 0.0;
         } else {
