@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Requestor/code_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_stats_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
@@ -478,6 +479,10 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
               return const Center(child: CircularProgressIndicator());
             }
 
+            if (!futureSnapshot.hasData || futureSnapshot.data == null) {
+              return const Center(child: Text('Erro ao carregar dados.'));
+            }
+
             final data = futureSnapshot.data!.data() as Map<String, dynamic>;
             final prazo = DateTime.parse(
                 data['prazo'] ?? DateTime.now().toIso8601String());
@@ -494,13 +499,13 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             Color statusColor;
             switch (status) {
               case 'Pendente':
-                statusColor = Colors.amber; // Amarelo
+                statusColor = Colors.amber;
                 break;
               case 'Em andamento':
-                statusColor = Colors.green; // Verde
+                statusColor = Colors.green;
                 break;
               case 'Concluído':
-                statusColor = Colors.blue; // Azul
+                statusColor = Colors.blue; 
                 break;
               default:
                 statusColor = Colors.grey;
@@ -508,16 +513,26 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
 
             return GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProposalsScreen(
-                      solicitationTitle: title,
-                      documentId: documentId,
-                      user: widget.user,
+                if (status == 'Em andamento') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          CodeVerificationScreen(documentId: documentId),
                     ),
-                  ),
-                );
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProposalsScreen(
+                        solicitationTitle: title,
+                        documentId: documentId,
+                        user: widget.user,
+                      ),
+                    ),
+                  );
+                }
               },
               child: Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
