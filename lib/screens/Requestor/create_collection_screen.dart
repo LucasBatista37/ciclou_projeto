@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class CreateCollection extends StatefulWidget {
   final UserModel user;
@@ -21,6 +23,7 @@ class _CreateCollectionState extends State<CreateCollection> {
   final _chavePixController = TextEditingController();
   String? _formaRecebimento;
   final _bancoController = TextEditingController();
+  final _regionController = TextEditingController();
   bool _isLoading = false;
   List<String> _bancos = [];
 
@@ -28,6 +31,7 @@ class _CreateCollectionState extends State<CreateCollection> {
   void initState() {
     super.initState();
     _carregarBancos();
+    _preencherRegiao();
   }
 
   Future<void> _carregarBancos() async {
@@ -87,6 +91,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           'chavePix': _chavePixController.text.trim(),
           'banco': _bancoController.text.trim(),
           'address': widget.user.address,
+          'region': _regionController.text.trim(),
           'status': 'Pendente',
           'userId': widget.user.userId,
           'requestorName': widget.user.responsible,
@@ -113,6 +118,69 @@ class _CreateCollectionState extends State<CreateCollection> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Preencha todos os campos obrigatórios.')),
+      );
+    }
+  }
+
+  Future<void> _preencherRegiao() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        permission = await Geolocator.requestPermission();
+        if (permission != LocationPermission.whileInUse &&
+            permission != LocationPermission.always) {
+          throw Exception('Permissão de localização negada');
+        }
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      print(
+          'Posição atual: Latitude: ${position.latitude}, Longitude: ${position.longitude}');
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      print('Placemarks retornados: $placemarks');
+
+      if (placemarks.isNotEmpty) {
+        Placemark placemark = placemarks.first;
+
+        print('Placemark detalhes:');
+        print('Bairro (subLocality): ${placemark.subLocality}');
+        print('Cidade (locality): ${placemark.locality}');
+        print(
+            'Área administrativa (subAdministrativeArea): ${placemark.subAdministrativeArea}');
+        print('Estado (administrativeArea): ${placemark.administrativeArea}');
+        print('País (country): ${placemark.country}');
+        print('CEP (postalCode): ${placemark.postalCode}');
+
+        String cidade = placemark.locality?.isNotEmpty == true
+            ? placemark.locality!
+            : placemark.subAdministrativeArea ?? 'Cidade desconhecida';
+        String estado = placemark.administrativeArea ?? 'Estado desconhecido';
+        String bairro = placemark.subLocality ?? 'Bairro desconhecido';
+
+        String regiao = '$bairro, $cidade, $estado';
+
+        print('Região formatada: $regiao');
+
+        setState(() {
+          _regionController.text = regiao;
+        });
+      } else {
+        print('Nenhum placemark encontrado.');
+        throw Exception('Nenhum placemark encontrado.');
+      }
+    } catch (e) {
+      print('Erro ao obter localização: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao obter localização: $e')),
       );
     }
   }
@@ -355,6 +423,20 @@ class _CreateCollectionState extends State<CreateCollection> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    const Text(
+                      'Região',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8.0),
+                    TextFormField(
+                      controller: _regionController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Região (Estado, Cidade, Bairro)',
                       ),
                     ),
                     const SizedBox(height: 16.0),
