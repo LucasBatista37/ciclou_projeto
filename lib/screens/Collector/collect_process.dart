@@ -526,7 +526,8 @@ class _CollectProcessState extends State<CollectProcess> {
               const SizedBox(height: 16),
 
               // Exibe o código de confirmação
-              if (_confirmationCode != null) ...[
+              if (_confirmationCode != null &&
+                  (data['status'] ?? '') != 'Aprovado') ...[
                 Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.0),
@@ -563,7 +564,8 @@ class _CollectProcessState extends State<CollectProcess> {
               ],
 
               // Pagamento Aprovado e Registro da Coleta
-              if (_paymentStatus == 'approved')
+              if (_paymentStatus == 'approved' &&
+                  (data['status'] ?? '') == 'Aprovado')
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -573,7 +575,7 @@ class _CollectProcessState extends State<CollectProcess> {
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: const Text(
-                            'Pagamento aprovado com sucesso! Você pode prosseguir com a coleta.',
+                            'Pagamento aprovado e coleta aprovada! Você pode prosseguir com a coleta.',
                             style: TextStyle(fontSize: 16, color: Colors.green),
                             textAlign: TextAlign.center,
                           ),
@@ -616,6 +618,21 @@ class _CollectProcessState extends State<CollectProcess> {
                       ),
                     ),
                   ],
+                )
+              else if (_paymentStatus == 'approved' &&
+                  (data['status'] ?? '') != 'Aprovado')
+                Center(
+                  child: Card(
+                    color: Colors.green[50],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: const Text(
+                        'Pagamento aprovado, peça que o solicitante preencha o código acima para poder finalizar a colta.',
+                        style: TextStyle(fontSize: 16, color: Colors.green),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
                 ),
 
               if (_qrCodeBase64 != null && _paymentStatus != 'approved')

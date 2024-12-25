@@ -39,10 +39,10 @@ class _SupportScreenState extends State<SupportScreen> {
       );
       _commentController.clear();
     } on PlatformException catch (e) {
-      print("Erro de PlatformException: ${e.message}");
+      print("Erro de PlatformException: \${e.message}");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao enviar mensagem: ${e.message}'),
+          content: Text('Erro ao enviar mensagem: \${e.message}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -63,23 +63,42 @@ class _SupportScreenState extends State<SupportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return true;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Suporte'),
-          backgroundColor: Colors.green,
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        centerTitle: true,
+        title: const Text(
+          'Suporte',
+          style: TextStyle(color: Colors.white),
         ),
-        body: Padding(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content:
+                        Text('Entre em contato com o suporte para ajuda!')),
+              );
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Envie-nos sua dúvida ou problema',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -102,9 +121,12 @@ class _SupportScreenState extends State<SupportScreen> {
                     child: Text('Outro'),
                   ),
                 ],
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Tipo',
-                  border: OutlineInputBorder(),
+                  labelStyle: TextStyle(fontSize: 16, color: Colors.green),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -116,16 +138,31 @@ class _SupportScreenState extends State<SupportScreen> {
               TextField(
                 controller: _commentController,
                 maxLines: 5,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Comentário',
-                  border: OutlineInputBorder(),
+                  labelStyle: TextStyle(fontSize: 16, color: Colors.green),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.green),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               Center(
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 64.0, vertical: 12.0),
+                  ),
                   onPressed: _sendEmail,
-                  child: const Text('Enviar'),
+                  child: const Text(
+                    'Enviar',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],
