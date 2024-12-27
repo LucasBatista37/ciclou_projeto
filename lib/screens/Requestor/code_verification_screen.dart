@@ -1,5 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
+    );
+  }
+}
 
 class CodeVerificationScreen extends StatelessWidget {
   final String documentId;
@@ -182,6 +194,9 @@ class CodeVerificationScreen extends StatelessWidget {
                         horizontal: 16,
                       ),
                     ),
+                    inputFormatters: [
+                      UpperCaseTextFormatter(), // Adiciona o formatador personalizado
+                    ],
                   ),
                   const SizedBox(height: 24),
                   SizedBox(

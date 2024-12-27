@@ -20,10 +20,55 @@ class _SendProposalState extends State<SendProposal> {
   final List<int> _temposMaximos = [2, 6, 12, 24, 36, 48];
   int? _tempoMaximoSelecionado;
 
+  double _quantidadeOleo = 0.0; // Armazena o valor de quantidadeOleo
+  double _totalCalculado = 0.0; // Armazena o total calculado
+  double _taxa = 0.0; // Armazena a taxa da plataforma
+
   @override
   void initState() {
     super.initState();
     _calcularTempoRestante();
+    _buscarQuantidadeOleo();
+  }
+
+  Future<void> _buscarQuantidadeOleo() async {
+    try {
+      final coletaDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(widget.documentId)
+          .get();
+
+      if (coletaDoc.exists) {
+        final quantidade = coletaDoc.data()?['quantidadeOleo'];
+        if (quantidade != null) {
+          setState(() {
+            _quantidadeOleo = double.tryParse(quantidade.toString()) ?? 0.0;
+            _calcularTotal();
+          });
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao buscar quantidade de óleo: $e')),
+      );
+    }
+  }
+
+  double _calcularTaxa(double liters) {
+    if (liters >= 20 && liters <= 30) return 7.5;
+    if (liters > 30 && liters <= 45) return 10.0;
+    if (liters > 45 && liters <= 60) return 12.0;
+    if (liters > 60 && liters <= 75) return 14.0;
+    if (liters > 75 && liters <= 100) return 16.0;
+    return 0.0;
+  }
+
+  void _calcularTotal() {
+    final preco = double.tryParse(_precoController.text) ?? 0.0;
+    setState(() {
+      _taxa = _calcularTaxa(_quantidadeOleo);
+      _totalCalculado = (preco * _quantidadeOleo) + _taxa;
+    });
   }
 
   Future<void> _calcularTempoRestante() async {
@@ -66,6 +111,9 @@ class _SendProposalState extends State<SendProposal> {
   void _enviarProposta() async {
     if (_formKey.currentState!.validate()) {
       final preco = _precoController.text.trim();
+      final valorTotalPago = _quantidadeOleo *
+          (double.tryParse(preco) ??
+              0.0); // Calcula o valor total pago sem a taxa
 
       try {
         final coletaDoc = await FirebaseFirestore.instance
@@ -95,6 +143,8 @@ class _SendProposalState extends State<SendProposal> {
           'collectorName': widget.user.responsible,
           'collectorId': widget.user.userId,
           'photoUrl': widget.user.photoUrl,
+          'valorTotalPago': valorTotalPago
+              .toStringAsFixed(2), // Adiciona o valor total pago sem taxa
         });
 
         await FirebaseFirestore.instance.collection('notifications').add({
@@ -162,6 +212,9 @@ class _SendProposalState extends State<SendProposal> {
                   border: OutlineInputBorder(),
                   hintText: 'Digite o preço por litro',
                 ),
+                onChanged: (value) {
+                  _calcularTotal();
+                },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, digite o preço';
@@ -204,10 +257,108 @@ class _SendProposalState extends State<SendProposal> {
                 },
               ),
               const SizedBox(height: 16.0),
-              Text(
-                'Tempo disponível para enviar a proposta: $_tempoRestante',
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.lightGreen.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade300,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Tempo Restante:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    Text(
+                      '$_tempoRestante',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade300,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(16.0),
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Quantidade de Óleo:',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '$_quantidadeOleo litros',
+                          style: const TextStyle(
+                              fontSize: 16, color: Colors.black87),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24.0, thickness: 1.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Taxa da Plataforma:',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'R\$ ${_taxa.toStringAsFixed(2)}',
+                          style:
+                              const TextStyle(fontSize: 16, color: Colors.red),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24.0, thickness: 1.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total Calculado:',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'R\$ ${_totalCalculado.toStringAsFixed(2)}',
+                          style:
+                              const TextStyle(fontSize: 16, color: Colors.blue),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24.0),
               Center(

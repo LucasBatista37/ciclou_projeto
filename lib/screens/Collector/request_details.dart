@@ -1,7 +1,7 @@
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/send_proposal.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 
 class RequestDetails extends StatelessWidget {
   final String tipoEstabelecimento;
@@ -10,8 +10,8 @@ class RequestDetails extends StatelessWidget {
   final String endereco;
   final String observacoes;
   final String documentId;
-  final String funcionamentoDias; 
-  final String funcionamentoHorario; 
+  final String funcionamentoDias;
+  final String funcionamentoHorario;
   final UserModel user;
 
   const RequestDetails({
@@ -22,15 +22,16 @@ class RequestDetails extends StatelessWidget {
     required this.endereco,
     required this.observacoes,
     required this.documentId,
-    required this.funcionamentoDias, 
-    required this.funcionamentoHorario, 
+    required this.funcionamentoDias,
+    required this.funcionamentoHorario,
     required this.user,
   });
 
   @override
   Widget build(BuildContext context) {
     final DateTime prazoDateTime = DateTime.parse(prazo);
-    final String prazoFormatado = DateFormat('dd/MM/yyyy HH:mm').format(prazoDateTime);
+    final String prazoFormatado =
+        DateFormat('dd/MM/yyyy HH:mm').format(prazoDateTime);
 
     return Scaffold(
       appBar: AppBar(
@@ -54,7 +55,7 @@ class RequestDetails extends StatelessWidget {
           children: [
             _buildDetailItem('Tipo de Estabelecimento', tipoEstabelecimento),
             const Divider(height: 24.0, thickness: 1.0),
-            _buildDetailItem('Quantidade de Óleo Estimada', '$quantidadeOleo litros'),
+            _buildDetailItem('Quantidade de Óleo Estimada', quantidadeOleo),
             const Divider(height: 24.0, thickness: 1.0),
             _buildDetailItem('Prazo para Propostas', prazoFormatado),
             const Divider(height: 24.0, thickness: 1.0),

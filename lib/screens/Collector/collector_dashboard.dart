@@ -515,7 +515,9 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ManualQrPaymentScreen(),
+              builder: (context) => CollectorHistoryScreen(
+                collectorId: widget.user.userId,
+              ),
             ),
           );
         }

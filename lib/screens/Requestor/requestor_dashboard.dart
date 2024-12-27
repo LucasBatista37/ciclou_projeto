@@ -393,11 +393,12 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                   RequesterStatsScreen(userId: widget.user.userId),
             ),
           );
-        } else if (label == 'Mapa') {
+        } else if (label == 'Histórico') {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PaymentScreen(user: widget.user),
+              builder: (context) =>
+                  RequestorHistoryScreen(userId: widget.user.userId),
             ),
           );
         }
