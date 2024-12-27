@@ -29,6 +29,7 @@ class CollectorDashboard extends StatefulWidget {
 class _CollectorDashboardState extends State<CollectorDashboard> {
   int _selectedIndex = 0;
   bool _showAll = false;
+  String _currentTip = "Carregando dica...";
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -36,6 +37,12 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCurrentTip();
   }
 
   @override
@@ -277,9 +284,9 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
               color: Colors.lightGreen,
               borderRadius: BorderRadius.circular(8.0),
             ),
-            child: const Text(
-              'Dica: Verifique as solicitações próximas para otimizar suas rotas!',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+            child: Text(
+              _currentTip,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
           const SizedBox(height: 16.0),
@@ -357,6 +364,31 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
     );
   }
 
+  Future<void> _fetchCurrentTip() async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('tips')
+          .orderBy('tipDescription')
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        setState(() {
+          _currentTip = querySnapshot.docs.first['tipDescription'];
+        });
+      } else {
+        setState(() {
+          _currentTip = "Nenhuma dica cadastrada.";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _currentTip = "Erro ao carregar a dica.";
+      });
+      print("Erro ao buscar dica: $e");
+    }
+  }
+
   Widget _buildSolicitationsList() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -420,11 +452,10 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 final data = documents[index].data() as Map<String, dynamic>;
                 final documentId = documents[index].id;
 
-                // Trate os campos que podem ser lista ou string
                 final funcionamentoDias = data['funcionamentoDias'];
                 final funcionamentoHorario = data['funcionamentoHorario'];
+                final region = data['region'] ?? 'Região não especificada';
 
-                // Converta listas para strings, se necessário
                 final diasFormatted = funcionamentoDias is List<dynamic>
                     ? funcionamentoDias.join(', ')
                     : funcionamentoDias ?? 'N/A';
@@ -437,7 +468,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                   data['tipoEstabelecimento'] ?? 'N/A',
                   '${data['quantidadeOleo'] ?? 'N/A'} Litros',
                   data['prazo'] ?? 'N/A',
-                  data['comentarios'] ?? 'Sem observações',
+                  region,
                   documentId,
                   diasFormatted,
                   horarioFormatted,
@@ -507,7 +538,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       String title,
       String quantity,
       String prazo,
-      String comentarios,
+      String region,
       String documentId,
       String funcionamentoDias,
       String funcionamentoHorario) {
@@ -542,7 +573,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                         quantidadeOleo: quantity,
                         prazo: prazo,
                         endereco: 'Endereço não disponível',
-                        observacoes: comentarios,
+                        observacoes: region,
                         documentId: documentId,
                         funcionamentoDias: funcionamentoDias,
                         funcionamentoHorario: funcionamentoHorario,
@@ -614,21 +645,12 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                   const SizedBox(height: 8.0),
                   Row(
                     children: [
-                      const Icon(Icons.group, size: 18, color: Colors.grey),
-                      const SizedBox(width: 4.0),
-                      Text('Propostas: $numPropostas'),
-                    ],
-                  ),
-                  const SizedBox(height: 8.0),
-                  Row(
-                    children: [
-                      const Icon(Icons.comment, size: 18, color: Colors.grey),
+                      const Icon(Icons.location_on,
+                          size: 18, color: Colors.grey),
                       const SizedBox(width: 4.0),
                       Expanded(
                         child: Text(
-                          comentarios.isNotEmpty
-                              ? comentarios
-                              : 'Nenhum comentário.',
+                          region,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),

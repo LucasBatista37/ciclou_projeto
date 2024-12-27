@@ -497,6 +497,8 @@ class _CreateCollectionState extends State<CreateCollection> {
                         border: OutlineInputBorder(),
                         hintText: 'Exemplo: 08:00 - 18:00',
                       ),
+                      keyboardType: TextInputType
+                          .datetime,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Informe o horário de funcionamento';

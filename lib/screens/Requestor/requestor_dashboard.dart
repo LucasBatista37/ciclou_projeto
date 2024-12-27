@@ -26,6 +26,7 @@ class RequestorDashboard extends StatefulWidget {
 class _RequestorDashboardState extends State<RequestorDashboard> {
   int _selectedIndex = 0;
   bool _showAll = false;
+  String _currentTip = "Carregando dica...";
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -33,6 +34,12 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCurrentTip();
   }
 
   @override
@@ -248,6 +255,31 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
     }
   }
 
+  Future<void> _fetchCurrentTip() async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('tips')
+          .orderBy('tipDescription')
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        setState(() {
+          _currentTip = querySnapshot.docs.first['tipDescription'];
+        });
+      } else {
+        setState(() {
+          _currentTip = "Nenhuma dica cadastrada.";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _currentTip = "Erro ao carregar a dica.";
+      });
+      print("Erro ao buscar dica: $e");
+    }
+  }
+
   Widget _buildHomeScreen() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -260,9 +292,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
               color: Colors.lightGreen,
               borderRadius: BorderRadius.circular(8.0),
             ),
-            child: const Text(
-              'Dica: Recicle seu óleo e ajude o meio ambiente!',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+            child: Text(
+              _currentTip,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
           const SizedBox(height: 16.0),
