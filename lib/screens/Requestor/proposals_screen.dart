@@ -96,6 +96,8 @@ class ProposalsScreen extends StatelessWidget {
       BuildContext context, Map<String, dynamic> proposal, String proposalId) {
     final photoUrl = proposal['photoUrl'];
     final displayInitial = proposal['collectorName']?[0]?.toUpperCase() ?? 'A';
+    final tempoMaximoColeta = proposal['tempoMaximoColeta'] ??
+        'N/A'; // Obtém o campo tempoMaximoColeta
 
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
@@ -146,6 +148,11 @@ class ProposalsScreen extends StatelessWidget {
                       const SizedBox(height: 8.0),
                       Text(
                         'Preço por Litro: R\$ ${proposal['precoPorLitro'] ?? 'N/A'}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 8.0),
+                      Text(
+                        'Tempo Máximo para Realizar Coleta: $tempoMaximoColeta horas',
                         style: const TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 8.0),

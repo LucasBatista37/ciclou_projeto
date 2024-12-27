@@ -17,6 +17,8 @@ class _SendProposalState extends State<SendProposal> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _precoController = TextEditingController();
   String _tempoRestante = '';
+  final List<int> _temposMaximos = [2, 6, 12, 24, 36, 48];
+  int? _tempoMaximoSelecionado;
 
   @override
   void initState() {
@@ -89,6 +91,7 @@ class _SendProposalState extends State<SendProposal> {
           'precoPorLitro': preco,
           'status': 'Pendente',
           'criadoEm': FieldValue.serverTimestamp(),
+          'tempoMaximoColeta': _tempoMaximoSelecionado,
           'collectorName': widget.user.responsible,
           'collectorId': widget.user.userId,
           'photoUrl': widget.user.photoUrl,
@@ -165,6 +168,37 @@ class _SendProposalState extends State<SendProposal> {
                   }
                   if (double.tryParse(value) == null) {
                     return 'Digite um valor numérico válido';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16.0),
+              const Text(
+                'Tempo Máximo de Coleta (horas)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8.0),
+              DropdownButtonFormField<int>(
+                value: _tempoMaximoSelecionado,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+                items: _temposMaximos
+                    .map(
+                      (tempo) => DropdownMenuItem<int>(
+                        value: tempo,
+                        child: Text('$tempo horas'),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _tempoMaximoSelecionado = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Por favor, selecione o tempo máximo de coleta';
                   }
                   return null;
                 },
