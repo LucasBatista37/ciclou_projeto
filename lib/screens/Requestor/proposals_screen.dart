@@ -96,8 +96,7 @@ class ProposalsScreen extends StatelessWidget {
       BuildContext context, Map<String, dynamic> proposal, String proposalId) {
     final photoUrl = proposal['photoUrl'];
     final displayInitial = proposal['collectorName']?[0]?.toUpperCase() ?? 'A';
-    final tempoMaximoColeta = proposal['tempoMaximoColeta'] ??
-        'N/A'; // Obtém o campo tempoMaximoColeta
+    final tempoMaximoColeta = proposal['tempoMaximoColeta'] ?? 'N/A';
 
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
