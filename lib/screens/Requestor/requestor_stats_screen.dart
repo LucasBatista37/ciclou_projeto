@@ -28,20 +28,14 @@ class _RequesterStatsScreenState extends State<RequesterStatsScreen> {
 
       double totalOil = 0.0;
 
-      print('Documentos retornados: ${querySnapshot.docs.length}');
-
       for (var doc in querySnapshot.docs) {
         if (doc.data().containsKey('quantidadeReal')) {
           totalOil += double.tryParse(doc['quantidadeReal'].toString()) ?? 0.0;
-        } else {
-          print('Documento ${doc.id} não possui o campo "quantidadeReal".');
         }
       }
 
-      print('Total de óleo coletado: $totalOil');
       return totalOil;
     } catch (e) {
-      print('Erro ao calcular o total de óleo: $e');
       return 0.0;
     }
   }
@@ -112,25 +106,31 @@ class _RequesterStatsScreenState extends State<RequesterStatsScreen> {
         color: const Color.fromARGB(255, 83, 190, 88),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          const Text(
-            'Total de Óleo Enviado',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${totalLiters.toStringAsFixed(1)} Litros',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.w400,
-            ),
+          const Icon(Icons.oil_barrel, color: Colors.white, size: 48),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Total de Óleo Enviado',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${totalLiters.toStringAsFixed(1)} Litros',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -144,25 +144,31 @@ class _RequesterStatsScreenState extends State<RequesterStatsScreen> {
         color: Colors.teal.shade500,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          const Text(
-            'Água Preservada',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${savedWater.toStringAsFixed(0)} Litros',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w400,
-            ),
+          const Icon(Icons.water_drop, color: Colors.white, size: 48),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Água Preservada',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${savedWater.toStringAsFixed(0)} Litros',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -176,25 +182,31 @@ class _RequesterStatsScreenState extends State<RequesterStatsScreen> {
         color: Colors.purple.shade400,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          const Text(
-            'Emissões Evitadas de CO₂',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${avoidedCO2.toStringAsFixed(2)} Kg',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w400,
-            ),
+          const Icon(Icons.cloud_off, color: Colors.white, size: 48),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Emissões Evitadas de CO₂',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${avoidedCO2.toStringAsFixed(2)} Kg',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
         ],
       ),

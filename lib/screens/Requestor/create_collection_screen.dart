@@ -27,6 +27,18 @@ class _CreateCollectionState extends State<CreateCollection> {
   bool _isLoading = false;
   List<String> _bancos = [];
 
+  List<String> _diasFuncionamento = [];
+  final _horarioFuncionamentoController = TextEditingController();
+  final List<String> _diasDaSemana = [
+    'Segunda-feira',
+    'Terça-feira',
+    'Quarta-feira',
+    'Quinta-feira',
+    'Sexta-feira',
+    'Sábado',
+    'Domingo'
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +108,8 @@ class _CreateCollectionState extends State<CreateCollection> {
           'userId': widget.user.userId,
           'requestorName': widget.user.responsible,
           'createdAt': FieldValue.serverTimestamp(),
+          'funcionamentoDias': _diasFuncionamento,
+          'funcionamentoHorario': _horarioFuncionamentoController.text.trim(),
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,6 +134,29 @@ class _CreateCollectionState extends State<CreateCollection> {
         const SnackBar(content: Text('Preencha todos os campos obrigatórios.')),
       );
     }
+  }
+
+  Widget _buildDiasFuncionamentoSelector() {
+    return Wrap(
+      spacing: 8.0,
+      runSpacing: 4.0,
+      children: _diasDaSemana.map((dia) {
+        final isSelected = _diasFuncionamento.contains(dia);
+        return ChoiceChip(
+          label: Text(dia),
+          selected: isSelected,
+          onSelected: (selected) {
+            setState(() {
+              if (selected) {
+                _diasFuncionamento.add(dia);
+              } else {
+                _diasFuncionamento.remove(dia);
+              }
+            });
+          },
+        );
+      }).toList(),
+    );
   }
 
   Future<void> _preencherRegiao() async {
@@ -438,6 +475,34 @@ class _CreateCollectionState extends State<CreateCollection> {
                         border: OutlineInputBorder(),
                         hintText: 'Região (Estado, Cidade, Bairro)',
                       ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    const Text(
+                      'Dias de Funcionamento',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8.0),
+                    _buildDiasFuncionamentoSelector(),
+                    const SizedBox(height: 16.0),
+                    const Text(
+                      'Horário de Funcionamento',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8.0),
+                    TextFormField(
+                      controller: _horarioFuncionamentoController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Exemplo: 08:00 - 18:00',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Informe o horário de funcionamento';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16.0),
                     const Text(

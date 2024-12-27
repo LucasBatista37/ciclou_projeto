@@ -1,6 +1,7 @@
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/send_proposal.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; 
 
 class RequestDetails extends StatelessWidget {
   final String tipoEstabelecimento;
@@ -9,7 +10,9 @@ class RequestDetails extends StatelessWidget {
   final String endereco;
   final String observacoes;
   final String documentId;
-  final UserModel user; 
+  final String funcionamentoDias; 
+  final String funcionamentoHorario; 
+  final UserModel user;
 
   const RequestDetails({
     super.key,
@@ -19,11 +22,16 @@ class RequestDetails extends StatelessWidget {
     required this.endereco,
     required this.observacoes,
     required this.documentId,
+    required this.funcionamentoDias, 
+    required this.funcionamentoHorario, 
     required this.user,
   });
 
   @override
   Widget build(BuildContext context) {
+    final DateTime prazoDateTime = DateTime.parse(prazo);
+    final String prazoFormatado = DateFormat('dd/MM/yyyy HH:mm').format(prazoDateTime);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
@@ -46,9 +54,9 @@ class RequestDetails extends StatelessWidget {
           children: [
             _buildDetailItem('Tipo de Estabelecimento', tipoEstabelecimento),
             const Divider(height: 24.0, thickness: 1.0),
-            _buildDetailItem('Quantidade de Óleo Estimada', quantidadeOleo),
+            _buildDetailItem('Quantidade de Óleo Estimada', '$quantidadeOleo litros'),
             const Divider(height: 24.0, thickness: 1.0),
-            _buildDetailItem('Prazo para Propostas', prazo),
+            _buildDetailItem('Prazo para Propostas', prazoFormatado),
             const Divider(height: 24.0, thickness: 1.0),
             _buildDetailItem('Endereço', endereco),
             const Divider(height: 24.0, thickness: 1.0),
@@ -56,6 +64,10 @@ class RequestDetails extends StatelessWidget {
               'Observações Adicionais',
               observacoes.isNotEmpty ? observacoes : 'Nenhuma observação',
             ),
+            const Divider(height: 24.0, thickness: 1.0),
+            _buildDetailItem('Dias de Funcionamento', funcionamentoDias),
+            const Divider(height: 24.0, thickness: 1.0),
+            _buildDetailItem('Horário de Funcionamento', funcionamentoHorario),
             const SizedBox(height: 24.0),
             Center(
               child: ElevatedButton(
@@ -72,7 +84,7 @@ class RequestDetails extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => SendProposal(
                         documentId: documentId,
-                        user: user, 
+                        user: user,
                       ),
                     ),
                   );
@@ -100,7 +112,7 @@ class RequestDetails extends StatelessWidget {
         const SizedBox(height: 8.0),
         Text(
           value,
-          style: const TextStyle(fontSize: 16),
+          style: const TextStyle(fontSize: 16, color: Colors.black87),
         ),
       ],
     );

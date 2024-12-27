@@ -271,7 +271,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             children: [
               _buildQuickActionButton(
                   Icons.add_circle, 'Solicitar Coleta', Colors.green),
-              _buildQuickActionButton(Icons.map, 'Mapa', Colors.blue),
+              _buildQuickActionButton(Icons.history, 'Histórico', Colors.blue),
               _buildQuickActionButton(
                   Icons.bar_chart, 'Relatórios', Colors.orange),
             ],

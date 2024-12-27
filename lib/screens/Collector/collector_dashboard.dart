@@ -420,12 +420,27 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 final data = documents[index].data() as Map<String, dynamic>;
                 final documentId = documents[index].id;
 
+                // Trate os campos que podem ser lista ou string
+                final funcionamentoDias = data['funcionamentoDias'];
+                final funcionamentoHorario = data['funcionamentoHorario'];
+
+                // Converta listas para strings, se necessário
+                final diasFormatted = funcionamentoDias is List<dynamic>
+                    ? funcionamentoDias.join(', ')
+                    : funcionamentoDias ?? 'N/A';
+
+                final horarioFormatted = funcionamentoHorario is List<dynamic>
+                    ? funcionamentoHorario.join(', ')
+                    : funcionamentoHorario ?? 'N/A';
+
                 return _buildSolicitationCard(
                   data['tipoEstabelecimento'] ?? 'N/A',
                   '${data['quantidadeOleo'] ?? 'N/A'} Litros',
                   data['prazo'] ?? 'N/A',
                   data['comentarios'] ?? 'Sem observações',
                   documentId,
+                  diasFormatted,
+                  horarioFormatted,
                 );
               },
             ),
@@ -488,8 +503,14 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
     );
   }
 
-  Widget _buildSolicitationCard(String title, String quantity, String prazo,
-      String comentarios, String documentId) {
+  Widget _buildSolicitationCard(
+      String title,
+      String quantity,
+      String prazo,
+      String comentarios,
+      String documentId,
+      String funcionamentoDias,
+      String funcionamentoHorario) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('coletas')
@@ -523,6 +544,8 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                         endereco: 'Endereço não disponível',
                         observacoes: comentarios,
                         documentId: documentId,
+                        funcionamentoDias: funcionamentoDias,
+                        funcionamentoHorario: funcionamentoHorario,
                         user: widget.user,
                       ),
                     ),
