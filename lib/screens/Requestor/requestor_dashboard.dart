@@ -259,7 +259,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('tips')
-          .orderBy('tipDescription')
+          .where('isCollector', isEqualTo: false)
           .limit(1)
           .get();
 
