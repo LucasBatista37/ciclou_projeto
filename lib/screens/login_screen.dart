@@ -109,9 +109,29 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 40),
                 Image.asset(
                   'assets/ciclou.png',
-                  height: 400,
+                  height: 350,
                 ),
-                const SizedBox(height: 16),
+                Column(
+                  children: const [
+                    Text(
+                      'Bem-vindo ao Ciclou!',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'O app de coleta de óleo que você precisa.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
                 _buildTextField(
                   controller: _emailController,
                   hint: 'Email',
@@ -148,8 +168,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) =>
-                              const RegisterRequestorScreen()),
+                        builder: (context) => const RegisterRequestorScreen(),
+                      ),
                     );
                   },
                   child: const Text(

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'register_collector_screen.dart';
 import 'login_screen.dart';
 
@@ -16,7 +18,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final TextEditingController _businessNameController = TextEditingController();
-  final TextEditingController _cnpjController = TextEditingController();
+  final TextEditingController _documentController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _responsibleController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -24,15 +26,26 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _birthDateController = TextEditingController();
 
   String? _selectedEstablishmentType;
+  String _selectedDocumentType = 'CNPJ';
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
 
-  bool _isValidCnpj(String cnpj) {
-    return RegExp(r'^\d{14}$').hasMatch(cnpj);
+  final _cpfMask = MaskTextInputFormatter(mask: '###.###.###-##');
+  final _cnpjMask = MaskTextInputFormatter(mask: '##.###.###/####-##');
+  final _phoneMask = MaskTextInputFormatter(mask: '(##) #####-####');
+  final _dateMask = MaskTextInputFormatter(mask: '##/##/####');
+
+  bool _isValidDocument(String document) {
+    if (_selectedDocumentType == 'CNPJ') {
+      return RegExp(r'^\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\$').hasMatch(document);
+    } else {
+      return RegExp(r'^\d{3}\.\d{3}\.\d{3}-\d{2}\$').hasMatch(document);
+    }
   }
 
   Future<void> _registerRequestor() async {
@@ -57,11 +70,13 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
             .doc(userId)
             .set({
           'businessName': _businessNameController.text.trim(),
-          'cnpj': _cnpjController.text.trim(),
+          'documentType': _selectedDocumentType,
+          'document': _documentController.text.trim(),
           'address': _addressController.text.trim(),
           'responsible': _responsibleController.text.trim(),
           'phone': _phoneController.text.trim(),
           'email': _emailController.text.trim(),
+          'birthDate': _birthDateController.text.trim(),
           'userType': 'Solicitante',
           'photoUrl': null,
           'createdAt': FieldValue.serverTimestamp(),
@@ -103,152 +118,184 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
     }
   }
 
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/ciclou.png',
-                    height: 400,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'Razão Social',
-                    _businessNameController,
-                    (value) => value!.isEmpty
-                        ? 'Por favor, insira a razão social.'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'CNPJ',
-                    _cnpjController,
-                    (value) {
-                      if (value!.isEmpty) return 'Por favor, insira o CNPJ.';
-                      if (!_isValidCnpj(value)) {
-                        return 'CNPJ inválido.';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDropdownField(),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'Endereço, Cidade e Estado',
-                    _addressController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira o endereço.' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'Responsável',
-                    _responsibleController,
-                    (value) => value!.isEmpty
-                        ? 'Por favor, insira o nome do responsável.'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'Telefone',
-                    _phoneController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira o telefone.' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'Email',
-                    _emailController,
-                    (value) {
-                      if (value!.isEmpty) return 'Por favor, insira o e-mail.';
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value)) {
-                        return 'E-mail inválido.';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildPasswordTextField('Senha', _passwordController, true),
-                  const SizedBox(height: 16),
-                  _buildPasswordTextField(
-                      'Confirmar Senha', _confirmPasswordController, false),
-                  const SizedBox(height: 32),
-                  _isLoading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                          onPressed: _registerRequestor,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+        body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/ciclou.png',
+                  height: 350,
+                ),
+                const SizedBox(height: 16),
+                Column(
+                  children: const [
+                    Text(
+                      'Bem-vindo ao Ciclou!',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Você está se cadastrando como um solicitante.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildTextField(
+                  'Razão Social',
+                  _businessNameController,
+                  (value) => value!.isEmpty
+                      ? 'Por favor, insira a razão social.'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                _buildDocumentDropdownField(),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  _selectedDocumentType,
+                  _documentController,
+                  (value) {
+                    if (value!.isEmpty) {
+                      return 'Por favor, insira o $_selectedDocumentType.';
+                    }
+                    if (!_isValidDocument(value)) {
+                      return '$_selectedDocumentType inválido.';
+                    }
+                    return null;
+                  },
+                  inputFormatters: [
+                    _selectedDocumentType == 'CNPJ' ? _cnpjMask : _cpfMask,
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  'Data de Nascimento',
+                  _birthDateController,
+                  (value) => value!.isEmpty
+                      ? 'Por favor, insira a data de nascimento.'
+                      : null,
+                  inputFormatters: [_dateMask],
+                ),
+                const SizedBox(height: 16),
+                _buildDropdownField(),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  'Endereço',
+                  _addressController,
+                  (value) =>
+                      value!.isEmpty ? 'Por favor, insira o endereço.' : null,
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  'Responsável',
+                  _responsibleController,
+                  (value) => value!.isEmpty
+                      ? 'Por favor, insira o nome do responsável.'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  'Telefone',
+                  _phoneController,
+                  (value) =>
+                      value!.isEmpty ? 'Por favor, insira o telefone.' : null,
+                  inputFormatters: [_phoneMask],
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  'Email',
+                  _emailController,
+                  (value) {
+                    if (value!.isEmpty) return 'Por favor, insira o e-mail.';
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value)) {
+                      return 'E-mail inválido.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildPasswordTextField('Senha', _passwordController, true),
+                const SizedBox(height: 16),
+                _buildPasswordTextField(
+                    'Confirmar Senha', _confirmPasswordController, false),
+                const SizedBox(height: 32),
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: _registerRequestor,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
                           ),
-                          child: const Center(
-                            child: Text(
-                              'Registrar Solicitante',
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
-                            ),
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Registrar Solicitante',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
                           ),
                         ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const LoginScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'Já tem uma conta? Entrar',
-                      style: TextStyle(fontSize: 16, color: Colors.green),
-                    ),
+                      ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
+                    );
+                  },
+                  child: const Text(
+                    'Já tem uma conta? Entrar',
+                    style: TextStyle(fontSize: 16, color: Colors.green),
                   ),
-                  const Text("Ou"),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                const RegisterCollectorScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'Registrar como Coletor',
-                      style: TextStyle(fontSize: 16, color: Colors.blue),
-                    ),
+                ),
+                const Text("Ou"),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              const RegisterCollectorScreen()),
+                    );
+                  },
+                  child: const Text(
+                    'Registrar como Coletor',
+                    style: TextStyle(fontSize: 16, color: Colors.blue),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildTextField(
     String hint,
     TextEditingController controller,
-    String? Function(String?) validator,
-  ) {
+    String? Function(String?) validator, {
+    List<TextInputFormatter>? inputFormatters,
+  }) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
@@ -258,6 +305,34 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
         ),
       ),
       validator: validator,
+      inputFormatters: inputFormatters,
+    );
+  }
+
+  Widget _buildDocumentDropdownField() {
+    return DropdownButtonFormField<String>(
+      value: _selectedDocumentType,
+      onChanged: (value) {
+        setState(() {
+          _selectedDocumentType = value!;
+        });
+      },
+      decoration: InputDecoration(
+        hintText: 'Tipo de Documento',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+      items: const [
+        DropdownMenuItem(
+          value: 'CNPJ',
+          child: Text('CNPJ'),
+        ),
+        DropdownMenuItem(
+          value: 'CPF',
+          child: Text('CPF'),
+        ),
+      ],
     );
   }
 
@@ -290,6 +365,18 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
         DropdownMenuItem(
           value: 'Condomínio',
           child: Text('Condomínio'),
+        ),
+        DropdownMenuItem(
+          value: 'Escola',
+          child: Text('Escola'),
+        ),
+        DropdownMenuItem(
+          value: 'Residência',
+          child: Text('Residência'),
+        ),
+        DropdownMenuItem(
+          value: 'Loja',
+          child: Text('Loja'),
         ),
       ],
     );

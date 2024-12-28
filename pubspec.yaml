@@ -63,6 +63,7 @@ dependencies:
   mailer: ^6.3.0
   csv: ^6.0.0
   syncfusion_flutter_pdfviewer: ^28.1.35
+  mask_text_input_formatter: ^2.9.0
 
 flutter_native_splash:
   color: "#02652b"

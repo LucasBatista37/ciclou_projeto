@@ -1,4 +1,4 @@
-import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
+import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Ciclou App',
       theme: ThemeData(primarySwatch: Colors.green),
-      home: const RegisterRequestorScreen(),
+      home: const LoginScreen(),
     );
   }
 }

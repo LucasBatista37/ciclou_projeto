@@ -483,8 +483,9 @@ class _CollectProcessState extends State<CollectProcess> {
                               icon: const Icon(Icons.copy,
                                   color: Colors.grey, size: 20),
                               onPressed: () {
-                                Clipboard.setData(ClipboardData(
-                                    text: data['chavePix'] ?? ''));
+                                Clipboard.setData(
+                                  ClipboardData(text: data['chavePix'] ?? ''),
+                                );
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text(
@@ -509,6 +510,28 @@ class _CollectProcessState extends State<CollectProcess> {
                                   fontWeight: FontWeight.bold,
                                 ),
                                 overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Valor Total Pago:',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            Text(
+                              'R\$ ${data['valorTotalPago']?.toStringAsFixed(2) ?? '0.00'}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
                               ),
                             ),
                           ],

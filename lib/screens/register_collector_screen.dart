@@ -2,6 +2,8 @@ import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'login_screen.dart';
 
 class RegisterCollectorScreen extends StatefulWidget {
@@ -28,13 +30,18 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _birthDateController = TextEditingController();
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
 
+  final cnpjMaskFormatter = MaskTextInputFormatter(mask: "##.###.###/####-##");
+  final phoneMaskFormatter = MaskTextInputFormatter(mask: "(##) #####-####");
+  final dateMaskFormatter = MaskTextInputFormatter(mask: "##/##/####");
+
   bool _isValidCnpj(String cnpj) {
-    return RegExp(r'^\d{14}$').hasMatch(cnpj);
+    return RegExp(r'\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}').hasMatch(cnpj);
   }
 
   Future<void> _registerCollector() async {
@@ -65,6 +72,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'phone': _phoneController.text.trim(),
           'licenseNumber': _licenseNumberController.text.trim(),
           'licenseExpiry': _licenseExpiryController.text.trim(),
+          'birthDate': _birthDateController.text.trim(),
           'email': _emailController.text.trim(),
           'userType': 'Coletor',
           'photoUrl': null,
@@ -121,9 +129,31 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                 children: [
                   Image.asset(
                     'assets/ciclou.png',
-                    height: 200,
+                    height: 350,
                   ),
                   const SizedBox(height: 16),
+                  Column(
+                    children: const [
+                      Text(
+                        'Bem-vindo ao Ciclou!',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Você está se cadastrando como um coletor.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
                   _buildTextField(
                     'Razão Social',
                     _businessNameController,
@@ -142,6 +172,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                       }
                       return null;
                     },
+                    inputFormatters: [cnpjMaskFormatter],
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -160,10 +191,20 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
+                    'Data de Nascimento',
+                    _birthDateController,
+                    (value) => value!.isEmpty
+                        ? 'Por favor, insira a data de nascimento.'
+                        : null,
+                    inputFormatters: [dateMaskFormatter],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
                     'Telefone',
                     _phoneController,
                     (value) =>
                         value!.isEmpty ? 'Por favor, insira o telefone.' : null,
+                    inputFormatters: [phoneMaskFormatter],
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -180,6 +221,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                     (value) => value!.isEmpty
                         ? 'Por favor, insira a data de vencimento.'
                         : null,
+                    inputFormatters: [dateMaskFormatter],
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -259,10 +301,12 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
   Widget _buildTextField(
     String hint,
     TextEditingController controller,
-    String? Function(String?) validator,
-  ) {
+    String? Function(String?) validator, {
+    List<TextInputFormatter>? inputFormatters,
+  }) {
     return TextFormField(
       controller: controller,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         hintText: hint,
         border: OutlineInputBorder(
