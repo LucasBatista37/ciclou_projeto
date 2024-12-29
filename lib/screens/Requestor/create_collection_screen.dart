@@ -69,9 +69,7 @@ class _CreateCollectionState extends State<CreateCollection> {
             .toList();
       });
 
-      print("Bancos carregados: $_bancos");
     } catch (e) {
-      print("Erro ao carregar bancos: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao carregar bancos: $e')),
       );
@@ -197,28 +195,13 @@ class _CreateCollectionState extends State<CreateCollection> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      print(
-          'Posição atual: Latitude: ${position.latitude}, Longitude: ${position.longitude}');
-
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
 
-      print('Placemarks retornados: $placemarks');
-
       if (placemarks.isNotEmpty) {
         Placemark placemark = placemarks.first;
-
-        print('Placemark detalhes:');
-        print('Bairro (subLocality): ${placemark.subLocality}');
-        print('Cidade (locality): ${placemark.locality}');
-        print(
-            'Área administrativa (subAdministrativeArea): ${placemark.subAdministrativeArea}');
-        print('Estado (administrativeArea): ${placemark.administrativeArea}');
-        print('País (country): ${placemark.country}');
-        print('CEP (postalCode): ${placemark.postalCode}');
-
         String cidade = placemark.locality?.isNotEmpty == true
             ? placemark.locality!
             : placemark.subAdministrativeArea ?? 'Cidade desconhecida';
@@ -227,17 +210,13 @@ class _CreateCollectionState extends State<CreateCollection> {
 
         String regiao = '$bairro, $cidade, $estado';
 
-        print('Região formatada: $regiao');
-
         setState(() {
           _regionController.text = regiao;
         });
       } else {
-        print('Nenhum placemark encontrado.');
         throw Exception('Nenhum placemark encontrado.');
       }
     } catch (e) {
-      print('Erro ao obter localização: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao obter localização: $e')),
       );

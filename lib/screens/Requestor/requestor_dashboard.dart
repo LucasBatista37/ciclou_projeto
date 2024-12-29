@@ -248,8 +248,6 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
         return CreateCollection(user: widget.user);
       case 2:
         return RequestorHistoryScreen(userId: widget.user.userId);
-      case 3:
-        return PaymentScreen(user: widget.user);
       default:
         return _buildHomeScreen();
     }

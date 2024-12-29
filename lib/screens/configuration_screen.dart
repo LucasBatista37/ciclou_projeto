@@ -1,5 +1,6 @@
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
+import 'package:ciclou_projeto/screens/support_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,7 +12,6 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
   void navigateToProfile(BuildContext context) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-
       final requestorDoc = await FirebaseFirestore.instance
           .collection('requestor')
           .doc(uid)
@@ -87,6 +87,18 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
             title: const Text('Editar Perfil', style: TextStyle(fontSize: 16)),
             onTap: () {
               navigateToProfile(context);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading:
+                const Icon(Icons.support_agent_rounded, color: Colors.green),
+            title: const Text('Suporte', style: TextStyle(fontSize: 16)),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SupportScreen()),
+              );
             },
           ),
           const Divider(),
