@@ -91,22 +91,37 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
       }
     } on FirebaseAuthException catch (e) {
       String errorMessage;
-      if (e.code == 'email-already-in-use') {
-        errorMessage = 'O e-mail já está em uso.';
-      } else if (e.code == 'weak-password') {
-        errorMessage = 'A senha é muito fraca.';
-      } else if (e.code == 'invalid-email') {
-        errorMessage = 'E-mail inválido.';
-      } else {
-        errorMessage = 'Erro: ${e.message}';
+      switch (e.code) {
+        case 'email-already-in-use':
+          errorMessage =
+              'Este e-mail já está em uso. Por favor, use outro ou faça login.';
+          break;
+        case 'weak-password':
+          errorMessage = 'A senha é muito fraca. Utilize uma senha mais forte.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'E-mail inválido. Verifique e tente novamente.';
+          break;
+        default:
+          errorMessage =
+              'Ocorreu um erro inesperado. Tente novamente mais tarde.';
+          break;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: ${e.toString()}')),
+        SnackBar(
+          content: Text(
+            'Erro inesperado ao registrar o coletor. Por favor, tente novamente.',
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() {

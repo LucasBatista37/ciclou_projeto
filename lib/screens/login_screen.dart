@@ -46,10 +46,6 @@ class _LoginScreenState extends State<LoginScreen> {
         if (userDoc.exists) {
           final user = UserModel.fromFirestore(userDoc.data()!, userId);
           print("Usuário encontrado em 'requestor':");
-          print("  Nome: ${user.responsible}");
-          print("  Email: ${user.email}");
-          print("  UserID: ${user.userId}");
-
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -67,10 +63,6 @@ class _LoginScreenState extends State<LoginScreen> {
         if (collectorDoc.exists) {
           final user = UserModel.fromFirestore(collectorDoc.data()!, userId);
           print("Usuário encontrado em 'collector':");
-          print("  Nome: ${user.responsible}");
-          print("  Email: ${user.email}");
-          print("  UserID: ${user.userId}");
-
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -84,10 +76,47 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         print("Erro: UID do usuário é nulo.");
       }
+    } on FirebaseAuthException catch (e) {
+      print("Erro de autenticação: ${e.code}");
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'Usuário não encontrado. Verifique o e-mail inserido.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Senha incorreta. Tente novamente.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Formato de e-mail inválido. Por favor, corrija.';
+          break;
+        case 'user-disabled':
+          errorMessage =
+              'Esta conta foi desativada. Entre em contato com o suporte.';
+          break;
+        case 'invalid-credential':
+          errorMessage =
+              'As credenciais fornecidas estão incorretas ou expiradas. Verifique e tente novamente.';
+          break;
+        default:
+          errorMessage = 'Ocorreu um erro inesperado. Tente novamente.';
+          break;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
+      );
     } catch (e) {
       print("Erro durante o login: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao fazer login: $e')),
+        const SnackBar(
+          content: Text(
+            'Erro inesperado ao tentar login. Tente novamente mais tarde.',
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() {

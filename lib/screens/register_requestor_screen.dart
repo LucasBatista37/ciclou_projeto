@@ -84,7 +84,9 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Solicitante registrado com sucesso!')),
+          const SnackBar(
+            content: Text('Solicitante registrado com sucesso!'),
+          ),
         );
 
         Navigator.pushReplacement(
@@ -94,22 +96,38 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
       }
     } on FirebaseAuthException catch (e) {
       String errorMessage;
-      if (e.code == 'email-already-in-use') {
-        errorMessage = 'O e-mail já está em uso.';
-      } else if (e.code == 'weak-password') {
-        errorMessage = 'A senha é muito fraca.';
-      } else if (e.code == 'invalid-email') {
-        errorMessage = 'E-mail inválido.';
-      } else {
-        errorMessage = 'Erro: ${e.message}';
+      switch (e.code) {
+        case 'email-already-in-use':
+          errorMessage =
+              'Este e-mail já está em uso. Por favor, use outro ou faça login.';
+          break;
+        case 'weak-password':
+          errorMessage = 'A senha é muito fraca. Escolha uma senha mais forte.';
+          break;
+        case 'invalid-email':
+          errorMessage =
+              'E-mail inválido. Verifique o formato e tente novamente.';
+          break;
+        default:
+          errorMessage =
+              'Ocorreu um erro inesperado ao criar a conta. Tente novamente.';
+          break;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: ${e.toString()}')),
+        SnackBar(
+          content: const Text(
+            'Erro inesperado ao tentar registrar o solicitante. Tente novamente mais tarde.',
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() {

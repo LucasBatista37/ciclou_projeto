@@ -13,6 +13,7 @@ class CreateCollection extends StatefulWidget {
   const CreateCollection({super.key, required this.user});
 
   @override
+  // ignore: library_private_types_in_public_api
   _CreateCollectionState createState() => _CreateCollectionState();
 }
 
@@ -27,8 +28,9 @@ class _CreateCollectionState extends State<CreateCollection> {
   bool _isLoading = false;
   List<String> _bancos = [];
 
-  List<String> _diasFuncionamento = [];
+  final List<String> _diasFuncionamento = [];
   final _horarioFuncionamentoController = TextEditingController();
+  final TextEditingController _enderecoController = TextEditingController();
   final List<String> _diasDaSemana = [
     'Segunda-feira',
     'Terça-feira',
@@ -43,7 +45,14 @@ class _CreateCollectionState extends State<CreateCollection> {
   void initState() {
     super.initState();
     _carregarBancos();
+    _enderecoController.text = widget.user.address;
     _preencherRegiao();
+  }
+
+  @override
+  void dispose() {
+    _enderecoController.dispose();
+    super.dispose();
   }
 
   Future<void> _carregarBancos() async {
@@ -93,6 +102,17 @@ class _CreateCollectionState extends State<CreateCollection> {
       });
 
       try {
+        final userId = widget.user.userId;
+
+        if (userId != null) {
+          await FirebaseFirestore.instance
+              .collection('requestor')
+              .doc(userId)
+              .update({
+            'address': _enderecoController.text.trim(),
+          });
+        }
+
         await FirebaseFirestore.instance.collection('coletas').add({
           'tipoEstabelecimento': widget.user.establishmentType,
           'quantidadeOleo': _quantidadeOleo,
@@ -102,7 +122,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           'tipoChavePix': _formaRecebimento,
           'chavePix': _chavePixController.text.trim(),
           'banco': _bancoController.text.trim(),
-          'address': widget.user.address,
+          'address': _enderecoController.text.trim(),   
           'region': _regionController.text.trim(),
           'status': 'Pendente',
           'userId': widget.user.userId,
@@ -115,10 +135,12 @@ class _CreateCollectionState extends State<CreateCollection> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Solicitação enviada com sucesso!')),
         );
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-              builder: (context) => RequestorDashboard(user: widget.user)),
+            builder: (context) => RequestorDashboard(user: widget.user),
+          ),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -286,13 +308,15 @@ class _CreateCollectionState extends State<CreateCollection> {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8.0),
-                    Text(
-                      widget.user.address ?? 'Endereço não informado',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                    TextFormField(
+                      controller: _enderecoController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Digite o endereço',
                       ),
+                      onChanged: (value) {
+                        widget.user.address = value;
+                      },
                     ),
                     const SizedBox(height: 16.0),
                     const Text(
@@ -349,7 +373,6 @@ class _CreateCollectionState extends State<CreateCollection> {
                               'CNPJ',
                               'E-mail',
                               'Chave Aleatória',
-                              'Dinheiro',
                             ]
                                 .map((tipo) => DropdownMenuItem(
                                       value: tipo,
@@ -371,65 +394,63 @@ class _CreateCollectionState extends State<CreateCollection> {
                                 ? 'Selecione a forma de recebimento'
                                 : null,
                           ),
-                          if (_formaRecebimento != 'Dinheiro') ...[
-                            const SizedBox(height: 16.0),
-                            const Text(
-                              'Chave Pix',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                          const SizedBox(height: 16.0),
+                          const Text(
+                            'Chave Pix',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8.0),
+                          TextFormField(
+                            controller: _chavePixController,
+                            decoration: InputDecoration(
+                              border: const OutlineInputBorder(),
+                              hintText: _formaRecebimento == null
+                                  ? 'Digite a chave Pix'
+                                  : 'Digite sua $_formaRecebimento',
                             ),
-                            const SizedBox(height: 8.0),
-                            TextFormField(
-                              controller: _chavePixController,
-                              decoration: InputDecoration(
-                                border: const OutlineInputBorder(),
-                                hintText: _formaRecebimento == null
-                                    ? 'Digite a chave Pix'
-                                    : 'Digite sua $_formaRecebimento',
-                              ),
-                              keyboardType: _formaRecebimento == 'CPF' ||
-                                      _formaRecebimento == 'CNPJ'
-                                  ? TextInputType.number
-                                  : TextInputType.text,
-                              validator: _validarChavePix,
-                            ),
-                            const SizedBox(height: 16.0),
-                            const Text(
-                              'Banco',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8.0),
-                            Autocomplete<String>(
-                              optionsBuilder:
-                                  (TextEditingValue textEditingValue) {
-                                if (textEditingValue.text.isEmpty) {
-                                  return const Iterable<String>.empty();
-                                }
-                                return _bancos.where((banco) => banco
-                                    .toLowerCase()
-                                    .contains(
-                                        textEditingValue.text.toLowerCase()));
-                              },
-                              onSelected: (String selection) {
-                                _bancoController.text = selection;
-                              },
-                              fieldViewBuilder: (BuildContext context,
-                                  TextEditingController fieldController,
-                                  FocusNode focusNode,
-                                  VoidCallback onFieldSubmitted) {
-                                _bancoController.text = fieldController.text;
-                                return TextFormField(
-                                  controller: fieldController,
-                                  focusNode: focusNode,
-                                  decoration: const InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: 'Digite ou selecione o banco',
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
+                            keyboardType: _formaRecebimento == 'CPF' ||
+                                    _formaRecebimento == 'CNPJ'
+                                ? TextInputType.number
+                                : TextInputType.text,
+                            validator: _validarChavePix,
+                          ),
+                          const SizedBox(height: 16.0),
+                          const Text(
+                            'Banco',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8.0),
+                          Autocomplete<String>(
+                            optionsBuilder:
+                                (TextEditingValue textEditingValue) {
+                              if (textEditingValue.text.isEmpty) {
+                                return const Iterable<String>.empty();
+                              }
+                              return _bancos.where((banco) => banco
+                                  .toLowerCase()
+                                  .contains(
+                                      textEditingValue.text.toLowerCase()));
+                            },
+                            onSelected: (String selection) {
+                              _bancoController.text = selection;
+                            },
+                            fieldViewBuilder: (BuildContext context,
+                                TextEditingController fieldController,
+                                FocusNode focusNode,
+                                VoidCallback onFieldSubmitted) {
+                              _bancoController.text = fieldController.text;
+                              return TextFormField(
+                                controller: fieldController,
+                                focusNode: focusNode,
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: 'Digite ou selecione o banco',
+                                ),
+                              );
+                            },
+                          ),
                           const SizedBox(height: 16.0),
                           Container(
                             color: Colors.green.shade50,
@@ -497,8 +518,7 @@ class _CreateCollectionState extends State<CreateCollection> {
                         border: OutlineInputBorder(),
                         hintText: 'Exemplo: 08:00 - 18:00',
                       ),
-                      keyboardType: TextInputType
-                          .datetime,
+                      keyboardType: TextInputType.datetime,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Informe o horário de funcionamento';

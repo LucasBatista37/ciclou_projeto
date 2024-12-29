@@ -5,7 +5,7 @@ class UserModel {
   final String photoUrl;
   final String? establishmentType;
   final String pixKey; 
-  final String address; 
+  late final String address; 
 
   UserModel({
     required this.userId,

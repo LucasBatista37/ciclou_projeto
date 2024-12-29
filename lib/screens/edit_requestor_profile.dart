@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 class EditRequestorProfile extends StatefulWidget {
   const EditRequestorProfile({super.key});
@@ -12,14 +14,20 @@ class EditRequestorProfile extends StatefulWidget {
 }
 
 class _EditRequestorProfileState extends State<EditRequestorProfile> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _nomeController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _telefoneController = TextEditingController();
   final TextEditingController _enderecoController = TextEditingController();
-  final TextEditingController _quantidadeOleoGeradoController =
+  final TextEditingController _businessNameController = TextEditingController();
+  final TextEditingController _cnpjController = TextEditingController();
+  final TextEditingController _establishmentTypeController =
       TextEditingController();
   XFile? _profileImage;
   bool _isLoading = false;
+
+  final _telefoneMaskFormatter =
+      MaskTextInputFormatter(mask: "(##) #####-####");
+  final _cnpjMaskFormatter = MaskTextInputFormatter(mask: "##.###.###/####-##");
 
   @override
   void initState() {
@@ -30,10 +38,11 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
   @override
   void dispose() {
     _nomeController.dispose();
-    _emailController.dispose();
     _telefoneController.dispose();
     _enderecoController.dispose();
-    _quantidadeOleoGeradoController.dispose();
+    _businessNameController.dispose();
+    _cnpjController.dispose();
+    _establishmentTypeController.dispose();
     super.dispose();
   }
 
@@ -49,11 +58,11 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
           final data = doc.data()!;
           setState(() {
             _nomeController.text = data['responsible'] ?? '';
-            _emailController.text = data['email'] ?? '';
             _telefoneController.text = data['phone'] ?? '';
             _enderecoController.text = data['address'] ?? '';
-            _quantidadeOleoGeradoController.text =
-                data['quantidade_oleo_gerado'] ?? '';
+            _businessNameController.text = data['businessName'] ?? '';
+            _cnpjController.text = data['cnpj'] ?? '';
+            _establishmentTypeController.text = data['establishmentType'] ?? '';
           });
         }
       } catch (e) {
@@ -65,6 +74,10 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
   }
 
   Future<void> _saveUserData() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -78,10 +91,11 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
     try {
       await FirebaseFirestore.instance.collection('requestor').doc(uid).update({
         'responsible': _nomeController.text.trim(),
-        'email': _emailController.text.trim(),
         'phone': _telefoneController.text.trim(),
         'address': _enderecoController.text.trim(),
-        'quantidade_oleo_gerado': _quantidadeOleoGeradoController.text.trim(),
+        'businessName': _businessNameController.text.trim(),
+        'cnpj': _cnpjController.text.trim(),
+        'establishmentType': _establishmentTypeController.text.trim(),
         'photoUrl': _profileImage != null ? _profileImage!.path : null,
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -130,82 +144,121 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Stack(
-                    children: [
-                      _profileImage == null
-                          ? CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.grey.shade300,
-                              child: Text(
-                                _nomeController.text.isNotEmpty
-                                    ? _nomeController.text[0].toUpperCase()
-                                    : '',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  color: Colors.black,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Stack(
+                      children: [
+                        _profileImage == null
+                            ? CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.grey.shade300,
+                                child: Text(
+                                  _nomeController.text.isNotEmpty
+                                      ? _nomeController.text[0].toUpperCase()
+                                      : '',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.black,
+                                  ),
                                 ),
+                              )
+                            : CircleAvatar(
+                                radius: 50,
+                                backgroundImage:
+                                    FileImage(File(_profileImage!.path)),
                               ),
-                            )
-                          : CircleAvatar(
-                              radius: 50,
-                              backgroundImage:
-                                  FileImage(File(_profileImage!.path)),
-                            ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: _pickImage,
-                          child: const CircleAvatar(
-                            radius: 18,
-                            backgroundColor: Colors.green,
-                            child: Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 20,
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: const CircleAvatar(
+                              radius: 18,
+                              backgroundColor: Colors.green,
+                              child: Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                _buildTextField(label: 'Nome', controller: _nomeController),
-                const SizedBox(height: 16),
-                _buildTextField(label: 'E-mail', controller: _emailController),
-                const SizedBox(height: 16),
-                _buildTextField(
-                    label: 'Telefone', controller: _telefoneController),
-                const SizedBox(height: 16),
-                _buildTextField(
-                    label: 'Endereço', controller: _enderecoController),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  label: 'Quantidade de óleo gerada mensalmente',
-                  controller: _quantidadeOleoGeradoController,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _saveUserData,
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      ],
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text(
-                    'Salvar Alterações',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  const SizedBox(height: 24),
+                  _buildTextField(
+                    label: 'Nome',
+                    controller: _nomeController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'O nome é obrigatório';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    label: 'Telefone',
+                    controller: _telefoneController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'O telefone é obrigatório';
+                      }
+                      return null;
+                    },
+                    inputFormatters: [_telefoneMaskFormatter],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    label: 'Endereço',
+                    controller: _enderecoController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'O endereço é obrigatório';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    label: 'Razão Social',
+                    controller: _businessNameController,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    label: 'CNPJ',
+                    controller: _cnpjController,
+                    inputFormatters: [_cnpjMaskFormatter],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    label: 'Tipo de Estabelecimento',
+                    controller: _establishmentTypeController,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _saveUserData,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    ),
+                    child: const Text(
+                      'Salvar Alterações',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           if (_isLoading)
@@ -220,13 +273,17 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
   }) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
       ),
+      validator: validator,
+      inputFormatters: inputFormatters,
     );
   }
 }
