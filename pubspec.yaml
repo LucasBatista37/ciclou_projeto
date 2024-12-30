@@ -64,6 +64,7 @@ dependencies:
   csv: ^6.0.0
   syncfusion_flutter_pdfviewer: ^28.1.35
   mask_text_input_formatter: ^2.9.0
+  file_picker: ^8.1.7
 
 flutter_native_splash:
   color: "#02652b"

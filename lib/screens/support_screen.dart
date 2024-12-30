@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 
 class SupportScreen extends StatefulWidget {
+  const SupportScreen({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _SupportScreenState createState() => _SupportScreenState();
 }
 
@@ -39,7 +42,6 @@ class _SupportScreenState extends State<SupportScreen> {
       );
       _commentController.clear();
     } on PlatformException catch (e) {
-      print("Erro de PlatformException: \${e.message}");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erro ao enviar mensagem: \${e.message}'),
@@ -47,7 +49,6 @@ class _SupportScreenState extends State<SupportScreen> {
         ),
       );
     } catch (e) {
-      print("Erro desconhecido: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erro ao enviar mensagem: $e'),

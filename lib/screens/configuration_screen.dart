@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/screens/Collector/upload_documents.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
 import 'package:ciclou_projeto/screens/support_screen.dart';
@@ -102,25 +103,17 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
             },
           ),
           const Divider(),
-          const ListTile(
-            leading: Icon(Icons.notifications, color: Colors.grey),
-            title: Text('Configurações de Notificações',
-                style: TextStyle(fontSize: 16, color: Colors.grey)),
-            onTap: null,
-          ),
-          const Divider(),
-          const ListTile(
-            leading: Icon(Icons.payment, color: Colors.grey),
-            title: Text('Métodos de Pagamento',
-                style: TextStyle(fontSize: 16, color: Colors.grey)),
-            onTap: null,
-          ),
-          const Divider(),
-          const ListTile(
-            leading: Icon(Icons.upload_file, color: Colors.grey),
-            title: Text('Upload de Documentos',
-                style: TextStyle(fontSize: 16, color: Colors.grey)),
-            onTap: null,
+          ListTile(
+            leading: const Icon(Icons.upload_file, color: Colors.green),
+            title: const Text('Upload de Documentos',
+                style: TextStyle(fontSize: 16)),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => UploadDocumentsScreen()),
+              );
+            },
           ),
           const Divider(),
           ListTile(

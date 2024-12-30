@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/screens/Collector/upload_documents.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -78,6 +79,10 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'photoUrl': null,
           'amountOil': 0,
           'createdAt': FieldValue.serverTimestamp(),
+          'ibama': null,
+          'licenseOperation': null,
+          'operatingPermit': null,
+          'avcb': null,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -86,7 +91,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(
+              builder: (context) => const UploadDocumentsScreen()),
         );
       }
     } on FirebaseAuthException catch (e) {

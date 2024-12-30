@@ -41,11 +41,37 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   final _dateMask = MaskTextInputFormatter(mask: '##/##/####');
 
   bool _isValidDocument(String document) {
+    final cleanedDocument =
+        document.replaceAll(RegExp(r'\D'), '');
     if (_selectedDocumentType == 'CNPJ') {
-      return RegExp(r'^\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\$').hasMatch(document);
-    } else {
-      return RegExp(r'^\d{3}\.\d{3}\.\d{3}-\d{2}\$').hasMatch(document);
+      return RegExp(r'^\d{14}$').hasMatch(cleanedDocument); 
+    } else if (_selectedDocumentType == 'CPF') {
+      return _validateCPF(cleanedDocument); 
     }
+    return false;
+  }
+
+  bool _validateCPF(String cpf) {
+    final cleanedCPF = cpf.replaceAll(RegExp(r'\D'), '');
+
+    if (cleanedCPF.length != 11) return false;
+
+    int sum = 0;
+    for (int i = 0; i < 9; i++) {
+      sum += int.parse(cleanedCPF[i]) * (10 - i);
+    }
+    int firstVerifier = (sum * 10) % 11;
+    if (firstVerifier == 10) firstVerifier = 0;
+
+    sum = 0;
+    for (int i = 0; i < 10; i++) {
+      sum += int.parse(cleanedCPF[i]) * (11 - i);
+    }
+    int secondVerifier = (sum * 10) % 11;
+    if (secondVerifier == 10) secondVerifier = 0;
+
+    return firstVerifier == int.parse(cleanedCPF[9]) &&
+        secondVerifier == int.parse(cleanedCPF[10]);
   }
 
   Future<void> _registerRequestor() async {
