@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:ciclou_projeto/components/generate_manualqr_payment.dart';
 import 'package:ciclou_projeto/components/payment_service.dart';
+import 'package:ciclou_projeto/components/pix_validation_service.dart';
+import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +34,7 @@ class _CollectProcessState extends State<CollectProcess> {
   double _quantidadeReal = 0.0;
   bool _coletaFinalizada = false;
   String? _paymentStatus;
+  File? _comprovantePagamento;
 
   @override
   void initState() {
@@ -174,95 +178,6 @@ class _CollectProcessState extends State<CollectProcess> {
     );
   }
 
-  Future<void> _confirmarColeta() async {
-    developer.log("Iniciando confirmação da coleta...");
-
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      developer.log("Erro: Usuário não autenticado.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuário não autenticado.')),
-      );
-      return;
-    }
-
-    final data = _coletaAtual.data() as Map<String, dynamic>;
-
-    if (data['collectorId'] != currentUser.uid) {
-      developer.log(
-          "Erro: Permissão negada. O coletor não corresponde ao usuário atual.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Permissão negada para esta coleta.')),
-      );
-      return;
-    }
-
-    try {
-      developer.log("Atualizando coleta no Firestore...");
-      await FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(_coletaAtual.id)
-          .update({
-        'status': 'Finalizada',
-        'quantidadeReal': _quantidadeReal,
-        'dataConclusao': FieldValue.serverTimestamp(),
-      });
-
-      developer
-          .log("Atualizando a quantidade de óleo no registro do coletor...");
-      await _atualizarQuantidadeOleo(currentUser.uid);
-
-      setState(() {
-        _coletaFinalizada = true;
-      });
-
-      developer.log("Coleta confirmada com sucesso pelo coletor.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coleta confirmada com sucesso!')),
-      );
-
-      await _gerarCertificado();
-    } catch (e, stack) {
-      developer.log("Erro ao confirmar coleta: $e",
-          error: e, stackTrace: stack);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao confirmar coleta: $e')),
-      );
-    }
-  }
-
-  Future<void> _atualizarQuantidadeOleo(String collectorId) async {
-    developer.log("Atualizando quantidade de óleo pelo coletor...");
-    try {
-      final collectorDocRef =
-          FirebaseFirestore.instance.collection('collector').doc(collectorId);
-
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final snapshot = await transaction.get(collectorDocRef);
-
-        final currentAmountRaw = snapshot.data()?['amountOil'] ?? 0.0;
-        final double currentAmount = currentAmountRaw is double
-            ? currentAmountRaw
-            : double.tryParse(currentAmountRaw.toString()) ?? 0.0;
-
-        final newAmount = currentAmount + _quantidadeReal;
-
-        transaction.update(collectorDocRef, {'amountOil': newAmount});
-      });
-
-      developer.log(
-          "Quantidade de óleo coletada foi atualizada com sucesso pelo coletor.");
-    } catch (e, stack) {
-      developer.log("Erro ao atualizar quantidade de óleo pelo coletor: $e",
-          error: e, stackTrace: stack);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Erro ao atualizar quantidade de óleo pelo coletor: $e')),
-      );
-    }
-  }
-
   Future<void> _gerarCertificado() async {
     developer.log("Iniciando geração do certificado...");
 
@@ -352,6 +267,280 @@ class _CollectProcessState extends State<CollectProcess> {
         SnackBar(content: Text('Erro ao gerar certificado: $e')),
       );
     }
+  }
+
+  Future<void> _atualizarQuantidadeOleo(String collectorId) async {
+    developer.log("Atualizando quantidade de óleo pelo coletor...");
+    try {
+      final collectorDocRef =
+          FirebaseFirestore.instance.collection('collector').doc(collectorId);
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(collectorDocRef);
+
+        final currentAmountRaw = snapshot.data()?['amountOil'] ?? 0.0;
+        final double currentAmount = currentAmountRaw is double
+            ? currentAmountRaw
+            : double.tryParse(currentAmountRaw.toString()) ?? 0.0;
+
+        final newAmount = currentAmount + _quantidadeReal;
+
+        transaction.update(collectorDocRef, {'amountOil': newAmount});
+      });
+
+      developer.log(
+          "Quantidade de óleo coletada foi atualizada com sucesso pelo coletor.");
+    } catch (e, stack) {
+      developer.log("Erro ao atualizar quantidade de óleo pelo coletor: $e",
+          error: e, stackTrace: stack);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('Erro ao atualizar quantidade de óleo pelo coletor: $e')),
+      );
+    }
+  }
+
+  Future<void> _confirmarColeta() async {
+    developer.log("Iniciando confirmação da coleta...");
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      developer.log("Erro: Usuário não autenticado.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário não autenticado.')),
+      );
+      return;
+    }
+
+    final data = _coletaAtual.data() as Map<String, dynamic>;
+
+    if (data['collectorId'] != currentUser.uid) {
+      developer.log(
+          "Erro: Permissão negada. O coletor não corresponde ao usuário atual.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Permissão negada para esta coleta.')),
+      );
+      return;
+    }
+
+    // Exibe a sobreposição para o envio do comprovante
+    _mostrarSobreposicaoComprovante();
+  }
+
+  Future<void> _enviarComprovantePagamento() async {
+    if (_comprovantePagamento == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nenhum comprovante selecionado.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('Usuário não autenticado.');
+      }
+
+      // Atualiza o Firestore com o caminho do comprovante
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .update({
+        'comprovantePagamento': _comprovantePagamento!.path,
+      });
+
+      developer.log("Comprovante de pagamento enviado com sucesso.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Comprovante enviado com sucesso!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Finaliza a coleta diretamente após o envio do comprovante
+      await _finalizarColeta();
+    } catch (e) {
+      developer.log("Erro ao enviar comprovante: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao enviar comprovante: $e')),
+      );
+    }
+  }
+
+  Future<void> _finalizarColeta() async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .update({
+        'status': 'Finalizada',
+        'quantidadeReal': _quantidadeReal,
+        'dataConclusao': FieldValue.serverTimestamp(),
+      });
+
+      setState(() {
+        _coletaFinalizada = true;
+      });
+
+      developer.log("Coleta confirmada com sucesso pelo coletor.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Coleta confirmada com sucesso!')),
+      );
+
+      await _gerarCertificado();
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ColetaFinalizadaScreen()),
+      );
+    } catch (e) {
+      developer.log("Erro ao finalizar coleta: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao finalizar coleta: $e')),
+      );
+    }
+  }
+
+  void _mostrarSobreposicaoComprovante() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              title: const Text(
+                'Enviar Comprovante de Pagamento',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_comprovantePagamento != null)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Comprovante Selecionado:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            _comprovantePagamento!.path.split('/').last,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.green,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final result = await FilePicker.platform.pickFiles(
+                        type: FileType.custom,
+                        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                      );
+
+                      if (result != null && result.files.single.path != null) {
+                        setState(() {
+                          _comprovantePagamento =
+                              File(result.files.single.path!);
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text('Comprovante selecionado com sucesso!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.upload, color: Colors.white),
+                    label: const Text(
+                      'Selecionar Comprovante',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12.0, horizontal: 16.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _comprovantePagamento != null
+                      ? () async {
+                          await _enviarComprovantePagamento();
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Comprovante enviado com sucesso!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          await _finalizarColeta();
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12.0, horizontal: 16.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Enviar e Finalizar',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override

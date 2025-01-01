@@ -195,7 +195,7 @@ class CodeVerificationScreen extends StatelessWidget {
                       ),
                     ),
                     inputFormatters: [
-                      UpperCaseTextFormatter(), // Adiciona o formatador personalizado
+                      UpperCaseTextFormatter(),
                     ],
                   ),
                   const SizedBox(height: 24),
