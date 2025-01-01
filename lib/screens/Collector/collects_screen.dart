@@ -25,7 +25,7 @@ class _CollectsScreenState extends State<CollectsScreen> {
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('coletas')
-          .where('status', isEqualTo: 'Em andamento')
+          .where('status', whereIn: ['Em andamento', 'Aprovado'])
           .where('collectorId', isEqualTo: widget.collectorId)
           .get();
 

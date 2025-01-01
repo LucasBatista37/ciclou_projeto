@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/code_verification_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/comprovante_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_stats_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
@@ -420,7 +421,8 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       stream: FirebaseFirestore.instance
           .collection('coletas')
           .where('userId', isEqualTo: widget.user.userId)
-          .where('status', whereIn: ['Pendente', 'Em andamento', 'Aprovado'])
+          .where('status',
+              whereIn: ['Pendente', 'Em andamento', 'Aprovado', 'Finalizada'])
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
@@ -533,10 +535,13 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                 statusColor = Colors.amber;
                 break;
               case 'Em andamento':
-                statusColor = Colors.green;
+                statusColor = Colors.orange;
                 break;
               case 'Aprovado':
                 statusColor = Colors.blue;
+                break;
+              case 'Finalizada':
+                statusColor = Colors.green;
                 break;
               default:
                 statusColor = Colors.grey;
@@ -544,7 +549,15 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
 
             return GestureDetector(
               onTap: () {
-                if (status == 'Em andamento' || status == 'Aprovado') {
+                if (status == 'Finalizada') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ComprovanteVerificationScreen(documentId: documentId),
+                    ),
+                  );
+                } else if (status == 'Em andamento' || status == 'Aprovado') {
                   Navigator.push(
                     context,
                     MaterialPageRoute(

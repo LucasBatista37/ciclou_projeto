@@ -345,7 +345,6 @@ class _CollectProcessState extends State<CollectProcess> {
         throw Exception('Usuário não autenticado.');
       }
 
-      // Atualiza o Firestore com o caminho do comprovante
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -361,7 +360,6 @@ class _CollectProcessState extends State<CollectProcess> {
         ),
       );
 
-      // Finaliza a coleta diretamente após o envio do comprovante
       await _finalizarColeta();
     } catch (e) {
       developer.log("Erro ao enviar comprovante: $e");
@@ -512,14 +510,6 @@ class _CollectProcessState extends State<CollectProcess> {
                   onPressed: _comprovantePagamento != null
                       ? () async {
                           await _enviarComprovantePagamento();
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Comprovante enviado com sucesso!'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                          await _finalizarColeta();
                         }
                       : null,
                   style: ElevatedButton.styleFrom(

@@ -41,12 +41,11 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   final _dateMask = MaskTextInputFormatter(mask: '##/##/####');
 
   bool _isValidDocument(String document) {
-    final cleanedDocument =
-        document.replaceAll(RegExp(r'\D'), '');
+    final cleanedDocument = document.replaceAll(RegExp(r'\D'), '');
     if (_selectedDocumentType == 'CNPJ') {
-      return RegExp(r'^\d{14}$').hasMatch(cleanedDocument); 
+      return RegExp(r'^\d{14}$').hasMatch(cleanedDocument);
     } else if (_selectedDocumentType == 'CPF') {
-      return _validateCPF(cleanedDocument); 
+      return _validateCPF(cleanedDocument);
     }
     return false;
   }
@@ -106,7 +105,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'userType': 'Solicitante',
           'photoUrl': null,
           'createdAt': FieldValue.serverTimestamp(),
-          'establishmentType': _selectedEstablishmentType,    
+          'establishmentType': _selectedEstablishmentType,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -178,7 +177,6 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                   'assets/ciclou.png',
                   height: 350,
                 ),
-                const SizedBox(height: 16),
                 Column(
                   children: const [
                     Text(
