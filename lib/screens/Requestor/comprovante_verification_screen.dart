@@ -39,12 +39,10 @@ class ComprovanteVerificationScreen extends StatelessWidget {
 
         final data = snapshot.data!.data() as Map<String, dynamic>;
 
-        // Log dos dados da coleta
         debugPrint('Dados da Coleta: $data');
 
         final comprovantePath = data['comprovantePagamento'];
 
-        // Verifica se o caminho do comprovante é válido e o arquivo existe
         final fileExists =
             comprovantePath != null && File(comprovantePath).existsSync();
         debugPrint('Caminho do Comprovante: $comprovantePath');

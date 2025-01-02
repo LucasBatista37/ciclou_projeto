@@ -29,6 +29,7 @@ class _CollectProcessState extends State<CollectProcess> {
   bool _carregando = true;
   String? _caminhoCertificado;
   String? _qrCodeBase64;
+  String? _qrCodeText;
   String? _confirmationCode;
 
   double _quantidadeReal = 0.0;
@@ -135,14 +136,11 @@ class _CollectProcessState extends State<CollectProcess> {
 
       if (proposalSnapshot.docs.isNotEmpty) {
         final proposalData = proposalSnapshot.docs.first.data();
-        if (proposalData.containsKey('qrCodeBase64')) {
-          setState(() {
-            _qrCodeBase64 = proposalData['qrCodeBase64'];
-          });
-          developer.log("QR Code encontrado e carregado com sucesso.");
-        } else {
-          developer.log("QR Code não encontrado na proposta aceita.");
-        }
+        setState(() {
+          _qrCodeBase64 = proposalData['qrCodeBase64'];
+          _qrCodeText = proposalData['qrCode']; // Adiciona o QR Code textual
+        });
+        developer.log("QR Code encontrado e carregado com sucesso.");
       } else {
         developer.log("Nenhuma proposta aceita encontrada.");
       }
@@ -841,30 +839,108 @@ class _CollectProcessState extends State<CollectProcess> {
                 Center(
                   child: Card(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+                      borderRadius: BorderRadius.circular(16.0),
                     ),
-                    elevation: 3,
+                    elevation: 5,
+                    shadowColor: Colors.grey.shade300,
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(20.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Text(
-                            'QR Code para Pagamento da Plataforma',
+                            'Pagamento com QR Code',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Use o QR Code abaixo para efetuar o pagamento.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
                             ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
-                          Image.memory(
-                            base64Decode(_qrCodeBase64!),
-                            width: 200,
-                            height: 200,
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.green, width: 2),
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: Image.memory(
+                              base64Decode(_qrCodeBase64!),
+                              width: 200,
+                              height: 200,
+                            ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
+                          if (_qrCodeText != null) ...[
+                            const Text(
+                              'Código do QR Code:',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(color: Colors.grey.shade400),
+                              ),
+                              padding: const EdgeInsets.all(12.0),
+                              child: SelectableText(
+                                _qrCodeText!,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                  fontFamily: 'Courier',
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                if (_qrCodeText != null) {
+                                  Clipboard.setData(
+                                      ClipboardData(text: _qrCodeText!));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Código do QR Code copiado!'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.copy, color: Colors.white),
+                              label: const Text(
+                                'Copiar Código',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12.0,
+                                  horizontal: 16.0,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
                           ElevatedButton(
                             onPressed: () async {
                               await _verificarPagamento();
@@ -872,13 +948,24 @@ class _CollectProcessState extends State<CollectProcess> {
                                 const SnackBar(
                                   content: Text(
                                       'Revalidando status do pagamento...'),
+                                  backgroundColor: Colors.orange,
                                 ),
                               );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12.0,
+                                horizontal: 16.0,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
                             ),
-                            child: const Text('Já Paguei'),
+                            child: const Text(
+                              'Já Paguei',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ],
                       ),

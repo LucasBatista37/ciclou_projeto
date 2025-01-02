@@ -312,6 +312,7 @@ class ProposalsScreen extends StatelessWidget {
 
       final amount = _calculateAmount(double.parse(quantityOleo.toString()));
 
+      // Atualiza o status da proposta para 'Aceita'
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -319,6 +320,7 @@ class ProposalsScreen extends StatelessWidget {
           .doc(proposalId)
           .update({'status': 'Aceita'});
 
+      // Atualiza os dados gerais da coleta
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -329,6 +331,7 @@ class ProposalsScreen extends StatelessWidget {
         'precoPorLitro': precoPorLitro,
       });
 
+      // Notifica o coletor
       _sendNotification(
         collectorId,
         'Proposta Aceita!',
@@ -336,12 +339,34 @@ class ProposalsScreen extends StatelessWidget {
         documentId,
       );
 
+      // Gera o pagamento e armazena os dados
       await generateFixedPixPayment(
         amount: amount.toString(),
         user: user,
         documentId: documentId,
         proposalId: proposalId,
       );
+
+      // Recupera os dados do QR Code gerado
+      final updatedProposalDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .collection('propostas')
+          .doc(proposalId)
+          .get();
+
+      final updatedProposalData = updatedProposalDoc.data();
+      if (updatedProposalData != null) {
+        final qrCode = updatedProposalData['qrCode']; // QR Code textual gerado
+        if (qrCode != null) {
+          await FirebaseFirestore.instance
+              .collection('coletas')
+              .doc(documentId)
+              .collection('propostas')
+              .doc(proposalId)
+              .update({'qrCodeText': qrCode}); // Salva no Firestore
+        }
+      }
 
       await _generateSolicitanteQrCode(
         documentId: documentId,

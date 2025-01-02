@@ -125,16 +125,18 @@ Future<void> generateFixedPixPayment({
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
 
+      final qrCode = data['qrCode'];
       final qrCodeBase64 = data['qrCodeBase64'];
-      final paymentId = data['paymentId']; 
-      if (qrCodeBase64 != null && paymentId != null) {
+      final paymentId = data['paymentId'];
+      if (qrCode != null && qrCodeBase64 != null && paymentId != null) {
         await FirebaseFirestore.instance
             .collection('coletas')
             .doc(documentId)
             .collection('propostas')
             .doc(proposalId)
             .update({
-          'paymentId': paymentId.toString(), 
+          'paymentId': paymentId.toString(),
+          'qrCode': qrCode,
           'qrCodeBase64': qrCodeBase64,
           'statusPagamento': 'Pendente',
         });
@@ -148,7 +150,6 @@ Future<void> generateFixedPixPayment({
       throw Exception('Erro ao gerar pagamento PIX: ${response.body}');
     }
   } catch (e) {
-    print('Erro ao gerar o pagamento: $e');
     rethrow;
   }
 }
