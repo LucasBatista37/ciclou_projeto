@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/screens/Requestor/collect_details_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -70,6 +71,27 @@ class RequestorHistoryScreen extends StatelessWidget {
                       "${createdAt.year}"
                   : 'Data não disponível';
 
+              final comprovanteStatus = record['comprovanteStatus'] ?? 'N/A';
+              Icon comprovanteIcon;
+              Color comprovanteColor;
+
+              switch (comprovanteStatus) {
+                case 'Válido':
+                  comprovanteIcon = const Icon(Icons.check_circle,
+                      color: Colors.green, size: 20);
+                  comprovanteColor = Colors.green;
+                  break;
+                case 'Inválido':
+                  comprovanteIcon =
+                      const Icon(Icons.cancel, color: Colors.red, size: 20);
+                  comprovanteColor = Colors.red;
+                  break;
+                default:
+                  comprovanteIcon = const Icon(Icons.help_outline,
+                      color: Colors.grey, size: 20);
+                  comprovanteColor = Colors.grey;
+              }
+
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
                 shape: RoundedRectangleBorder(
@@ -77,7 +99,13 @@ class RequestorHistoryScreen extends StatelessWidget {
                 ),
                 child: InkWell(
                   onTap: () {
-                    // Optional: Add details page navigation or action
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ColetaDetailsScreen(documentId: history[index].id),
+                      ),
+                    );
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -167,6 +195,32 @@ class RequestorHistoryScreen extends StatelessWidget {
                                   fontSize: 14.0,
                                   color: Colors.black87,
                                 ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8.0),
+                        Row(
+                          children: [
+                            const Icon(Icons.receipt_long,
+                                color: Colors.grey, size: 20),
+                            const SizedBox(width: 8.0),
+                            Text(
+                              'Comprovante:',
+                              style: const TextStyle(
+                                fontSize: 14.0,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(width: 8.0),
+                            comprovanteIcon,
+                            const SizedBox(width: 8.0),
+                            Text(
+                              comprovanteStatus,
+                              style: TextStyle(
+                                color: comprovanteColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.0,
                               ),
                             ),
                           ],

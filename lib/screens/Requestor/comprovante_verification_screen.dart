@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:ciclou_projeto/screens/Requestor/verificacao_concluida_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -125,7 +126,14 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                             backgroundColor: Colors.red,
                           ),
                         );
-                        Navigator.pop(context);
+
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const VerificacaoConcluidaScreen(),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
@@ -154,7 +162,14 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                             backgroundColor: Colors.green,
                           ),
                         );
-                        Navigator.pop(context);
+
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const VerificacaoConcluidaScreen(),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
