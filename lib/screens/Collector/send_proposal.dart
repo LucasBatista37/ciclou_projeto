@@ -20,9 +20,9 @@ class _SendProposalState extends State<SendProposal> {
   final List<int> _temposMaximos = [2, 6, 12, 24, 36, 48];
   int? _tempoMaximoSelecionado;
 
-  double _quantidadeOleo = 0.0; // Armazena o valor de quantidadeOleo
-  double _totalCalculado = 0.0; // Armazena o total calculado
-  double _taxa = 0.0; // Armazena a taxa da plataforma
+  double _quantidadeOleo = 0.0;
+  double _totalCalculado = 0.0; 
+  double _taxa = 0.0; 
 
   @override
   void initState() {
@@ -55,6 +55,7 @@ class _SendProposalState extends State<SendProposal> {
   }
 
   double _calcularTaxa(double liters) {
+    if (liters > 100) return 20.0;
     if (liters >= 20 && liters <= 30) return 7.5;
     if (liters > 30 && liters <= 45) return 10.0;
     if (liters > 45 && liters <= 60) return 12.0;
@@ -111,9 +112,7 @@ class _SendProposalState extends State<SendProposal> {
   void _enviarProposta() async {
     if (_formKey.currentState!.validate()) {
       final preco = _precoController.text.trim();
-      final valorTotalPago = _quantidadeOleo *
-          (double.tryParse(preco) ??
-              0.0); // Calcula o valor total pago sem a taxa
+      final valorTotalPago = _quantidadeOleo * (double.tryParse(preco) ?? 0.0);
 
       try {
         final coletaDoc = await FirebaseFirestore.instance
@@ -143,8 +142,7 @@ class _SendProposalState extends State<SendProposal> {
           'collectorName': widget.user.responsible,
           'collectorId': widget.user.userId,
           'photoUrl': widget.user.photoUrl,
-          'valorTotalPago': valorTotalPago
-              .toStringAsFixed(2), // Adiciona o valor total pago sem taxa
+          'valorTotalPago': valorTotalPago.toStringAsFixed(2),
         });
 
         await FirebaseFirestore.instance.collection('notifications').add({

@@ -573,43 +573,63 @@ class _CollectProcessState extends State<CollectProcess> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                elevation: 3,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Informações da Coleta',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tipo de Estabelecimento: ${data['tipoEstabelecimento'] ?? 'N/A'}',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Quantidade Estimada: ${data['quantidadeOleo'] ?? 'N/A'} Litros',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      if (_paymentStatus == 'approved') ...[
+              Center(
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.0),
+                  ),
+                  elevation: 5,
+                  shadowColor: Colors.grey.shade300,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Informações da Coleta',
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Tipo de Estabelecimento: ${data['tipoEstabelecimento'] ?? 'N/A'}',
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Colors.black87,
+                                  ),
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 8),
                         Text(
-                          'Endereço: ${data['address'] ?? 'N/A'}',
-                          style: Theme.of(context).textTheme.bodyLarge,
+                          'Quantidade Estimada: ${data['quantidadeOleo'] ?? 'N/A'} Litros',
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Colors.black87,
+                                  ),
+                          textAlign: TextAlign.center,
                         ),
+                        if (_paymentStatus == 'approved') ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Endereço: ${data['address'] ?? 'N/A'}',
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Colors.black87,
+                                    ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               // Informações de Pagamento
               if (_paymentStatus == 'approved')
@@ -850,7 +870,7 @@ class _CollectProcessState extends State<CollectProcess> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Text(
-                            'Pagamento com QR Code',
+                            'Pagamento com QR Code para a Plataforma',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -860,7 +880,7 @@ class _CollectProcessState extends State<CollectProcess> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Use o QR Code abaixo para efetuar o pagamento.',
+                            'Use o QR Code para efetuar o pagamento para a plataforma, após isso poderá visualizar o endereço e pagar o solicitante.',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.black54,
@@ -883,7 +903,7 @@ class _CollectProcessState extends State<CollectProcess> {
                           const SizedBox(height: 20),
                           if (_qrCodeText != null) ...[
                             const Text(
-                              'Código do QR Code:',
+                              'Código QR:',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -899,7 +919,7 @@ class _CollectProcessState extends State<CollectProcess> {
                               ),
                               padding: const EdgeInsets.all(12.0),
                               child: SelectableText(
-                                _qrCodeText!,
+                                '${_qrCodeText!.substring(0, 22)}...',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.black87,
@@ -909,64 +929,69 @@ class _CollectProcessState extends State<CollectProcess> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                if (_qrCodeText != null) {
-                                  Clipboard.setData(
-                                      ClipboardData(text: _qrCodeText!));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Código do QR Code copiado!'),
-                                      backgroundColor: Colors.green,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    if (_qrCodeText != null) {
+                                      Clipboard.setData(
+                                          ClipboardData(text: _qrCodeText!));
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Código copiado!'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.copy,
+                                      color: Colors.white),
+                                  label: const Text(
+                                    'Copiar Código',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12.0,
+                                      horizontal: 16.0,
                                     ),
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.copy, color: Colors.white),
-                              label: const Text(
-                                'Copiar Código',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12.0,
-                                  horizontal: 16.0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await _verificarPagamento();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content:
+                                            Text('Revalidando pagamento...'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12.0,
+                                      horizontal: 16.0,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Já Paguei',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ],
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: () async {
-                              await _verificarPagamento();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Revalidando status do pagamento...'),
-                                  backgroundColor: Colors.orange,
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 12.0,
-                                horizontal: 16.0,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                            ),
-                            child: const Text(
-                              'Já Paguei',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
                         ],
                       ),
                     ),

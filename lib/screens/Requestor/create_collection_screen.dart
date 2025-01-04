@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/custom_time_picker.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -25,6 +26,10 @@ class _CreateCollectionState extends State<CreateCollection> {
   String? _formaRecebimento;
   final _bancoController = TextEditingController();
   final _regionController = TextEditingController();
+  final TextEditingController _horarioInicialController =
+      TextEditingController();
+  final TextEditingController _horarioFinalController = TextEditingController();
+
   bool _isLoading = false;
   List<String> _bancos = [];
 
@@ -51,6 +56,8 @@ class _CreateCollectionState extends State<CreateCollection> {
 
   @override
   void dispose() {
+    _horarioInicialController.dispose();
+    _horarioFinalController.dispose();
     _enderecoController.dispose();
     super.dispose();
   }
@@ -68,7 +75,6 @@ class _CreateCollectionState extends State<CreateCollection> {
             .where((name) => name.isNotEmpty)
             .toList();
       });
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao carregar bancos: $e')),
@@ -94,6 +100,36 @@ class _CreateCollectionState extends State<CreateCollection> {
   }
 
   Future<void> _enviarSolicitacao() async {
+    if (_quantidadeOleo == null || _quantidadeOleo! < 20) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'A quantidade estimada de óleo deve ser no mínimo 20 litros.',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_horarioInicialController.text.isEmpty ||
+        _horarioFinalController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Informe o horário inicial e final de funcionamento.',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    _horarioFuncionamentoController.text =
+        '${_horarioInicialController.text} - ${_horarioFinalController.text}';
+
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -120,7 +156,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           'tipoChavePix': _formaRecebimento,
           'chavePix': _chavePixController.text.trim(),
           'banco': _bancoController.text.trim(),
-          'address': _enderecoController.text.trim(),   
+          'address': _enderecoController.text.trim(),
           'region': _regionController.text.trim(),
           'status': 'Pendente',
           'userId': widget.user.userId,
@@ -317,6 +353,10 @@ class _CreateCollectionState extends State<CreateCollection> {
                         if (value == null || double.tryParse(value) == null) {
                           return 'Digite uma quantidade válida';
                         }
+                        final quantidade = double.tryParse(value);
+                        if (quantidade != null && quantidade < 20) {
+                          return 'A quantidade mínima é de 20 litros';
+                        }
                         return null;
                       },
                     ),
@@ -491,19 +531,68 @@ class _CreateCollectionState extends State<CreateCollection> {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8.0),
-                    TextFormField(
-                      controller: _horarioFuncionamentoController,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Exemplo: 08:00 - 18:00',
-                      ),
-                      keyboardType: TextInputType.datetime,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Informe o horário de funcionamento';
-                        }
-                        return null;
-                      },
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _horarioInicialController,
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Hora Inicial',
+                              hintText: 'Ex: 08:00',
+                            ),
+                            onTap: () async {
+                              TimeOfDay? pickedTime = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.now(),
+                              );
+                              if (pickedTime != null) {
+                                setState(() {
+                                  _horarioInicialController.text =
+                                      pickedTime.format(context);
+                                });
+                              }
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Informe a hora inicial';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _horarioFinalController,
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Hora Final',
+                              hintText: 'Ex: 18:00',
+                            ),
+                            onTap: () async {
+                              TimeOfDay? pickedTime = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.now(),
+                              );
+                              if (pickedTime != null) {
+                                setState(() {
+                                  _horarioFinalController.text =
+                                      pickedTime.format(context);
+                                });
+                              }
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Informe a hora final';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16.0),
                     const Text(

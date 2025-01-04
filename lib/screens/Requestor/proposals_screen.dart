@@ -312,7 +312,6 @@ class ProposalsScreen extends StatelessWidget {
 
       final amount = _calculateAmount(double.parse(quantityOleo.toString()));
 
-      // Atualiza o status da proposta para 'Aceita'
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -320,7 +319,6 @@ class ProposalsScreen extends StatelessWidget {
           .doc(proposalId)
           .update({'status': 'Aceita'});
 
-      // Atualiza os dados gerais da coleta
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -331,7 +329,6 @@ class ProposalsScreen extends StatelessWidget {
         'precoPorLitro': precoPorLitro,
       });
 
-      // Notifica o coletor
       _sendNotification(
         collectorId,
         'Proposta Aceita!',
@@ -339,7 +336,6 @@ class ProposalsScreen extends StatelessWidget {
         documentId,
       );
 
-      // Gera o pagamento e armazena os dados
       await generateFixedPixPayment(
         amount: amount.toString(),
         user: user,
@@ -347,7 +343,6 @@ class ProposalsScreen extends StatelessWidget {
         proposalId: proposalId,
       );
 
-      // Recupera os dados do QR Code gerado
       final updatedProposalDoc = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -357,14 +352,14 @@ class ProposalsScreen extends StatelessWidget {
 
       final updatedProposalData = updatedProposalDoc.data();
       if (updatedProposalData != null) {
-        final qrCode = updatedProposalData['qrCode']; // QR Code textual gerado
+        final qrCode = updatedProposalData['qrCode'];
         if (qrCode != null) {
           await FirebaseFirestore.instance
               .collection('coletas')
               .doc(documentId)
               .collection('propostas')
               .doc(proposalId)
-              .update({'qrCodeText': qrCode}); // Salva no Firestore
+              .update({'qrCodeText': qrCode});
         }
       }
 
@@ -396,6 +391,7 @@ class ProposalsScreen extends StatelessWidget {
   }
 
   double _calculateAmount(double liters) {
+    if (liters > 100) return 20.0;
     if (liters >= 20 && liters <= 30) return 7.5;
     if (liters > 30 && liters <= 45) return 10.0;
     if (liters > 45 && liters <= 60) return 12.0;
