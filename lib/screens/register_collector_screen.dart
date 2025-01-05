@@ -92,7 +92,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-              builder: (context) => const UploadDocumentsScreen()),
+            builder: (context) => const LoginScreen(),
+          ),
         );
       }
     } on FirebaseAuthException catch (e) {

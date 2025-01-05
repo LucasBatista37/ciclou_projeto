@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
@@ -107,13 +108,71 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
     }
   }
 
+  Future<void> _updatePhotoUrl(String photoPath) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        // Criação de referência no Firebase Storage
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('collector_photos')
+            .child('$uid.jpg');
+
+        // Upload do arquivo
+        final uploadTask = await storageRef.putFile(File(photoPath));
+        final photoUrl = await uploadTask.ref.getDownloadURL();
+
+        // Atualização do Firestore com o URL da foto
+        await FirebaseFirestore.instance
+            .collection('collector')
+            .doc(uid)
+            .update({
+          'photoUrl': photoUrl,
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Foto de perfil atualizada com sucesso!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar foto: $e')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário não autenticado.')),
+      );
+    }
+  }
+
+  Future<String> _uploadImage(File imageFile) async {
+    try {
+      final fileName =
+          'profile_images/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final storageRef = FirebaseStorage.instance.ref().child(fileName);
+      final uploadTask = await storageRef.putFile(imageFile);
+      return await storageRef.getDownloadURL();
+    } catch (e) {
+      throw Exception('Erro ao fazer upload da imagem: $e');
+    }
+  }
+
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedImage != null) {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
       setState(() {
-        _profileImage = pickedImage;
+        _profileImage = pickedFile;
       });
+
+      await _updatePhotoUrl(pickedFile.path);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhuma imagem selecionada.')),
+      );
     }
   }
 

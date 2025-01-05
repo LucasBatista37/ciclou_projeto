@@ -11,13 +11,13 @@ class TimeRangePicker extends StatefulWidget {
 }
 
 class _TimeRangePickerState extends State<TimeRangePicker> {
-  TimeOfDay? _startTime;
-  TimeOfDay? _endTime;
+  TimeOfDay? _startTime = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay? _endTime = const TimeOfDay(hour: 18, minute: 0);
 
   Future<void> _selectTime(BuildContext context, bool isStartTime) async {
     final initialTime = isStartTime
-        ? _startTime ?? TimeOfDay.now()
-        : _endTime ?? TimeOfDay.now();
+        ? _startTime ?? const TimeOfDay(hour: 8, minute: 0)
+        : _endTime ?? const TimeOfDay(hour: 18, minute: 0);
 
     final selectedTime = await showTimePicker(
       context: context,

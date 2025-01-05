@@ -98,7 +98,7 @@ class ProposalsScreen extends StatelessWidget {
     final displayInitial = proposal['collectorName']?[0]?.toUpperCase() ?? 'A';
     final tempoMaximoColeta = proposal['tempoMaximoColeta'] ?? 'N/A';
     final valorTotalPago =
-        proposal['valorTotalPago'] ?? 'N/A'; // Obtém o valorTotalPago
+        proposal['valorTotalPago'] ?? 'N/A'; 
 
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance

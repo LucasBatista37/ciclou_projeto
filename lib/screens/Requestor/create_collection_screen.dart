@@ -539,13 +539,25 @@ class _CreateCollectionState extends State<CreateCollection> {
                             readOnly: true,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              labelText: 'Hora Inicial',
+                              labelText: 'Horário Inicial',
                               hintText: 'Ex: 08:00',
                             ),
                             onTap: () async {
+                              final initialTime =
+                                  _horarioInicialController.text.isNotEmpty
+                                      ? TimeOfDay(
+                                          hour: int.parse(
+                                              _horarioInicialController.text
+                                                  .split(':')[0]),
+                                          minute: int.parse(
+                                              _horarioInicialController.text
+                                                  .split(':')[1]),
+                                        )
+                                      : const TimeOfDay(hour: 8, minute: 0);
+
                               TimeOfDay? pickedTime = await showTimePicker(
                                 context: context,
-                                initialTime: TimeOfDay.now(),
+                                initialTime: initialTime,
                               );
                               if (pickedTime != null) {
                                 setState(() {
@@ -569,13 +581,25 @@ class _CreateCollectionState extends State<CreateCollection> {
                             readOnly: true,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              labelText: 'Hora Final',
+                              labelText: 'Horário Final',
                               hintText: 'Ex: 18:00',
                             ),
                             onTap: () async {
+                              final initialTime =
+                                  _horarioFinalController.text.isNotEmpty
+                                      ? TimeOfDay(
+                                          hour: int.parse(
+                                              _horarioFinalController.text
+                                                  .split(':')[0]),
+                                          minute: int.parse(
+                                              _horarioFinalController.text
+                                                  .split(':')[1]),
+                                        )
+                                      : const TimeOfDay(hour: 18, minute: 0);
+
                               TimeOfDay? pickedTime = await showTimePicker(
                                 context: context,
-                                initialTime: TimeOfDay.now(),
+                                initialTime: initialTime,
                               );
                               if (pickedTime != null) {
                                 setState(() {
@@ -587,6 +611,26 @@ class _CreateCollectionState extends State<CreateCollection> {
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Informe a hora final';
+                              }
+
+                              if (_horarioInicialController.text.isNotEmpty) {
+                                final inicio = TimeOfDay(
+                                  hour: int.parse(_horarioInicialController.text
+                                      .split(':')[0]),
+                                  minute: int.parse(_horarioInicialController
+                                      .text
+                                      .split(':')[1]),
+                                );
+                                final fim = TimeOfDay(
+                                  hour: int.parse(value.split(':')[0]),
+                                  minute: int.parse(value.split(':')[1]),
+                                );
+
+                                if (fim.hour < inicio.hour ||
+                                    (fim.hour == inicio.hour &&
+                                        fim.minute <= inicio.minute)) {
+                                  return 'Hora final deve ser maior que a inicial';
+                                }
                               }
                               return null;
                             },
