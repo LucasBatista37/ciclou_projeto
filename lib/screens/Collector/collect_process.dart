@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:ciclou_projeto/components/collect_process/Collect_Service.dart';
+import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
+import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
 import 'package:ciclou_projeto/components/generate_manualqr_payment.dart';
 import 'package:ciclou_projeto/components/payment_service.dart';
 import 'package:ciclou_projeto/components/pix_validation_service.dart';
@@ -36,6 +39,7 @@ class _CollectProcessState extends State<CollectProcess> {
   bool _coletaFinalizada = false;
   String? _paymentStatus;
   File? _comprovantePagamento;
+  double _valorTotalPago = 0.0;
 
   @override
   void initState() {
@@ -44,84 +48,37 @@ class _CollectProcessState extends State<CollectProcess> {
     _carregando = false;
     _buscarQrCode();
     _verificarPagamento();
+    _carregarValorTotalPago();
     developer.log("Coleta inicializada com ID: ${_coletaAtual.id}");
   }
 
   Future<void> _verificarPagamento() async {
     try {
-      final proposalSnapshot = await FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(_coletaAtual.id)
-          .collection('propostas')
-          .where('status', isEqualTo: 'Aceita')
-          .get();
+      final result =
+          await CollectService.verificarPagamentoComCodigo(_coletaAtual.id);
 
-      if (proposalSnapshot.docs.isNotEmpty) {
-        final proposalData = proposalSnapshot.docs.first.data();
-        final paymentId = proposalData['paymentId'];
-
-        if (paymentId != null) {
-          final paymentService = PaymentService(paymentId);
-
-          final status = await paymentService.validatePayment();
-
-          setState(() {
-            _paymentStatus = status;
-          });
-
-          developer.log("Status do pagamento: $status");
-
-          if (_paymentStatus == 'approved') {
-            final confirmationCode = await _generateConfirmationCode();
-            setState(() {
-              _confirmationCode = confirmationCode;
-            });
-          }
-        } else {
-          developer.log("Nenhum ID de pagamento encontrado na proposta.");
-        }
-      }
-    } catch (e, stack) {
-      developer.log("Erro ao verificar status do pagamento: $e",
-          error: e, stackTrace: stack);
-
+      setState(() {
+        _paymentStatus = result['paymentStatus'];
+        _confirmationCode = result['confirmationCode'];
+      });
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao verificar status do pagamento: $e')),
+        SnackBar(content: Text('Erro ao verificar pagamento: $e')),
       );
     }
   }
 
-  Future<String> _generateConfirmationCode() async {
+  Future<void> _carregarValorTotalPago() async {
     try {
-      final data = _coletaAtual.data() as Map<String, dynamic>;
-
-      // Gera o código de confirmação usando a função importada
-      final result = await generateManualQr(
-        pixKey: data['chavePix'],
-        amount: data['quantidadeOleo'] ?? 0.0,
-        description:
-            'Confirmação de coleta para ${data['tipoEstabelecimento']}',
-      );
-
-      final confirmationCode = result['confirmationCode'] as String;
-
-      await FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(_coletaAtual.id)
-          .update({
-        'confirmationCode': confirmationCode,
+      final valor = await CollectService.getValorTotalPago(_coletaAtual.id);
+      setState(() {
+        _valorTotalPago = valor;
       });
-
-      developer.log(
-          "Código de confirmação salvo com sucesso na coleta ${_coletaAtual.id}");
-
-      return confirmationCode;
     } catch (e) {
-      developer.log("Erro ao gerar código de confirmação: $e");
+      developer.log("Erro ao carregar valor total pago: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao gerar código de confirmação: $e')),
+        SnackBar(content: Text('Erro ao carregar valor total pago: $e')),
       );
-      return 'Erro';
     }
   }
 
@@ -149,118 +106,23 @@ class _CollectProcessState extends State<CollectProcess> {
     }
   }
 
-  void _exibirQrCode() {
-    if (_qrCodeBase64 == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('QR Code não disponível.')),
-      );
-      return;
-    }
-
-    final Uint8List qrCodeBytes = base64Decode(_qrCodeBase64!);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('QR Code para Pagamento'),
-          content: Image.memory(qrCodeBytes),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Fechar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _gerarCertificado() async {
-    developer.log("Iniciando geração do certificado...");
-
     final data = _coletaAtual.data() as Map<String, dynamic>;
 
     try {
-      developer.log("Dados da coleta: $data");
-
-      final templatePdf = await rootBundle.load('assets/certificado.png');
-      developer.log("Imagem do certificado carregada com sucesso.");
-
-      final outputPdf = pw.Document();
-
-      final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
-      final ttf = pw.Font.ttf(fontData.buffer.asByteData());
-
-      final pdfImage = pw.MemoryImage(templatePdf.buffer.asUint8List());
-
-      outputPdf.addPage(
-        pw.Page(
-          pageFormat: const PdfPageFormat(792, 612),
-          margin: pw.EdgeInsets.zero,
-          build: (context) {
-            return pw.Stack(
-              children: [
-                pw.Image(pdfImage, fit: pw.BoxFit.cover),
-                pw.Positioned(
-                  left: 125,
-                  top: 272,
-                  child: pw.Text(
-                    '${data['tipoEstabelecimento'] ?? 'N/A'}',
-                    style: pw.TextStyle(font: ttf, fontSize: 18),
-                  ),
-                ),
-                pw.Positioned(
-                  left: 99.5,
-                  top: 314.2,
-                  child: pw.Text(
-                    '${data['cnpj'] ?? 'N/A'}',
-                    style: pw.TextStyle(font: ttf, fontSize: 18),
-                  ),
-                ),
-                pw.Positioned(
-                  left: 260,
-                  top: 360,
-                  child: pw.Text(
-                    '${_quantidadeReal.toStringAsFixed(2)} L',
-                    style: pw.TextStyle(font: ttf, fontSize: 18),
-                  ),
-                ),
-                pw.Positioned(
-                  left: 390,
-                  top: 360,
-                  child: pw.Text(
-                    '${DateTime.now().toString().split(' ')[0]}',
-                    style: pw.TextStyle(font: ttf, fontSize: 18),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+      await CertificadoService.gerarCertificado(
+        coletaData: data,
+        coletaId: _coletaAtual.id,
+        quantidadeReal: _quantidadeReal,
       );
 
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/certificado_${_coletaAtual.id}.pdf');
-      await file.writeAsBytes(await outputPdf.save());
-
-      await FirebaseFirestore.instance
-          .collection('certificados')
-          .doc(_coletaAtual.id)
-          .set({
-        'coletaId': _coletaAtual.id,
-        'userId': data['userId'],
-        'collectorId': FirebaseAuth.instance.currentUser?.uid,
-        'requestorName': data['requestorName'],
-        'filePath': file.path,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      developer.log(
-          "Certificado gerado e associado ao usuário ${data['requestorName']} (ID: ${data['userId']}).");
-    } catch (e, stack) {
-      developer.log("Erro ao gerar certificado: $e",
-          error: e, stackTrace: stack);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Certificado gerado com sucesso!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao gerar certificado: $e')),
       );
@@ -285,9 +147,6 @@ class _CollectProcessState extends State<CollectProcess> {
 
         transaction.update(collectorDocRef, {'amountOil': newAmount});
       });
-
-      developer.log(
-          "Quantidade de óleo coletada foi atualizada com sucesso pelo coletor.");
     } catch (e, stack) {
       developer.log("Erro ao atualizar quantidade de óleo pelo coletor: $e",
           error: e, stackTrace: stack);
@@ -300,11 +159,8 @@ class _CollectProcessState extends State<CollectProcess> {
   }
 
   Future<void> _confirmarColeta() async {
-    developer.log("Iniciando confirmação da coleta...");
-
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
-      developer.log("Erro: Usuário não autenticado.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Usuário não autenticado.')),
       );
@@ -322,7 +178,6 @@ class _CollectProcessState extends State<CollectProcess> {
       return;
     }
 
-    // Exibe a sobreposição para o envio do comprovante
     _mostrarSobreposicaoComprovante();
   }
 
@@ -382,57 +237,24 @@ class _CollectProcessState extends State<CollectProcess> {
         _coletaFinalizada = true;
       });
 
-      developer.log("Coleta confirmada com sucesso pelo coletor.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Coleta confirmada com sucesso!')),
       );
 
       await _gerarCertificado();
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ColetaFinalizadaScreen()),
-      );
+      Future.delayed(Duration.zero, () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => const ColetaFinalizadaScreen()),
+        );
+      });
     } catch (e) {
-      developer.log("Erro ao finalizar coleta: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao finalizar coleta: $e')),
       );
     }
-  }
-
-  Future<double> _getValorTotalPago() async {
-    try {
-      final proposalSnapshot = await FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(_coletaAtual.id)
-          .collection('propostas')
-          .where('status', isEqualTo: 'Aceita')
-          .get();
-
-      developer.log("Propostas encontradas: ${proposalSnapshot.docs.length}");
-
-      if (proposalSnapshot.docs.isNotEmpty) {
-        final proposalData = proposalSnapshot.docs.first.data();
-        developer.log("Dados da primeira proposta: $proposalData");
-
-        final valorTotalPagoRaw = proposalData['valorTotalPago'];
-        final valorTotalPago = valorTotalPagoRaw is double
-            ? valorTotalPagoRaw
-            : double.tryParse(valorTotalPagoRaw.toString()) ?? 0.0;
-
-        developer.log("Valor Total Pago recuperado: $valorTotalPago");
-
-        return valorTotalPago;
-      } else {
-        developer.log("Nenhuma proposta com status 'Aceita' encontrada.");
-      }
-    } catch (e, stack) {
-      developer.log("Erro ao buscar valorTotalPago: $e",
-          error: e, stackTrace: stack);
-    }
-
-    return 0.0;
   }
 
   void _mostrarSobreposicaoComprovante() {
@@ -440,125 +262,15 @@ class _CollectProcessState extends State<CollectProcess> {
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              title: const Text(
-                'Enviar Comprovante de Pagamento',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_comprovantePagamento != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Comprovante Selecionado:',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: Colors.green[50],
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: Text(
-                            _comprovantePagamento!.path.split('/').last,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.green,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final result = await FilePicker.platform.pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-                      );
-
-                      if (result != null && result.files.single.path != null) {
-                        setState(() {
-                          _comprovantePagamento =
-                              File(result.files.single.path!);
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content:
-                                Text('Comprovante selecionado com sucesso!'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.upload, color: Colors.white),
-                    label: const Text(
-                      'Selecionar Comprovante',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12.0, horizontal: 16.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    'Cancelar',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: _comprovantePagamento != null
-                      ? () async {
-                          await _enviarComprovantePagamento();
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12.0, horizontal: 16.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  child: const Text(
-                    'Enviar e Finalizar',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            );
+        return ComprovanteOverlay(
+          onComprovanteSelecionado: (File? comprovante) {
+            setState(() {
+              _comprovantePagamento = comprovante;
+            });
+          },
+          onEnviarComprovante: () async {
+            await _enviarComprovantePagamento();
+            Navigator.pop(context);
           },
         );
       },
@@ -607,6 +319,7 @@ class _CollectProcessState extends State<CollectProcess> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Informações da Coleta
               Center(
                 child: Card(
                   shape: RoundedRectangleBorder(
@@ -667,155 +380,118 @@ class _CollectProcessState extends State<CollectProcess> {
 
               // Informações de Pagamento
               if (_paymentStatus == 'approved')
-                FutureBuilder<double>(
-                  future: _getValorTotalPago(),
-                  builder: (context, snapshot) {
-                    developer.log(
-                        "FutureBuilder: estado da conexão: ${snapshot.connectionState}");
-
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      developer
-                          .log("FutureBuilder: carregando valorTotalPago.");
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-
-                    if (snapshot.hasError) {
-                      return Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        elevation: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: const Text(
-                            'Erro ao carregar informações de pagamento.',
-                            style: TextStyle(fontSize: 16, color: Colors.red),
-                          ),
-                        ),
-                      );
-                    }
-
-                    final valorTotalPago = snapshot.data ?? 0.0;
-
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      elevation: 3,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  elevation: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Pagamento para o Solicitante',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.green[700],
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.attach_money,
-                                  color: Colors.green,
-                                  size: 24,
-                                ),
-                              ],
+                            Text(
+                              'Pagamento para o Solicitante',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[700],
+                              ),
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                const Icon(Icons.key,
-                                    color: Colors.grey, size: 20),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    '${data['tipoChavePix'] ?? 'N/A'} / ${data['chavePix'] ?? 'N/A'}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.copy,
-                                      color: Colors.grey, size: 20),
-                                  onPressed: () {
-                                    Clipboard.setData(
-                                      ClipboardData(
-                                          text: data['chavePix'] ?? ''),
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            'Chave Pix copiada para a área de transferência!'),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                const Icon(Icons.account_balance,
-                                    color: Colors.grey, size: 20),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Banco: ${data['banco'] ?? 'N/A'}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                const Icon(Icons.monetization_on,
-                                    color: Colors.grey, size: 20),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Valor Total Pago:',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  'R\$ ${valorTotalPago.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Por favor, revise cuidadosamente as informações.',
-                              style:
-                                  TextStyle(fontSize: 14, color: Colors.grey),
+                            const Icon(
+                              Icons.attach_money,
+                              color: Colors.green,
+                              size: 24,
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  },
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(Icons.key, color: Colors.grey, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${data['tipoChavePix'] ?? 'N/A'} / ${data['chavePix'] ?? 'N/A'}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.copy,
+                                  color: Colors.grey, size: 20),
+                              onPressed: () {
+                                Clipboard.setData(
+                                  ClipboardData(text: data['chavePix'] ?? ''),
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        'Chave Pix copiada para a área de transferência!'),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(Icons.account_balance,
+                                color: Colors.grey, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Banco: ${data['banco'] ?? 'N/A'}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            const Icon(Icons.monetization_on,
+                                color: Colors.grey, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Valor Total Pago:',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              'R\$ ${_valorTotalPago.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Por favor, revise cuidadosamente as informações.',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
 
               const SizedBox(height: 16),
