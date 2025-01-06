@@ -138,7 +138,7 @@ class _CollectProcessState extends State<CollectProcess> {
         final proposalData = proposalSnapshot.docs.first.data();
         setState(() {
           _qrCodeBase64 = proposalData['qrCodeBase64'];
-          _qrCodeText = proposalData['qrCode']; // Adiciona o QR Code textual
+          _qrCodeText = proposalData['qrCode'];
         });
         developer.log("QR Code encontrado e carregado com sucesso.");
       } else {
@@ -401,6 +401,40 @@ class _CollectProcessState extends State<CollectProcess> {
     }
   }
 
+  Future<double> _getValorTotalPago() async {
+    try {
+      final proposalSnapshot = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .collection('propostas')
+          .where('status', isEqualTo: 'Aceita')
+          .get();
+
+      developer.log("Propostas encontradas: ${proposalSnapshot.docs.length}");
+
+      if (proposalSnapshot.docs.isNotEmpty) {
+        final proposalData = proposalSnapshot.docs.first.data();
+        developer.log("Dados da primeira proposta: $proposalData");
+
+        final valorTotalPagoRaw = proposalData['valorTotalPago'];
+        final valorTotalPago = valorTotalPagoRaw is double
+            ? valorTotalPagoRaw
+            : double.tryParse(valorTotalPagoRaw.toString()) ?? 0.0;
+
+        developer.log("Valor Total Pago recuperado: $valorTotalPago");
+
+        return valorTotalPago;
+      } else {
+        developer.log("Nenhuma proposta com status 'Aceita' encontrada.");
+      }
+    } catch (e, stack) {
+      developer.log("Erro ao buscar valorTotalPago: $e",
+          error: e, stackTrace: stack);
+    }
+
+    return 0.0;
+  }
+
   void _mostrarSobreposicaoComprovante() {
     showDialog(
       context: context,
@@ -633,114 +667,155 @@ class _CollectProcessState extends State<CollectProcess> {
 
               // Informações de Pagamento
               if (_paymentStatus == 'approved')
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  elevation: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Pagamento para o Solicitante',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green[700],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.attach_money,
-                              color: Colors.green,
-                              size: 24,
-                            ),
-                          ],
+                FutureBuilder<double>(
+                  future: _getValorTotalPago(),
+                  builder: (context, snapshot) {
+                    developer.log(
+                        "FutureBuilder: estado da conexão: ${snapshot.connectionState}");
+
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      developer
+                          .log("FutureBuilder: carregando valorTotalPago.");
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
                         ),
-                        const SizedBox(height: 12),
-                        Row(
+                        elevation: 3,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: const Text(
+                            'Erro ao carregar informações de pagamento.',
+                            style: TextStyle(fontSize: 16, color: Colors.red),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final valorTotalPago = snapshot.data ?? 0.0;
+
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      elevation: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.key, color: Colors.grey, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${data['tipoChavePix'] ?? 'N/A'} / ${data['chavePix'] ?? 'N/A'}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.copy,
-                                  color: Colors.grey, size: 20),
-                              onPressed: () {
-                                Clipboard.setData(
-                                  ClipboardData(text: data['chavePix'] ?? ''),
-                                );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'Chave Pix copiada para a área de transferência!'),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Pagamento para o Solicitante',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green[700],
                                   ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(Icons.account_balance,
-                                color: Colors.grey, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Banco: ${data['banco'] ?? 'N/A'}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                                const Icon(
+                                  Icons.attach_money,
+                                  color: Colors.green,
+                                  size: 24,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Icon(Icons.key,
+                                    color: Colors.grey, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${data['tipoChavePix'] ?? 'N/A'} / ${data['chavePix'] ?? 'N/A'}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.copy,
+                                      color: Colors.grey, size: 20),
+                                  onPressed: () {
+                                    Clipboard.setData(
+                                      ClipboardData(
+                                          text: data['chavePix'] ?? ''),
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Chave Pix copiada para a área de transferência!'),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Icon(Icons.account_balance,
+                                    color: Colors.grey, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Banco: ${data['banco'] ?? 'N/A'}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                const Icon(Icons.monetization_on,
+                                    color: Colors.grey, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Valor Total Pago:',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  'R\$ ${valorTotalPago.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
                             const Text(
-                              'Valor Total Pago:',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            Text(
-                              'R\$ ${data['valorTotalPago']?.toStringAsFixed(2) ?? '0.00'}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
-                              ),
+                              'Por favor, revise cuidadosamente as informações.',
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.grey),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Por favor, revise cuidadosamente as informações.',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 ),
 
               const SizedBox(height: 16),
