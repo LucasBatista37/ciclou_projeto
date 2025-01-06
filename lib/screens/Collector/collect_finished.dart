@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ColetaFinalizadaScreen extends StatelessWidget {
-  const ColetaFinalizadaScreen({Key? key}) : super(key: key);
+  const ColetaFinalizadaScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

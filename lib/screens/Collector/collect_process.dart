@@ -1,21 +1,15 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:ciclou_projeto/components/collect_process/Coleta_info.dart';
 import 'package:ciclou_projeto/components/collect_process/Collect_Service.dart';
 import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
 import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
-import 'package:ciclou_projeto/components/generate_manualqr_payment.dart';
-import 'package:ciclou_projeto/components/payment_service.dart';
-import 'package:ciclou_projeto/components/pix_validation_service.dart';
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CollectProcess extends StatefulWidget {
@@ -62,8 +56,9 @@ class _CollectProcessState extends State<CollectProcess> {
         _confirmationCode = result['confirmationCode'];
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao verificar pagamento: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao verificar pagamento: $e',
       );
     }
   }
@@ -75,9 +70,9 @@ class _CollectProcessState extends State<CollectProcess> {
         _valorTotalPago = valor;
       });
     } catch (e) {
-      developer.log("Erro ao carregar valor total pago: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar valor total pago: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao carregar valor total pago: $e',
       );
     }
   }
@@ -97,7 +92,6 @@ class _CollectProcessState extends State<CollectProcess> {
           _qrCodeBase64 = proposalData['qrCodeBase64'];
           _qrCodeText = proposalData['qrCode'];
         });
-        developer.log("QR Code encontrado e carregado com sucesso.");
       } else {
         developer.log("Nenhuma proposta aceita encontrada.");
       }
@@ -116,15 +110,52 @@ class _CollectProcessState extends State<CollectProcess> {
         quantidadeReal: _quantidadeReal,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Certificado gerado com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Certificado gerado com sucesso!',
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao gerar certificado: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao gerar certificado: $e',
+      );
+    }
+  }
+
+  Future<void> _enviarComprovantePagamento() async {
+    if (_comprovantePagamento == null) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Nenhum comprovante selecionado.',
+      );
+
+      return;
+    }
+
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('Usuário não autenticado.');
+      }
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .update({
+        'comprovantePagamento': _comprovantePagamento!.path,
+      });
+
+      developer.log("Comprovante de pagamento enviado com sucesso.");
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Comprovante enviado com sucesso!',
+      );
+
+      await _finalizarColeta();
+    } catch (e) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao enviar comprovante: $e',
       );
     }
   }
@@ -150,10 +181,9 @@ class _CollectProcessState extends State<CollectProcess> {
     } catch (e, stack) {
       developer.log("Erro ao atualizar quantidade de óleo pelo coletor: $e",
           error: e, stackTrace: stack);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Erro ao atualizar quantidade de óleo pelo coletor: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao atualizar quantidade de óleo pelo coletor: $e',
       );
     }
   }
@@ -161,8 +191,9 @@ class _CollectProcessState extends State<CollectProcess> {
   Future<void> _confirmarColeta() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuário não autenticado.')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Usuário não autenticado.',
       );
       return;
     }
@@ -170,56 +201,14 @@ class _CollectProcessState extends State<CollectProcess> {
     final data = _coletaAtual.data() as Map<String, dynamic>;
 
     if (data['collectorId'] != currentUser.uid) {
-      developer.log(
-          "Erro: Permissão negada. O coletor não corresponde ao usuário atual.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Permissão negada para esta coleta.')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Permissão negada para essa coleta.',
       );
       return;
     }
 
     _mostrarSobreposicaoComprovante();
-  }
-
-  Future<void> _enviarComprovantePagamento() async {
-    if (_comprovantePagamento == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nenhum comprovante selecionado.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) {
-        throw Exception('Usuário não autenticado.');
-      }
-
-      await FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(_coletaAtual.id)
-          .update({
-        'comprovantePagamento': _comprovantePagamento!.path,
-      });
-
-      developer.log("Comprovante de pagamento enviado com sucesso.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Comprovante enviado com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      await _finalizarColeta();
-    } catch (e) {
-      developer.log("Erro ao enviar comprovante: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao enviar comprovante: $e')),
-      );
-    }
   }
 
   Future<void> _finalizarColeta() async {
@@ -233,12 +222,19 @@ class _CollectProcessState extends State<CollectProcess> {
         'dataConclusao': FieldValue.serverTimestamp(),
       });
 
+      final data = _coletaAtual.data() as Map<String, dynamic>;
+      final String collectorId = data['collectorId'] ?? '';
+      if (collectorId.isNotEmpty) {
+        await _atualizarQuantidadeOleo(collectorId);
+      }
+
       setState(() {
         _coletaFinalizada = true;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coleta confirmada com sucesso!')),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Coleta confirmada com sucesso!',
       );
 
       await _gerarCertificado();
@@ -251,8 +247,9 @@ class _CollectProcessState extends State<CollectProcess> {
         );
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao finalizar coleta: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao finalizar coleta: $e',
       );
     }
   }
@@ -319,61 +316,11 @@ class _CollectProcessState extends State<CollectProcess> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Informações da Coleta
-              Center(
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.0),
-                  ),
-                  elevation: 5,
-                  shadowColor: Colors.grey.shade300,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Informações da Coleta',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.green,
-                                  ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Tipo de Estabelecimento: ${data['tipoEstabelecimento'] ?? 'N/A'}',
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Colors.black87,
-                                  ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Quantidade Estimada: ${data['quantidadeOleo'] ?? 'N/A'} Litros',
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Colors.black87,
-                                  ),
-                          textAlign: TextAlign.center,
-                        ),
-                        if (_paymentStatus == 'approved') ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Endereço: ${data['address'] ?? 'N/A'}',
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: Colors.black87,
-                                    ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
+              ColetaInfoCard(
+                tipoEstabelecimento: data['tipoEstabelecimento'] ?? 'N/A',
+                quantidadeOleo: (data['quantidadeOleo'] ?? 'N/A').toString(),
+                endereco: data['address'],
+                mostrarEndereco: _paymentStatus == 'approved',
               ),
 
               const SizedBox(height: 8),
@@ -430,11 +377,10 @@ class _CollectProcessState extends State<CollectProcess> {
                                 Clipboard.setData(
                                   ClipboardData(text: data['chavePix'] ?? ''),
                                 );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'Chave Pix copiada para a área de transferência!'),
-                                  ),
+                                ScaffoldMessengerHelper.showSuccess(
+                                  context: context,
+                                  message:
+                                      'Chave Pix copiada para a área de transferência!',
                                 );
                               },
                             ),
@@ -688,12 +634,9 @@ class _CollectProcessState extends State<CollectProcess> {
                                     if (_qrCodeText != null) {
                                       Clipboard.setData(
                                           ClipboardData(text: _qrCodeText!));
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Código copiado!'),
-                                          backgroundColor: Colors.green,
-                                        ),
+                                      ScaffoldMessengerHelper.showSuccess(
+                                        context: context,
+                                        message: 'Código Copiado!',
                                       );
                                     }
                                   },
@@ -717,12 +660,9 @@ class _CollectProcessState extends State<CollectProcess> {
                                 ElevatedButton(
                                   onPressed: () async {
                                     await _verificarPagamento();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Revalidando pagamento...'),
-                                        backgroundColor: Colors.orange,
-                                      ),
+                                    ScaffoldMessengerHelper.showWarning(
+                                      context: context,
+                                      message: 'Revalidando Pagamento...',
                                     );
                                   },
                                   style: ElevatedButton.styleFrom(

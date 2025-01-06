@@ -14,10 +14,7 @@ class CertificadoService {
     required double quantidadeReal,
   }) async {
     try {
-      developer.log("Iniciando geração do certificado...");
-
       final templatePdf = await rootBundle.load('assets/certificado.png');
-      developer.log("Imagem do certificado carregada com sucesso.");
 
       final fontData =
           await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
@@ -88,9 +85,6 @@ class CertificadoService {
         'filePath': file.path,
         'createdAt': FieldValue.serverTimestamp(),
       });
-
-      developer.log(
-          "Certificado gerado e associado ao usuário ${coletaData['requestorName']} (ID: ${coletaData['userId']}).");
     } catch (e, stack) {
       developer.log("Erro ao gerar certificado: $e",
           error: e, stackTrace: stack);

@@ -7,12 +7,13 @@ class ComprovanteOverlay extends StatefulWidget {
   final VoidCallback onEnviarComprovante;
 
   const ComprovanteOverlay({
-    Key? key,
+    super.key,
     required this.onComprovanteSelecionado,
     required this.onEnviarComprovante,
-  }) : super(key: key);
+  });
 
   @override
+  // ignore: library_private_types_in_public_api
   _ComprovanteOverlayState createState() => _ComprovanteOverlayState();
 }
 

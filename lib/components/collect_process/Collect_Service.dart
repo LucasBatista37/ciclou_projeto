@@ -91,13 +91,8 @@ class CollectService {
           .update({
         'confirmationCode': confirmationCode,
       });
-
-      developer
-          .log("Código de confirmação salvo com sucesso na coleta $coletaId");
-
       return confirmationCode;
     } catch (e) {
-      developer.log("Erro ao gerar código de confirmação: $e");
       throw Exception('Erro ao gerar código de confirmação: $e');
     }
   }
