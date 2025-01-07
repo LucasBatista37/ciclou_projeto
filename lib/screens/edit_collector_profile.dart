@@ -112,17 +112,14 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       try {
-        // Criação de referência no Firebase Storage
         final storageRef = FirebaseStorage.instance
             .ref()
             .child('collector_photos')
             .child('$uid.jpg');
 
-        // Upload do arquivo
         final uploadTask = await storageRef.putFile(File(photoPath));
         final photoUrl = await uploadTask.ref.getDownloadURL();
 
-        // Atualização do Firestore com o URL da foto
         await FirebaseFirestore.instance
             .collection('collector')
             .doc(uid)

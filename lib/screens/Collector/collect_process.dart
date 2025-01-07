@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:ciclou_projeto/components/collect_process/Coleta_info.dart';
 import 'package:ciclou_projeto/components/collect_process/Collect_Service.dart';
+import 'package:ciclou_projeto/components/collect_process/Pagamento_info.dart';
+import 'package:ciclou_projeto/components/collect_process/Pagamento_plataforma.dart';
 import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
 import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
@@ -327,117 +329,20 @@ class _CollectProcessState extends State<CollectProcess> {
 
               // Informações de Pagamento
               if (_paymentStatus == 'approved')
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  elevation: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Pagamento para o Solicitante',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green[700],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.attach_money,
-                              color: Colors.green,
-                              size: 24,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(Icons.key, color: Colors.grey, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${data['tipoChavePix'] ?? 'N/A'} / ${data['chavePix'] ?? 'N/A'}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.copy,
-                                  color: Colors.grey, size: 20),
-                              onPressed: () {
-                                Clipboard.setData(
-                                  ClipboardData(text: data['chavePix'] ?? ''),
-                                );
-                                ScaffoldMessengerHelper.showSuccess(
-                                  context: context,
-                                  message:
-                                      'Chave Pix copiada para a área de transferência!',
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(Icons.account_balance,
-                                color: Colors.grey, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Banco: ${data['banco'] ?? 'N/A'}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            const Icon(Icons.monetization_on,
-                                color: Colors.grey, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Valor Total Pago:',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              'R\$ ${_valorTotalPago.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Por favor, revise cuidadosamente as informações.',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
+                PagamentoInfoCard(
+                  tipoChavePix: data['tipoChavePix'] ?? 'N/A',
+                  chavePix: data['chavePix'] ?? 'N/A',
+                  banco: data['banco'] ?? 'N/A',
+                  valorTotalPago: _valorTotalPago,
+                  onCopiarChavePix: () {
+                    Clipboard.setData(
+                        ClipboardData(text: data['chavePix'] ?? ''));
+                    ScaffoldMessengerHelper.showSuccess(
+                      context: context,
+                      message:
+                          'Chave Pix copiada para a área de transferência!',
+                    );
+                  },
                 ),
 
               const SizedBox(height: 16),
@@ -536,6 +441,7 @@ class _CollectProcessState extends State<CollectProcess> {
                     ),
                   ],
                 )
+                
               else if (_paymentStatus == 'approved' &&
                   (data['status'] ?? '') != 'Aprovado')
                 Center(
@@ -553,140 +459,25 @@ class _CollectProcessState extends State<CollectProcess> {
                 ),
 
               if (_qrCodeBase64 != null && _paymentStatus != 'approved')
-                Center(
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.0),
-                    ),
-                    elevation: 5,
-                    shadowColor: Colors.grey.shade300,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Pagamento com QR Code para a Plataforma',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Use o QR Code para efetuar o pagamento para a plataforma, após isso poderá visualizar o endereço e pagar o solicitante.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.black54,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.green, width: 2),
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                            padding: const EdgeInsets.all(8.0),
-                            child: Image.memory(
-                              base64Decode(_qrCodeBase64!),
-                              width: 200,
-                              height: 200,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          if (_qrCodeText != null) ...[
-                            const Text(
-                              'Código QR:',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(8.0),
-                                border: Border.all(color: Colors.grey.shade400),
-                              ),
-                              padding: const EdgeInsets.all(12.0),
-                              child: SelectableText(
-                                '${_qrCodeText!.substring(0, 22)}...',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black87,
-                                  fontFamily: 'Courier',
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    if (_qrCodeText != null) {
-                                      Clipboard.setData(
-                                          ClipboardData(text: _qrCodeText!));
-                                      ScaffoldMessengerHelper.showSuccess(
-                                        context: context,
-                                        message: 'Código Copiado!',
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(Icons.copy,
-                                      color: Colors.white),
-                                  label: const Text(
-                                    'Copiar Código',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12.0,
-                                      horizontal: 16.0,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                  ),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    await _verificarPagamento();
-                                    ScaffoldMessengerHelper.showWarning(
-                                      context: context,
-                                      message: 'Revalidando Pagamento...',
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12.0,
-                                      horizontal: 16.0,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Já Paguei',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
+                PagamentoQRCodeCard(
+                  qrCodeBase64: _qrCodeBase64!,
+                  qrCodeText: _qrCodeText,
+                  onCopiarCodigo: () {
+                    if (_qrCodeText != null) {
+                      Clipboard.setData(ClipboardData(text: _qrCodeText!));
+                      ScaffoldMessengerHelper.showSuccess(
+                        context: context,
+                        message: 'Código Copiado!',
+                      );
+                    }
+                  },
+                  onRevalidarPagamento: () async {
+                    await _verificarPagamento();
+                    ScaffoldMessengerHelper.showWarning(
+                      context: context,
+                      message: 'Revalidando Pagamento...',
+                    );
+                  },
                 ),
 
               if (_qrCodeBase64 == null && _paymentStatus != 'approved')
