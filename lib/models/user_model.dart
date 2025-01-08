@@ -4,8 +4,10 @@ class UserModel {
   final String email;
   final String photoUrl;
   final String? establishmentType;
-  final String pixKey; 
-  late final String address; 
+  final String pixKey;
+  late final String address;
+  final bool IsNet;
+  final double precoFixoOleo;
 
   UserModel({
     required this.userId,
@@ -15,6 +17,8 @@ class UserModel {
     this.establishmentType,
     this.pixKey = 'Pix não informado',
     this.address = 'Endereço não informado',
+    this.IsNet = false,
+    this.precoFixoOleo = 0.0,
   });
 
   factory UserModel.fromFirestore(Map<String, dynamic> data, String id) {
@@ -26,6 +30,12 @@ class UserModel {
       establishmentType: data['establishmentType'],
       pixKey: data['pixKey'] ?? 'Pix não informado',
       address: data['address'] ?? 'Endereço não informado',
+      IsNet: data['IsNet'] ?? false,
+      precoFixoOleo: (data['precoFixoOleo'] is String)
+          ? double.tryParse(data['precoFixoOleo']) ?? 0.0
+          : (data['precoFixoOleo'] is num)
+              ? (data['precoFixoOleo'] as num).toDouble()
+              : 0.0,
     );
   }
 
@@ -38,6 +48,8 @@ class UserModel {
       'establishmentType': establishmentType,
       'pixKey': pixKey,
       'address': address,
+      'IsNet': IsNet,
+      'precoFixoOleo': precoFixoOleo.toString(),
     };
   }
 }

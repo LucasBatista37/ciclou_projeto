@@ -20,7 +20,6 @@ class PagamentoForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Armazena o futuro de carregar os bancos
     final Future<List<String>> bancosFuture = carregarBancos();
 
     return Container(
@@ -94,7 +93,7 @@ class PagamentoForm extends StatelessWidget {
           ),
           const SizedBox(height: 8.0),
           FutureBuilder<List<String>>(
-            future: bancosFuture, // Usa o futuro armazenado
+            future: bancosFuture, 
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const CircularProgressIndicator();

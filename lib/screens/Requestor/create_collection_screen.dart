@@ -1,5 +1,3 @@
-import 'package:ciclou_projeto/components/create_collection.dart';
-import 'package:ciclou_projeto/components/custom_time_picker.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -33,7 +31,7 @@ class _CreateCollectionState extends State<CreateCollection> {
 
   bool _isLoading = false;
   late Future<List<String>> _bancosFuture;
-
+  List<String>? _bancos;
 
   final List<String> _diasFuncionamento = [];
   final _horarioFuncionamentoController = TextEditingController();
@@ -51,7 +49,11 @@ class _CreateCollectionState extends State<CreateCollection> {
   @override
   void initState() {
     super.initState();
-    _carregarBancos();
+    _carregarBancos().then((bancos) {
+      setState(() {
+        _bancos = bancos;
+      });
+    });
     _bancosFuture = _carregarBancos();
     _enderecoController.text = widget.user.address;
     _preencherRegiao();
@@ -263,6 +265,8 @@ class _CreateCollectionState extends State<CreateCollection> {
 
   @override
   Widget build(BuildContext context) {
+    print("Preço Fixo do Óleo: ${widget.user.precoFixoOleo}");
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
@@ -363,20 +367,164 @@ class _CreateCollectionState extends State<CreateCollection> {
                       },
                     ),
                     const SizedBox(height: 16.0),
-                    PagamentoForm(
-                      formaRecebimento: _formaRecebimento,
-                      onFormaRecebimentoChanged: (value) {
-                        setState(() {
-                          _formaRecebimento = value;
-                          _chavePixController.clear();
-                          _bancoController.clear();
-                        });
-                      },
-                      chavePixController: _chavePixController,
-                      bancoController: _bancoController,
-                      validarChavePix: _validarChavePix,
-                      carregarBancos: _carregarBancos,
-                    ),
+                    if (widget.user.IsNet)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Preço Fixo do Óleo',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8.0),
+                          TextFormField(
+                            initialValue:
+                                widget.user.precoFixoOleo.toStringAsFixed(2),
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Preço fixo do óleo',
+                            ),
+                            readOnly: true,
+                          ),
+                          const SizedBox(height: 16.0),
+                        ],
+                      ),
+                    const SizedBox(height: 8.0),
+                    widget.user.IsNet
+                        ? const SizedBox.shrink()
+                        : Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.green, width: 2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Pagamento',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                const SizedBox(height: 16.0),
+                                const Text(
+                                  'Forma de recebimento',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8.0),
+                                DropdownButtonFormField<String>(
+                                  value: _formaRecebimento,
+                                  items: [
+                                    'CPF',
+                                    'CNPJ',
+                                    'E-mail',
+                                    'Chave Aleatória',
+                                  ]
+                                      .map((tipo) => DropdownMenuItem(
+                                            value: tipo,
+                                            child: Text(tipo),
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _formaRecebimento = value;
+                                      _chavePixController.clear();
+                                      _bancoController.clear();
+                                    });
+                                  },
+                                  decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText:
+                                        'Selecione a forma de recebimento',
+                                  ),
+                                  validator: (value) => value == null
+                                      ? 'Selecione a forma de recebimento'
+                                      : null,
+                                ),
+                                const SizedBox(height: 16.0),
+                                const Text(
+                                  'Chave Pix',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8.0),
+                                TextFormField(
+                                  controller: _chavePixController,
+                                  decoration: InputDecoration(
+                                    border: const OutlineInputBorder(),
+                                    hintText: _formaRecebimento == null
+                                        ? 'Digite a chave Pix'
+                                        : 'Digite sua $_formaRecebimento',
+                                  ),
+                                  keyboardType: _formaRecebimento == 'CPF' ||
+                                          _formaRecebimento == 'CNPJ'
+                                      ? TextInputType.number
+                                      : TextInputType.text,
+                                  validator: _validarChavePix,
+                                ),
+                                const SizedBox(height: 16.0),
+                                const Text(
+                                  'Banco',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8.0),
+                                Autocomplete<String>(
+                                  optionsBuilder:
+                                      (TextEditingValue textEditingValue) {
+                                    if (textEditingValue.text.isEmpty) {
+                                      return const Iterable<String>.empty();
+                                    }
+                                    return _bancos!.where((banco) => banco
+                                        .toLowerCase()
+                                        .contains(textEditingValue.text
+                                            .toLowerCase()));
+                                  },
+                                  onSelected: (String selection) {
+                                    _bancoController.text = selection;
+                                  },
+                                  fieldViewBuilder: (BuildContext context,
+                                      TextEditingController fieldController,
+                                      FocusNode focusNode,
+                                      VoidCallback onFieldSubmitted) {
+                                    _bancoController.text =
+                                        fieldController.text;
+                                    return TextFormField(
+                                      controller: fieldController,
+                                      focusNode: focusNode,
+                                      decoration: const InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        hintText: 'Digite ou selecione o banco',
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 16.0),
+                                Container(
+                                  color: Colors.green.shade50,
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: const Text(
+                                    'Por favor, revise cuidadosamente todas as informações aqui preenchidas.',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                     const SizedBox(height: 16.0),
                     const Text(
                       'Prazo para Recebimento de Propostas',
