@@ -151,7 +151,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           });
         }
 
-        await FirebaseFirestore.instance.collection('coletas').add({
+        final coletaData = {
           'tipoEstabelecimento': widget.user.establishmentType,
           'quantidadeOleo': _quantidadeOleo,
           'prazo':
@@ -168,7 +168,14 @@ class _CreateCollectionState extends State<CreateCollection> {
           'createdAt': FieldValue.serverTimestamp(),
           'funcionamentoDias': _diasFuncionamento,
           'funcionamentoHorario': _horarioFuncionamentoController.text.trim(),
-        });
+          'IsNetCollection': widget.user.IsNet,
+        };
+
+        if (widget.user.precoFixoOleo > 0.0) {
+          coletaData['precoFixoOleo'] = widget.user.precoFixoOleo;
+        }
+
+        await FirebaseFirestore.instance.collection('coletas').add(coletaData);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Solicitação enviada com sucesso!')),

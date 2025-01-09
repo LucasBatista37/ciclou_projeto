@@ -544,22 +544,28 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       String documentId,
       String funcionamentoDias,
       String funcionamentoHorario) {
-    return StreamBuilder<QuerySnapshot>(
+    return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
-          .collection('propostas')
           .snapshots(),
       builder: (context, snapshot) {
-        final numPropostas = snapshot.hasData ? snapshot.data!.docs.length : 0;
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+          return const Center(
+            child: Text('Erro ao carregar informações da coleta.'),
+          );
+        }
+
+        final data = snapshot.data!.data() as Map<String, dynamic>;
+        final isNetCollection = data['IsNetCollection'] ?? false;
 
         final formattedPrazo =
             DateTime.tryParse(prazo)?.toLocal() ?? DateTime.now();
         final tempoRestante = formattedPrazo.difference(DateTime.now());
-
-        final tempoRestanteStr = tempoRestante.isNegative
-            ? 'Tempo esgotado'
-            : '${tempoRestante.inMinutes} minutos restantes';
 
         final bool isPrazoEsgotado = tempoRestante.isNegative;
 
@@ -659,6 +665,28 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                       ),
                     ],
                   ),
+                  if (isNetCollection)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.star, size: 16, color: Colors.yellow),
+                            SizedBox(width: 4.0),
+                            Text(
+                              'Módulo Rede',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 16.0),
                   LinearProgressIndicator(
                     value: isPrazoEsgotado

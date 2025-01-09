@@ -21,8 +21,8 @@ class _SendProposalState extends State<SendProposal> {
   int? _tempoMaximoSelecionado;
 
   double _quantidadeOleo = 0.0;
-  double _totalCalculado = 0.0; 
-  double _taxa = 0.0; 
+  double _totalCalculado = 0.0;
+  double _taxa = 0.0;
 
   @override
   void initState() {
@@ -39,12 +39,25 @@ class _SendProposalState extends State<SendProposal> {
           .get();
 
       if (coletaDoc.exists) {
-        final quantidade = coletaDoc.data()?['quantidadeOleo'];
-        if (quantidade != null) {
-          setState(() {
-            _quantidadeOleo = double.tryParse(quantidade.toString()) ?? 0.0;
-            _calcularTotal();
-          });
+        final data = coletaDoc.data();
+        if (data != null) {
+          final quantidade = data['quantidadeOleo'];
+          final isNetCollection = data['IsNetCollection'] ?? false;
+          final precoFixoOleo = data['precoFixoOleo'];
+
+          if (quantidade != null) {
+            setState(() {
+              _quantidadeOleo = double.tryParse(quantidade.toString()) ?? 0.0;
+              _calcularTotal();
+            });
+          }
+
+          if (isNetCollection && precoFixoOleo != null) {
+            setState(() {
+              _precoController.text = precoFixoOleo.toString();
+              _calcularTotal();
+            });
+          }
         }
       }
     } catch (e) {
@@ -222,6 +235,7 @@ class _SendProposalState extends State<SendProposal> {
                   }
                   return null;
                 },
+                readOnly: _precoController.text.isNotEmpty,
               ),
               const SizedBox(height: 16.0),
               const Text(
