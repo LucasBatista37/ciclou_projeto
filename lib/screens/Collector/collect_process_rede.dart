@@ -4,6 +4,7 @@ import 'package:ciclou_projeto/components/collect_process/Coleta_info.dart';
 import 'package:ciclou_projeto/components/collect_process/Collect_Service.dart';
 import 'package:ciclou_projeto/components/collect_process/Pagamento_info.dart';
 import 'package:ciclou_projeto/components/collect_process/Pagamento_plataforma.dart';
+import 'package:ciclou_projeto/components/collect_process/Pagamento_solicitante.dart';
 import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
 import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
@@ -37,6 +38,9 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
   File? _comprovantePagamento;
   double _valorTotalPago = 0.0;
 
+  String? _qrCodeSolicitanteBase64;
+  String? _qrCodeTextSolicitante;
+
   @override
   void initState() {
     super.initState();
@@ -45,10 +49,13 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
     _buscarQrCode();
     _verificarPagamento();
     _carregarValorTotalPago();
+    _loadSolicitanteQRCode(_coletaAtual.id, 'proposalId');
     developer.log("Coleta inicializada com ID: ${_coletaAtual.id}");
   }
 
   Future<void> _verificarPagamento() async {
+    developer.log(
+        "Iniciando verificação de pagamento para a coleta ID: ${_coletaAtual.id}");
     try {
       final result =
           await CollectService.verificarPagamentoComCodigo(_coletaAtual.id);
@@ -57,7 +64,13 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         _paymentStatus = result['paymentStatus'];
         _confirmationCode = result['confirmationCode'];
       });
+
+      developer.log(
+          "Verificação de pagamento concluída com sucesso. Status: $_paymentStatus, Código de confirmação: $_confirmationCode",
+          name: "_verificarPagamento");
     } catch (e) {
+      developer.log("Erro ao verificar pagamento",
+          error: e, name: "_verificarPagamento");
       ScaffoldMessengerHelper.showError(
         context: context,
         message: 'Erro ao verificar pagamento: $e',
@@ -65,13 +78,52 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
     }
   }
 
+  Future<void> _loadSolicitanteQRCode(
+      String documentId, String proposalId) async {
+    developer.log("Carregando QR Code do solicitante...");
+    try {
+      final propostaData = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .collection('propostas')
+          .doc(proposalId)
+          .get();
+
+      if (propostaData.exists) {
+        final data = propostaData.data();
+        developer.log("Dados da proposta: $data");
+
+        setState(() {
+          _qrCodeSolicitanteBase64 = data?['qrCodeTextSolicitante'];
+          _qrCodeTextSolicitante = data?['qrCodeSolicitante'];
+        });
+
+        developer.log(
+            "QR Code do solicitante atualizado: Base64=${_qrCodeSolicitanteBase64}, Text=${_qrCodeTextSolicitante}");
+      } else {
+        developer
+            .log("Proposta não encontrada ou sem QR Code para o solicitante.");
+      }
+    } catch (e) {
+      developer.log("Erro ao carregar QR Code do solicitante: $e");
+    }
+  }
+
   Future<void> _carregarValorTotalPago() async {
+    developer.log(
+        "Carregando valor total pago para a coleta ID: ${_coletaAtual.id}");
     try {
       final valor = await CollectService.getValorTotalPago(_coletaAtual.id);
       setState(() {
         _valorTotalPago = valor;
       });
+
+      developer.log(
+          "Valor total pago carregado com sucesso. Valor: $_valorTotalPago",
+          name: "_carregarValorTotalPago");
     } catch (e) {
+      developer.log("Erro ao carregar valor total pago",
+          error: e, name: "_carregarValorTotalPago");
       ScaffoldMessengerHelper.showError(
         context: context,
         message: 'Erro ao carregar valor total pago: $e',
@@ -80,6 +132,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
   }
 
   Future<void> _buscarQrCode() async {
+    developer.log("Buscando QR Code para a coleta ID: ${_coletaAtual.id}");
     try {
       final proposalSnapshot = await FirebaseFirestore.instance
           .collection('coletas')
@@ -90,15 +143,26 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       if (proposalSnapshot.docs.isNotEmpty) {
         final proposalData = proposalSnapshot.docs.first.data();
+        final proposalId = proposalSnapshot.docs.first.id;
+
         setState(() {
           _qrCodeBase64 = proposalData['qrCodeBase64'];
           _qrCodeText = proposalData['qrCode'];
         });
+
+        developer.log("QR Code encontrado: $_qrCodeBase64",
+            name: "_buscarQrCode");
+
+        // Carregar QR Code do solicitante usando o proposalId
+        await _loadSolicitanteQRCode(_coletaAtual.id, proposalId);
       } else {
-        developer.log("Nenhuma proposta aceita encontrada.");
+        developer.log(
+            "Nenhuma proposta aceita encontrada para a coleta ID: ${_coletaAtual.id}",
+            name: "_buscarQrCode");
       }
     } catch (e) {
-      developer.log("Erro ao buscar QR Code da proposta: $e");
+      developer.log("Erro ao buscar QR Code da proposta",
+          error: e, name: "_buscarQrCode");
     }
   }
 
@@ -302,7 +366,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         backgroundColor: Colors.green,
         centerTitle: true,
         title: const Text(
-          'Processo de Coleta',
+          'Processo de Coleta Rede',
           style: TextStyle(color: Colors.white),
         ),
         leading: IconButton(
@@ -328,19 +392,25 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
               const SizedBox(height: 8),
 
               // Informações de Pagamento
-              if (_paymentStatus == 'approved')
-                PagamentoInfoCard(
-                  tipoChavePix: data['tipoChavePix'] ?? 'N/A',
-                  chavePix: data['chavePix'] ?? 'N/A',
-                  banco: data['banco'] ?? 'N/A',
-                  valorTotalPago: _valorTotalPago,
-                  onCopiarChavePix: () {
+              if (_paymentStatus == 'approved' &&
+                  _qrCodeSolicitanteBase64 != null &&
+                  _qrCodeTextSolicitante != null)
+                PagamentoSolicitanteQRCodeCard(
+                  qrCodeSolicitanteBase64: _qrCodeSolicitanteBase64!,
+                  qrCodeTextSolicitante: _qrCodeTextSolicitante!,
+                  onCopiarCodigoSolicitante: () {
                     Clipboard.setData(
-                        ClipboardData(text: data['chavePix'] ?? ''));
+                        ClipboardData(text: _qrCodeTextSolicitante!));
                     ScaffoldMessengerHelper.showSuccess(
                       context: context,
-                      message:
-                          'Chave Pix copiada para a área de transferência!',
+                      message: 'Código Copiado!',
+                    );
+                  },
+                  onConfirmarPagamentoSolicitante: () async {
+                    await _verificarPagamento();
+                    ScaffoldMessengerHelper.showSuccess(
+                      context: context,
+                      message: 'Pagamento ao solicitante confirmado!',
                     );
                   },
                 ),
@@ -449,7 +519,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: const Text(
-                        'Pagamento aprovado, peça que o solicitante preencha o código acima para poder finalizar a colta.',
+                        'Pagamento aprovado, peça que o solicitante preencha o código acima para poder finalizar a coleta.',
                         style: TextStyle(fontSize: 16, color: Colors.green),
                         textAlign: TextAlign.center,
                       ),

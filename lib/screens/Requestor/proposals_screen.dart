@@ -244,51 +244,31 @@ class ProposalsScreen extends StatelessWidget {
     return null;
   }
 
-  Future<void> _generateSolicitanteQrCode({
-    required String documentId,
-    required String proposalId,
-    required String solicitantePixKey,
-    required double precoPorLitro,
-  }) async {
-    try {
-      final novoQrCode = await generateManualQr(
-        pixKey: solicitantePixKey,
-        amount: precoPorLitro,
-        description: 'Pagamento para solicitante',
-      );
-
-      await FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(documentId)
-          .collection('propostas')
-          .doc(proposalId)
-          .update({
-        'qrCodeSolicitanteBase64': novoQrCode['qrCodeBase64'],
-        'statusPagamentoSolicitante': 'Pendente',
-      });
-
-      print('QR Code do solicitante gerado e salvo com sucesso.');
-    } catch (e) {
-      print('Erro ao gerar QR Code para o solicitante: $e');
-    }
-  }
-
   Future<void> _acceptProposal(BuildContext context, String proposalId,
       Map<String, dynamic> proposal) async {
     try {
+      print('Iniciando método _acceptProposal...');
+      print('Document ID: $documentId, Proposal ID: $proposalId');
+
+      // Obter dados da coleta
+      print('Buscando dados da coleta...');
       final coletaDoc = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
           .get();
 
       final coletaData = coletaDoc.data();
+      print('Dados da coleta: $coletaData');
 
       if (coletaData == null || coletaData['quantidadeOleo'] == null) {
         throw Exception('Quantidade de óleo não especificada na coleta.');
       }
 
       final quantityOleo = coletaData['quantidadeOleo'];
+      print('Quantidade de óleo: $quantityOleo');
 
+      // Obter dados da proposta
+      print('Buscando dados da proposta...');
       final proposalDoc = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -297,8 +277,10 @@ class ProposalsScreen extends StatelessWidget {
           .get();
 
       final proposalData = proposalDoc.data();
+      print('Dados da proposta: $proposalData');
 
       if (proposalData == null || proposalData['collectorId'] == null) {
+        print('Erro: coletor não encontrado.');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro: coletor não encontrado.')),
         );
@@ -308,9 +290,13 @@ class ProposalsScreen extends StatelessWidget {
       final collectorId = proposalData['collectorId'];
       final collectorName = proposalData['collectorName'];
       final precoPorLitro = proposalData['precoPorLitro'];
+      print('Collector ID: $collectorId, Collector Name: $collectorName');
 
       final amount = _calculateAmount(double.parse(quantityOleo.toString()));
+      print('Valor calculado: $amount');
 
+      // Atualizar status da proposta
+      print('Atualizando status da proposta para "Aceita"...');
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -318,6 +304,8 @@ class ProposalsScreen extends StatelessWidget {
           .doc(proposalId)
           .update({'status': 'Aceita'});
 
+      // Atualizar status geral da coleta
+      print('Atualizando status geral da coleta para "Em andamento"...');
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(documentId)
@@ -328,6 +316,8 @@ class ProposalsScreen extends StatelessWidget {
         'precoPorLitro': precoPorLitro,
       });
 
+      // Enviar notificação
+      print('Enviando notificação ao coletor...');
       _sendNotification(
         collectorId,
         'Proposta Aceita!',
@@ -335,39 +325,61 @@ class ProposalsScreen extends StatelessWidget {
         documentId,
       );
 
-      await generateFixedPixPayment(
+      print('Gerando QR Code para o pagamento principal...');
+      final principalQrCodeData = await generateFixedPixPayment(
         amount: amount.toString(),
         user: user,
         documentId: documentId,
         proposalId: proposalId,
       );
 
-      final updatedProposalDoc = await FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(documentId)
-          .collection('propostas')
-          .doc(proposalId)
-          .get();
-
-      final updatedProposalData = updatedProposalDoc.data();
-      if (updatedProposalData != null) {
-        final qrCode = updatedProposalData['qrCode'];
-        if (qrCode != null) {
-          await FirebaseFirestore.instance
-              .collection('coletas')
-              .doc(documentId)
-              .collection('propostas')
-              .doc(proposalId)
-              .update({'qrCodeText': qrCode});
-        }
+      if (principalQrCodeData != null) {
+        print('QR Code principal gerado: ${principalQrCodeData['qrCode']}');
+        await FirebaseFirestore.instance
+            .collection('coletas')
+            .doc(documentId)
+            .collection('propostas')
+            .doc(proposalId)
+            .update({
+          'qrCode': principalQrCodeData['qrCode'],
+          'qrCodeBase64': principalQrCodeData['qrCodeBase64'],
+          'paymentId': principalQrCodeData['paymentId'],
+        });
+      } else {
+        print('Erro: Falha ao gerar QR Code principal.');
       }
 
-      await _generateSolicitanteQrCode(
-        documentId: documentId,
-        proposalId: proposalId,
-        solicitantePixKey: user.pixKey,
-        precoPorLitro: double.parse(precoPorLitro.toString()),
-      );
+      // Gerar QR Code para o solicitante se necessário
+      if (coletaData['IsNetCollection'] == true) {
+        print('IsNetCollection é true. Gerando QR Code para o solicitante...');
+        final valorTotalPago = proposalData['valorTotalPago']?.toString();
+        if (valorTotalPago != null) {
+          final solicitanteQrCodeData = await generateFixedPixPayment(
+            amount: valorTotalPago,
+            user: user,
+            documentId: documentId,
+            proposalId: proposalId,
+          );
+
+          if (solicitanteQrCodeData != null) {
+            print(
+                'QR Code do solicitante gerado: ${solicitanteQrCodeData['qrCode']}');
+            await FirebaseFirestore.instance
+                .collection('coletas')
+                .doc(documentId)
+                .collection('propostas')
+                .doc(proposalId)
+                .update({
+              'qrCodeSolicitante': solicitanteQrCodeData['qrCode'],
+              'qrCodeTextSolicitante': solicitanteQrCodeData['qrCodeBase64'],
+              'paymentIdSolicitante': solicitanteQrCodeData['paymentId'],
+              'statusSolicitante': 'Pendente',
+            });
+          } else {
+            print('Erro: Falha ao gerar QR Code para o solicitante.');
+          }
+        }
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -375,6 +387,8 @@ class ProposalsScreen extends StatelessWidget {
         ),
       );
 
+      // Navegar para o dashboard
+      print('Navegando para o dashboard...');
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
@@ -383,6 +397,7 @@ class ProposalsScreen extends StatelessWidget {
         (route) => false,
       );
     } catch (error) {
+      print('Erro no método _acceptProposal: $error');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao aceitar a proposta: $error')),
       );

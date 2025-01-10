@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
+import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -131,14 +132,28 @@ class _CollectsScreenState extends State<CollectsScreen> {
                                       horizontal: 16.0, vertical: 10.0),
                                 ),
                                 onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CollectProcess(
-                                        coletaAtual: coleta,
+                                  final isNetCollection =
+                                      coletaData['IsNetCollection'] ?? false;
+                                  if (isNetCollection) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            CollectProcessRede(
+                                          coletaAtual: coleta,
+                                        ),
                                       ),
-                                    ),
-                                  );
+                                    );
+                                  } else {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => CollectProcess(
+                                          coletaAtual: coleta,
+                                        ),
+                                      ),
+                                    );
+                                  }
                                 },
                                 icon: const Icon(Icons.open_in_new,
                                     color: Colors.white),

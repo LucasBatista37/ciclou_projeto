@@ -54,6 +54,9 @@ class _CreateCollectionState extends State<CreateCollection> {
         _bancos = bancos;
       });
     });
+    if (widget.user.IsNet) {
+      _chavePixController.text = 'saiahacker@gmail.com';
+    }
     _bancosFuture = _carregarBancos();
     _enderecoController.text = widget.user.address;
     _preencherRegiao();
@@ -140,6 +143,10 @@ class _CreateCollectionState extends State<CreateCollection> {
       });
 
       try {
+        final chavePix = widget.user.IsNet
+            ? 'saiahacker@gmail.com'
+            : _chavePixController.text.trim();
+
         final userId = widget.user.userId;
 
         if (userId != null) {
@@ -158,7 +165,7 @@ class _CreateCollectionState extends State<CreateCollection> {
               DateTime.now().add(const Duration(minutes: 15)).toIso8601String(),
           'comentarios': _comentariosController.text.trim(),
           'tipoChavePix': _formaRecebimento,
-          'chavePix': _chavePixController.text.trim(),
+          'chavePix': chavePix,
           'banco': _bancoController.text.trim(),
           'address': _enderecoController.text.trim(),
           'region': _regionController.text.trim(),
@@ -272,8 +279,6 @@ class _CreateCollectionState extends State<CreateCollection> {
 
   @override
   Widget build(BuildContext context) {
-    print("Preço Fixo do Óleo: ${widget.user.precoFixoOleo}");
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,

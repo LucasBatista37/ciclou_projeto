@@ -441,7 +441,6 @@ class _CollectProcessState extends State<CollectProcess> {
                     ),
                   ],
                 )
-                
               else if (_paymentStatus == 'approved' &&
                   (data['status'] ?? '') != 'Aprovado')
                 Center(
@@ -450,7 +449,7 @@ class _CollectProcessState extends State<CollectProcess> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: const Text(
-                        'Pagamento aprovado, peça que o solicitante preencha o código acima para poder finalizar a colta.',
+                        'Pagamento aprovado, peça que o solicitante preencha o código acima para poder finalizar a coleta.',
                         style: TextStyle(fontSize: 16, color: Colors.green),
                         textAlign: TextAlign.center,
                       ),

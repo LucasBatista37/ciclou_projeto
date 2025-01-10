@@ -101,7 +101,7 @@ class PaymentScreen extends StatelessWidget {
   }
 }
 
-Future<void> generateFixedPixPayment({
+Future<Map<String, dynamic>?> generateFixedPixPayment({
   required String amount,
   required UserModel user,
   required String documentId,
@@ -112,6 +112,7 @@ Future<void> generateFixedPixPayment({
   const String description = 'Pagamento Plataforma';
 
   try {
+    print('Enviando requisição para o endpoint $endpoint...');
     final response = await http.post(
       Uri.parse(endpoint),
       headers: {'Content-Type': 'application/json'},
@@ -122,34 +123,33 @@ Future<void> generateFixedPixPayment({
       }),
     );
 
+    print('Resposta da API: ${response.statusCode} - ${response.body}');
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      print('Dados recebidos da API: $data');
 
       final qrCode = data['qrCode'];
       final qrCodeBase64 = data['qrCodeBase64'];
       final paymentId = data['paymentId'];
+
       if (qrCode != null && qrCodeBase64 != null && paymentId != null) {
-        await FirebaseFirestore.instance
-            .collection('coletas')
-            .doc(documentId)
-            .collection('propostas')
-            .doc(proposalId)
-            .update({
-          'paymentId': paymentId.toString(),
+        print('QR Code e Payment ID gerados com sucesso.');
+        return {
           'qrCode': qrCode,
           'qrCodeBase64': qrCodeBase64,
-          'statusPagamento': 'Pendente',
-        });
-
-        print(
-            'Payment ID salvo como String no Firestore: ${paymentId.toString()}');
+          'paymentId': paymentId.toString(),
+        };
       } else {
-        throw Exception('QR Code ou Payment ID não encontrados na resposta.');
+        print('Erro: QR Code ou Payment ID não encontrados na resposta.');
+        return null;
       }
     } else {
-      throw Exception('Erro ao gerar pagamento PIX: ${response.body}');
+      print('Erro na resposta da API: ${response.body}');
+      return null;
     }
   } catch (e) {
-    rethrow;
+    print('Erro ao gerar pagamento PIX: $e');
+    return null;
   }
 }
