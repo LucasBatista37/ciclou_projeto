@@ -390,12 +390,15 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
   }
 
   Widget _buildSolicitationsList() {
+    final isNetUser = widget.user.IsNet;
+
+    final stream = FirebaseFirestore.instance
+        .collection('coletas')
+        .where('status', isEqualTo: 'Pendente')
+        .snapshots();
+
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('coletas')
-          .where('status', isEqualTo: 'Pendente')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream: stream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -438,9 +441,37 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
         }
 
         final documents = snapshot.data!.docs;
+
+        final filteredDocuments = documents.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final isNetCollection = data['IsNetCollection'];
+
+          if (isNetUser) {
+            return true;
+          }
+
+          return isNetCollection == false || isNetCollection == null;
+        }).toList();
+
+        filteredDocuments.sort((a, b) {
+          final aData = a.data() as Map<String, dynamic>;
+          final bData = b.data() as Map<String, dynamic>;
+
+          final aIsActive =
+              !(DateTime.tryParse(aData['prazo'] ?? '') ?? DateTime.now())
+                  .isBefore(DateTime.now());
+          final bIsActive =
+              !(DateTime.tryParse(bData['prazo'] ?? '') ?? DateTime.now())
+                  .isBefore(DateTime.now());
+
+          if (aIsActive && !bIsActive) return -1;
+          if (!aIsActive && bIsActive) return 1;
+          return 0;
+        });
+
         final int itemCount = _showAll
-            ? documents.length
-            : (documents.length < 3 ? documents.length : 3);
+            ? filteredDocuments.length
+            : (filteredDocuments.length < 3 ? filteredDocuments.length : 3);
 
         return Column(
           children: [
@@ -449,8 +480,9 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: itemCount,
               itemBuilder: (context, index) {
-                final data = documents[index].data() as Map<String, dynamic>;
-                final documentId = documents[index].id;
+                final data =
+                    filteredDocuments[index].data() as Map<String, dynamic>;
+                final documentId = filteredDocuments[index].id;
 
                 final funcionamentoDias = data['funcionamentoDias'];
                 final funcionamentoHorario = data['funcionamentoHorario'];
@@ -475,7 +507,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 );
               },
             ),
-            if (documents.length > 3)
+            if (filteredDocuments.length > 3)
               TextButton(
                 onPressed: () {
                   setState(() {
@@ -487,52 +519,6 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildQuickActionButton(IconData icon, String label, Color color) {
-    return GestureDetector(
-      onTap: () {
-        if (label == 'Coletas Ativas') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CollectsScreen(
-                collectorId: widget.user.userId,
-              ),
-            ),
-          );
-        } else if (label == 'Estatísticas') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CollectorStatsScreen(
-                collectorId: widget.user.userId,
-              ),
-            ),
-          );
-        } else if (label == 'Histórico') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CollectorHistoryScreen(
-                collectorId: widget.user.userId,
-              ),
-            ),
-          );
-        }
-      },
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: color,
-            child: Icon(icon, color: Colors.white),
-          ),
-          const SizedBox(width: 4.0),
-          Text(label, style: const TextStyle(fontSize: 12)),
-        ],
-      ),
     );
   }
 
@@ -701,6 +687,52 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildQuickActionButton(IconData icon, String label, Color color) {
+    return GestureDetector(
+      onTap: () {
+        if (label == 'Coletas Ativas') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CollectsScreen(
+                collectorId: widget.user.userId,
+              ),
+            ),
+          );
+        } else if (label == 'Estatísticas') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CollectorStatsScreen(
+                collectorId: widget.user.userId,
+              ),
+            ),
+          );
+        } else if (label == 'Histórico') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CollectorHistoryScreen(
+                collectorId: widget.user.userId,
+              ),
+            ),
+          );
+        }
+      },
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: color,
+            child: Icon(icon, color: Colors.white),
+          ),
+          const SizedBox(width: 4.0),
+          Text(label, style: const TextStyle(fontSize: 12)),
+        ],
+      ),
     );
   }
 

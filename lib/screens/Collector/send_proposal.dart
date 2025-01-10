@@ -2,6 +2,7 @@ import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:flutter/services.dart';
 
 class SendProposal extends StatefulWidget {
   final String documentId;
@@ -23,6 +24,7 @@ class _SendProposalState extends State<SendProposal> {
   double _quantidadeOleo = 0.0;
   double _totalCalculado = 0.0;
   double _taxa = 0.0;
+  bool? _isNetCollection;
 
   @override
   void initState() {
@@ -44,6 +46,10 @@ class _SendProposalState extends State<SendProposal> {
           final quantidade = data['quantidadeOleo'];
           final isNetCollection = data['IsNetCollection'] ?? false;
           final precoFixoOleo = data['precoFixoOleo'];
+
+          setState(() {
+            _isNetCollection = isNetCollection;
+          });
 
           if (quantidade != null) {
             setState(() {
@@ -187,6 +193,51 @@ class _SendProposalState extends State<SendProposal> {
     }
   }
 
+  Widget _buildPrecoPorLitroInput() {
+    if (_isNetCollection == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_isNetCollection == true) {
+      return TextFormField(
+        controller: _precoController,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          border: OutlineInputBorder(),
+          hintText: 'Preço fixo',
+          filled: true,
+          fillColor: Colors.grey.shade200,
+        ),
+        readOnly: true,
+      );
+    } else {
+      return TextFormField(
+        controller: _precoController,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+        ],
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          hintText: 'Digite o preço por litro',
+        ),
+        onChanged: (value) {
+          _calcularTotal();
+        },
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Por favor, digite o preço';
+          }
+          if (double.tryParse(value) == null) {
+            return 'Digite um valor numérico válido';
+          }
+          return null;
+        },
+        readOnly: false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -216,27 +267,7 @@ class _SendProposalState extends State<SendProposal> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8.0),
-              TextFormField(
-                controller: _precoController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Digite o preço por litro',
-                ),
-                onChanged: (value) {
-                  _calcularTotal();
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, digite o preço';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Digite um valor numérico válido';
-                  }
-                  return null;
-                },
-                readOnly: _precoController.text.isNotEmpty,
-              ),
+              _buildPrecoPorLitroInput(),
               const SizedBox(height: 16.0),
               const Text(
                 'Tempo Máximo de Coleta (horas)',
