@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -82,8 +83,9 @@ class _CreateCollectionState extends State<CreateCollection> {
           .where((name) => name.isNotEmpty)
           .toList();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar bancos: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao carregar bancos',
       );
       return [];
     }
@@ -108,28 +110,18 @@ class _CreateCollectionState extends State<CreateCollection> {
 
   Future<void> _enviarSolicitacao() async {
     if (_quantidadeOleo == null || _quantidadeOleo! < 20) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'A quantidade estimada de óleo deve ser no mínimo 20 litros.',
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'A quantidade estimada de óleo deve ser no mínimo 20 litros',
       );
       return;
     }
 
     if (_horarioInicialController.text.isEmpty ||
         _horarioFinalController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Informe o horário inicial e final de funcionamento.',
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Informe o horário inicial e final de funcionamento',
       );
       return;
     }
@@ -184,8 +176,9 @@ class _CreateCollectionState extends State<CreateCollection> {
 
         await FirebaseFirestore.instance.collection('coletas').add(coletaData);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Solicitação enviada com sucesso!')),
+        ScaffoldMessengerHelper.showSuccess(
+          context: context,
+          message: 'Solicitação enviada com sucesso!',
         );
 
         Navigator.pushReplacement(
@@ -195,8 +188,9 @@ class _CreateCollectionState extends State<CreateCollection> {
           ),
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao enviar solicitação: $e')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro ao enviar solicitação: $e',
         );
       } finally {
         setState(() {
@@ -204,8 +198,9 @@ class _CreateCollectionState extends State<CreateCollection> {
         });
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha todos os campos obrigatórios.')),
+      ScaffoldMessengerHelper.showWarning(
+        context: context,
+        message: 'Preencha todos os campos obrigatórios',
       );
     }
   }
@@ -271,8 +266,9 @@ class _CreateCollectionState extends State<CreateCollection> {
         throw Exception('Nenhum placemark encontrado.');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao obter localização: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao obter localização',
       );
     }
   }
@@ -297,10 +293,9 @@ class _CreateCollectionState extends State<CreateCollection> {
           IconButton(
             icon: const Icon(Icons.help_outline, color: Colors.white),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content:
-                        Text('Entre em contato com o suporte para ajuda!')),
+              ScaffoldMessengerHelper.showWarning(
+                context: context,
+                message: 'Entre em contato com o suporte para ajuda!',
               );
             },
           ),

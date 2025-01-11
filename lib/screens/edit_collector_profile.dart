@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -61,8 +62,9 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
           });
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao carregar dados: $e')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro ao carregar dados',
         );
       }
     }
@@ -90,13 +92,15 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
           'licenseExpiry': _licenseExpiryController.text.trim(),
           'photoUrl': _profileImage != null ? _profileImage!.path : null,
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dados salvos com sucesso!')),
+        ScaffoldMessengerHelper.showSuccess(
+          context: context,
+          message: 'Dados salvos com sucesso!',
         );
         Navigator.pop(context);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar os dados: $e')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro ao salvar dados',
         );
       } finally {
         setState(() {
@@ -104,8 +108,9 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
         });
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuário não autenticado.')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Usuário não autenticado!',
       );
     }
   }
@@ -127,18 +132,20 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
             .doc(uid)
             .update({'photoUrl': photoUrl});
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Foto de perfil atualizada com sucesso!')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Foto de perfil atualizada com sucesso!',
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao atualizar foto: $e')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro ao atualizar foto',
         );
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuário não autenticado.')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Usuário não autenticado',
       );
     }
   }
@@ -155,8 +162,9 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
 
       await _updatePhotoUrl(pickedFile.path);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhuma imagem selecionada.')),
+      ScaffoldMessengerHelper.showWarning(
+        context: context,
+        message: 'Nenhuma imagem selecionada',
       );
     }
   }

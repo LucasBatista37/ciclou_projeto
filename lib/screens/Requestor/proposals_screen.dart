@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:ciclou_projeto/components/generate_manualqr_payment.dart';
 import 'package:ciclou_projeto/components/generate_payment_screen.dart';
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:http/http.dart' as http;
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
@@ -281,8 +282,9 @@ class ProposalsScreen extends StatelessWidget {
 
       if (proposalData == null || proposalData['collectorId'] == null) {
         print('Erro: coletor não encontrado.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro: coletor não encontrado.')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: coletor não encontrado',
         );
         return;
       }
@@ -381,10 +383,9 @@ class ProposalsScreen extends StatelessWidget {
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Proposta aceita com sucesso! Coleta em andamento.'),
-        ),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Proposta aceita com sucesso! Coleta em andamento.',
       );
 
       // Navegar para o dashboard
@@ -398,8 +399,9 @@ class ProposalsScreen extends StatelessWidget {
       );
     } catch (error) {
       print('Erro no método _acceptProposal: $error');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao aceitar a proposta: $error')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao aceitar proposta',
       );
     }
   }
@@ -426,8 +428,9 @@ class ProposalsScreen extends StatelessWidget {
       final proposalData = proposalDoc.data();
 
       if (proposalData == null || proposalData['collectorId'] == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro: coletor não encontrado.')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: coletor não encontrado',
         );
         return;
       }
@@ -449,12 +452,14 @@ class ProposalsScreen extends StatelessWidget {
         documentId,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Proposta rejeitada com sucesso!')),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Proposta Rejeitada',
       );
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao rejeitar a proposta: $error')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao rejeitar proposta',
       );
     }
   }

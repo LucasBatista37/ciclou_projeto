@@ -1,5 +1,6 @@
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
+import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/send_proposal.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,7 +10,7 @@ class CollectorNotificationsScreen extends StatelessWidget {
   final String collectorId;
   final UserModel user;
 
-  CollectorNotificationsScreen({
+  const CollectorNotificationsScreen({
     super.key,
     required this.collectorId,
     required this.user,
@@ -163,14 +164,30 @@ class CollectorNotificationsScreen extends StatelessWidget {
               .get();
 
           if (coletaDoc.exists) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CollectProcess(
-                  coletaAtual: coletaDoc,
-                ),
-              ),
-            );
+            final coletaData = coletaDoc.data() as Map<String, dynamic>;
+            final isNetCollection = coletaData['IsNetCollection'] ?? false;
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (isNetCollection) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CollectProcessRede(
+                      coletaAtual: coletaDoc,
+                    ),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CollectProcess(
+                      coletaAtual: coletaDoc,
+                    ),
+                  ),
+                );
+              }
+            });
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Coleta não encontrada.')),

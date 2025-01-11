@@ -46,8 +46,18 @@ class ComprovanteVerificationScreen extends StatelessWidget {
         if (comprovanteUrl == null || comprovanteUrl.isEmpty) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Verificação de Comprovante'),
               backgroundColor: Colors.green,
+              centerTitle: true,
+              title: const Text(
+                'Verificação de Comprovante',
+                style: TextStyle(color: Colors.white),
+              ),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
             ),
             body: const Center(
               child: Text(
@@ -60,8 +70,18 @@ class ComprovanteVerificationScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Verificação de Comprovante'),
             backgroundColor: Colors.green,
+            centerTitle: true,
+            title: const Text(
+              'Verificação de Comprovante',
+              style: TextStyle(color: Colors.white),
+            ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
           ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),

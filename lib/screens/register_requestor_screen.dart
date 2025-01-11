@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -109,10 +110,9 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'IsNet': false,
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Solicitante registrado com sucesso!'),
-          ),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Solicitante registrado com sucesso!',
         );
 
         Navigator.pushReplacement(
@@ -140,20 +140,14 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           break;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: errorMessage,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Erro inesperado ao tentar registrar o solicitante. Tente novamente mais tarde.',
-          ),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro inesperado ao registrar solicitante. Por favor, tente novamente',
       );
     } finally {
       setState(() {

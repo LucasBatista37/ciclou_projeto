@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -67,8 +68,9 @@ class _SendProposalState extends State<SendProposal> {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao buscar quantidade de óleo: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao buscar quantidade de óleo',
       );
     }
   }
@@ -140,8 +142,9 @@ class _SendProposalState extends State<SendProposal> {
             .get();
 
         if (!coletaDoc.exists) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erro: Coleta não encontrada.')),
+          ScaffoldMessengerHelper.showError(
+            context: context,
+            message: 'Erro: coleta não encontrada',
           );
           return;
         }
@@ -176,8 +179,9 @@ class _SendProposalState extends State<SendProposal> {
           'isRead': false,
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Proposta enviada com sucesso!')),
+        ScaffoldMessengerHelper.showSuccess(
+          context: context,
+          message: 'Proposta enviada com sucesso!',
         );
 
         Navigator.pushReplacement(
@@ -186,8 +190,9 @@ class _SendProposalState extends State<SendProposal> {
               builder: (context) => CollectorDashboard(user: widget.user)),
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao enviar proposta: $e')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro ao enviar proposta',
         );
       }
     }

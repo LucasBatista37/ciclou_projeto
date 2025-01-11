@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/upload_documents.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -87,8 +88,9 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'IsNet': false,
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Coletor registrado com sucesso!')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Coletor registrado com sucesso!',
         );
 
         Navigator.pushReplacement(
@@ -117,20 +119,14 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           break;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: errorMessage,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Erro inesperado ao registrar o coletor. Por favor, tente novamente.',
-          ),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro inesperado ao registrar o coletor. Por favor, tente novamente',
       );
     } finally {
       setState(() {
