@@ -11,6 +11,7 @@ class RegisterCollectorScreen extends StatefulWidget {
   const RegisterCollectorScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _RegisterCollectorScreenState createState() =>
       _RegisterCollectorScreenState();
 }
@@ -83,6 +84,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'licenseOperation': null,
           'operatingPermit': null,
           'avcb': null,
+          'IsNet': false,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:ciclou_projeto/screens/Requestor/verificacao_concluida_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -38,17 +37,9 @@ class ComprovanteVerificationScreen extends StatelessWidget {
         }
 
         final data = snapshot.data!.data() as Map<String, dynamic>;
+        final comprovanteUrl = data['comprovantePagamento']; // URL do Storage
 
-        debugPrint('Dados da Coleta: $data');
-
-        final comprovantePath = data['comprovantePagamento'];
-
-        final fileExists =
-            comprovantePath != null && File(comprovantePath).existsSync();
-        debugPrint('Caminho do Comprovante: $comprovantePath');
-        debugPrint('Arquivo existe: $fileExists');
-
-        if (!fileExists) {
+        if (comprovanteUrl == null || comprovanteUrl.isEmpty) {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Verificação de Comprovante'),
@@ -56,7 +47,7 @@ class ComprovanteVerificationScreen extends StatelessWidget {
             ),
             body: const Center(
               child: Text(
-                'Nenhum comprovante enviado ou caminho inválido.',
+                'Nenhum comprovante enviado ou URL inválida.',
                 style: TextStyle(fontSize: 18),
               ),
             ),
@@ -101,9 +92,23 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      File(comprovantePath!),
+                    child: Image.network(
+                      comprovanteUrl,
                       fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Text(
+                            'Erro ao carregar a imagem do comprovante.',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),

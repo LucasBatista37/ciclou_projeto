@@ -123,9 +123,7 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
         await FirebaseFirestore.instance
             .collection('collector')
             .doc(uid)
-            .update({
-          'photoUrl': photoUrl,
-        });
+            .update({'photoUrl': photoUrl});
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -140,18 +138,6 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Usuário não autenticado.')),
       );
-    }
-  }
-
-  Future<String> _uploadImage(File imageFile) async {
-    try {
-      final fileName =
-          'profile_images/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final storageRef = FirebaseStorage.instance.ref().child(fileName);
-      final uploadTask = await storageRef.putFile(imageFile);
-      return await storageRef.getDownloadURL();
-    } catch (e) {
-      throw Exception('Erro ao fazer upload da imagem: $e');
     }
   }
 
@@ -171,6 +157,24 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
         const SnackBar(content: Text('Nenhuma imagem selecionada.')),
       );
     }
+  }
+
+  Future<String> _uploadImage(File imageFile) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        final fileName =
+            'collector_photos/${uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final storageRef = FirebaseStorage.instance.ref().child(fileName);
+
+        final uploadTask = await storageRef.putFile(imageFile);
+
+        return await uploadTask.ref.getDownloadURL();
+      } catch (e) {
+        throw Exception('Erro ao fazer upload da imagem: $e');
+      }
+    }
+    throw Exception('Usuário não autenticado.');
   }
 
   @override

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:developer' as developer;
 
 class CertificadoService {
@@ -15,9 +16,7 @@ class CertificadoService {
   }) async {
     try {
       final templatePdf = await rootBundle.load('assets/certificado.png');
-
-      final fontData =
-          await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+      final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
       final ttf = pw.Font.ttf(fontData.buffer.asByteData());
 
       final outputPdf = pw.Document();
@@ -70,9 +69,16 @@ class CertificadoService {
       );
 
       final directory = await getApplicationDocumentsDirectory();
-      final file =
-          File('${directory.path}/certificado_$coletaId.pdf');
-      await file.writeAsBytes(await outputPdf.save());
+      final localFile = File('${directory.path}/certificado_$coletaId.pdf');
+      await localFile.writeAsBytes(await outputPdf.save());
+
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('certificados')
+          .child('$coletaId.pdf');
+
+      final uploadTask = await storageRef.putFile(localFile);
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
 
       await FirebaseFirestore.instance
           .collection('certificados')
@@ -82,9 +88,13 @@ class CertificadoService {
         'userId': coletaData['userId'],
         'collectorId': FirebaseAuth.instance.currentUser?.uid,
         'requestorName': coletaData['requestorName'],
-        'filePath': file.path,
+        'downloadUrl': downloadUrl, 
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      await localFile.delete();
+
+      developer.log("Certificado gerado e salvo com sucesso: $downloadUrl");
     } catch (e, stack) {
       developer.log("Erro ao gerar certificado: $e",
           error: e, stackTrace: stack);

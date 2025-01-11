@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
@@ -56,7 +55,7 @@ class CertificatesScreen extends StatelessWidget {
             itemCount: certificados.length,
             itemBuilder: (context, index) {
               final certificado = certificados[index];
-              final filePath = certificado['filePath'];
+              final downloadUrl = certificado['downloadUrl']; // Use downloadUrl
               final coletaId = certificado['coletaId'];
               final createdAt = certificado['createdAt'] != null
                   ? (certificado['createdAt'] as Timestamp).toDate()
@@ -73,7 +72,8 @@ class CertificatesScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PDFViewScreen(filePath: filePath),
+                      builder: (context) =>
+                          PDFViewScreen(downloadUrl: downloadUrl),
                     ),
                   );
                 },
@@ -87,9 +87,9 @@ class CertificatesScreen extends StatelessWidget {
 }
 
 class PDFViewScreen extends StatelessWidget {
-  final String filePath;
+  final String downloadUrl;
 
-  const PDFViewScreen({super.key, required this.filePath});
+  const PDFViewScreen({super.key, required this.downloadUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -108,8 +108,8 @@ class PDFViewScreen extends StatelessWidget {
           },
         ),
       ),
-      body: SfPdfViewer.file(
-        File(filePath),
+      body: SfPdfViewer.network(
+        downloadUrl, 
       ),
     );
   }

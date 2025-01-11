@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -104,11 +103,25 @@ class ColetaDetailsScreen extends StatelessWidget {
                           const SizedBox(height: 12),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.file(
-                              File(data['comprovantePagamento']),
+                            child: Image.network(
+                              data['comprovantePagamento'],
                               fit: BoxFit.cover,
                               height: 600,
                               width: double.infinity,
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Text(
+                                    'Erro ao carregar imagem.',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],

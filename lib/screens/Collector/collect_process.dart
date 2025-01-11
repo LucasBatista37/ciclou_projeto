@@ -9,6 +9,7 @@ import 'package:ciclou_projeto/components/collect_process/generate_certificate.d
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
@@ -126,11 +127,9 @@ class _CollectProcessState extends State<CollectProcess> {
 
   Future<void> _enviarComprovantePagamento() async {
     if (_comprovantePagamento == null) {
-      ScaffoldMessengerHelper.showError(
-        context: context,
-        message: 'Nenhum comprovante selecionado.',
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhum comprovante selecionado.')),
       );
-
       return;
     }
 
@@ -140,24 +139,29 @@ class _CollectProcessState extends State<CollectProcess> {
         throw Exception('Usuário não autenticado.');
       }
 
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('comprovantes_pagamento')
+          .child('$userId/${DateTime.now().millisecondsSinceEpoch}.pdf');
+
+      final uploadTask = await storageRef.putFile(_comprovantePagamento!);
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
           .update({
-        'comprovantePagamento': _comprovantePagamento!.path,
+        'comprovantePagamento': downloadUrl,
       });
 
-      developer.log("Comprovante de pagamento enviado com sucesso.");
-      ScaffoldMessengerHelper.showSuccess(
-        context: context,
-        message: 'Comprovante enviado com sucesso!',
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comprovante enviado com sucesso!')),
       );
 
       await _finalizarColeta();
     } catch (e) {
-      ScaffoldMessengerHelper.showError(
-        context: context,
-        message: 'Erro ao enviar comprovante: $e',
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao enviar comprovante: $e')),
       );
     }
   }

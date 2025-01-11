@@ -106,6 +106,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'photoUrl': null,
           'createdAt': FieldValue.serverTimestamp(),
           'establishmentType': _selectedEstablishmentType,
+          'IsNet': false,
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

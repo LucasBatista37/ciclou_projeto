@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -73,6 +74,41 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
     }
   }
 
+  Future<void> _updatePhotoUrl(String photoPath) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('requestor_photos')
+            .child('$uid.jpg');
+
+        final uploadTask = await storageRef.putFile(File(photoPath));
+        final photoUrl = await uploadTask.ref.getDownloadURL();
+
+        await FirebaseFirestore.instance
+            .collection('requestor')
+            .doc(uid)
+            .update({
+          'photoUrl': photoUrl,
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Foto de perfil atualizada com sucesso!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar foto: $e')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuário não autenticado.')),
+      );
+    }
+  }
+
   Future<void> _saveUserData() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -85,9 +121,11 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
       );
       return;
     }
+
     setState(() {
       _isLoading = true;
     });
+
     try {
       await FirebaseFirestore.instance.collection('requestor').doc(uid).update({
         'responsible': _nomeController.text.trim(),
@@ -96,8 +134,11 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
         'businessName': _businessNameController.text.trim(),
         'cnpj': _cnpjController.text.trim(),
         'establishmentType': _establishmentTypeController.text.trim(),
-        'photoUrl': _profileImage != null ? _profileImage!.path : null,
+        'photoUrl': _profileImage != null
+            ? await _uploadImage(File(_profileImage!.path))
+            : null,
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Dados salvos com sucesso!')),
       );
@@ -113,6 +154,18 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
     }
   }
 
+  Future<String> _uploadImage(File imageFile) async {
+    try {
+      final fileName =
+          'requestor_photos/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final storageRef = FirebaseStorage.instance.ref().child(fileName);
+      final uploadTask = await storageRef.putFile(imageFile);
+      return await uploadTask.ref.getDownloadURL();
+    } catch (e) {
+      throw Exception('Erro ao fazer upload da imagem: $e');
+    }
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.gallery);
@@ -120,6 +173,12 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
       setState(() {
         _profileImage = pickedImage;
       });
+
+      await _updatePhotoUrl(pickedImage.path);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhuma imagem selecionada.')),
+      );
     }
   }
 
