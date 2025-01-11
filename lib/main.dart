@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/screens/Collector/share_collection.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -14,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,  
+      debugShowCheckedModeBanner: false,
       title: 'Ciclou App',
       theme: ThemeData(primarySwatch: Colors.green),
       home: const LoginScreen(),
