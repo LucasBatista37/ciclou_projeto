@@ -24,20 +24,24 @@ class ComprovanteVerificationScreen extends StatelessWidget {
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Verificação de Comprovante'),
               backgroundColor: Colors.green,
-            ),
-            body: const Center(
-              child: Text(
-                'Coleta não encontrada.',
-                style: TextStyle(fontSize: 18),
+              centerTitle: true,
+              title: const Text(
+                'Verificação de Comprovante',
+                style: TextStyle(color: Colors.white),
+              ),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
               ),
             ),
           );
         }
 
         final data = snapshot.data!.data() as Map<String, dynamic>;
-        final comprovanteUrl = data['comprovantePagamento']; // URL do Storage
+        final comprovanteUrl = data['comprovantePagamento'];
 
         if (comprovanteUrl == null || comprovanteUrl.isEmpty) {
           return Scaffold(

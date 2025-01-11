@@ -28,6 +28,7 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
       TextEditingController();
   XFile? _profileImage;
   bool _isLoading = false;
+  String? _profileUrl;
 
   final cnpjMask = MaskTextInputFormatter(mask: "##.###.###/####-##");
   final phoneMask = MaskTextInputFormatter(mask: "(##) #####-####");
@@ -56,6 +57,7 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
             _phoneController.text = data['phone'] ?? '';
             _licenseNumberController.text = data['licenseNumber'] ?? '';
             _licenseExpiryController.text = data['licenseExpiry'] ?? '';
+            _profileUrl = data['photoUrl'];
           });
         }
       } catch (e) {
@@ -206,11 +208,18 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
                   Center(
                     child: Stack(
                       children: [
-                        _profileImage == null
-                            ? CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.grey.shade300,
-                                child: Text(
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey.shade300,
+                          backgroundImage: _profileImage != null
+                              ? FileImage(File(_profileImage!
+                                  .path)) // Imagem local selecionada
+                              : (_profileUrl != null
+                                  ? NetworkImage(
+                                      _profileUrl!) // URL da imagem no Firebase Storage
+                                  : null),
+                          child: (_profileImage == null && _profileUrl == null)
+                              ? Text(
                                   _responsibleController.text.isNotEmpty
                                       ? _responsibleController.text[0]
                                           .toUpperCase()
@@ -219,13 +228,9 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
                                     fontSize: 20,
                                     color: Colors.black,
                                   ),
-                                ),
-                              )
-                            : CircleAvatar(
-                                radius: 50,
-                                backgroundImage:
-                                    FileImage(File(_profileImage!.path)),
-                              ),
+                                )
+                              : null,
+                        ),
                         Positioned(
                           bottom: 0,
                           right: 0,

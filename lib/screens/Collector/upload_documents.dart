@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class UploadDocumentsScreen extends StatefulWidget {
   const UploadDocumentsScreen({super.key});
@@ -33,7 +34,7 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
         _uploadedFiles[documentType] = file;
       });
 
-      await _updateFirestore(documentType, file);
+      await _uploadToFirebase(documentType, file);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -44,12 +45,20 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
     }
   }
 
-  Future<void> _updateFirestore(String documentType, File file) async {
+  Future<void> _uploadToFirebase(String documentType, File file) async {
     try {
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) {
         throw Exception('Usuário não autenticado.');
       }
+
+      final fileName =
+          'collector_documents/$userId/${documentType.replaceAll(" ", "_")}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final storageRef = FirebaseStorage.instance.ref().child(fileName);
+
+      final uploadTask = await storageRef.putFile(file);
+
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
 
       String firestoreField;
       switch (documentType) {
@@ -72,18 +81,18 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
       await FirebaseFirestore.instance
           .collection('collector')
           .doc(userId)
-          .update({firestoreField: file.path});
+          .update({firestoreField: downloadUrl});
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Documento atualizado com sucesso!'),
+          content: Text('Documento enviado com sucesso!'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao atualizar documento: $e'),
+          content: Text('Erro ao enviar documento: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -125,6 +134,20 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        title: const Text(
+          'Upload de Documentos',
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -155,9 +178,9 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
                       ),
                       title: Text(documentType),
                       subtitle: isUploaded
-                          ? Text(
-                              'Enviado: ${_uploadedFiles[documentType]?.path.split('/').last}',
-                              style: const TextStyle(color: Colors.green),
+                          ? const Text(
+                              'Enviado',
+                              style: TextStyle(color: Colors.green),
                             )
                           : const Text(
                               'Pendente',
@@ -190,26 +213,6 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
                   child: Text(
                     'Finalizar Envio',
                     style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginScreen()),
-                    );
-                  },
-                  child: const Text(
-                    'Ir para Login',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                 ),
               ),

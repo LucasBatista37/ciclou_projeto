@@ -25,6 +25,7 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
       TextEditingController();
   XFile? _profileImage;
   bool _isLoading = false;
+  String? _profileUrl;
 
   final _telefoneMaskFormatter =
       MaskTextInputFormatter(mask: "(##) #####-####");
@@ -64,6 +65,7 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
             _businessNameController.text = data['businessName'] ?? '';
             _cnpjController.text = data['cnpj'] ?? '';
             _establishmentTypeController.text = data['establishmentType'] ?? '';
+            _profileUrl = data['photoUrl'];
           });
         }
       } catch (e) {
@@ -211,11 +213,18 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
                   Center(
                     child: Stack(
                       children: [
-                        _profileImage == null
-                            ? CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.grey.shade300,
-                                child: Text(
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey.shade300,
+                          backgroundImage: _profileImage != null
+                              ? FileImage(File(_profileImage!
+                                  .path)) // Imagem local selecionada
+                              : (_profileUrl != null
+                                  ? NetworkImage(
+                                      _profileUrl!) // URL da imagem no Firebase Storage
+                                  : null),
+                          child: (_profileImage == null && _profileUrl == null)
+                              ? Text(
                                   _nomeController.text.isNotEmpty
                                       ? _nomeController.text[0].toUpperCase()
                                       : '',
@@ -223,13 +232,9 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
                                     fontSize: 20,
                                     color: Colors.black,
                                   ),
-                                ),
-                              )
-                            : CircleAvatar(
-                                radius: 50,
-                                backgroundImage:
-                                    FileImage(File(_profileImage!.path)),
-                              ),
+                                )
+                              : null,
+                        ),
                         Positioned(
                           bottom: 0,
                           right: 0,

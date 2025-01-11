@@ -11,6 +11,7 @@ class ColetaDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
+        centerTitle: true,
         title: const Text(
           'Detalhes da Coleta',
           style: TextStyle(color: Colors.white),
