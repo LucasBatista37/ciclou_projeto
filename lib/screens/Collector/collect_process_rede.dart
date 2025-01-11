@@ -7,6 +7,7 @@ import 'package:ciclou_projeto/components/collect_process/Pagamento_plataforma.d
 import 'package:ciclou_projeto/components/collect_process/Pagamento_solicitante.dart';
 import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
 import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
+import 'package:ciclou_projeto/components/payment_service.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -154,7 +155,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         developer.log("QR Code encontrado: $_qrCodeBase64",
             name: "_buscarQrCode");
 
-        // Carregar QR Code do solicitante usando o proposalId
         await _loadSolicitanteQRCode(_coletaAtual.id, proposalId);
       } else {
         developer.log(
@@ -404,18 +404,93 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                   qrCodeTextSolicitante: _qrCodeTextSolicitante!,
                   onCopiarCodigoSolicitante: () {
                     Clipboard.setData(
-                        ClipboardData(text: _qrCodeTextSolicitante!));
+                      ClipboardData(text: _qrCodeTextSolicitante!),
+                    );
                     ScaffoldMessengerHelper.showSuccess(
                       context: context,
                       message: 'Código Copiado!',
                     );
+                    developer
+                        .log("Código Pix copiado: $_qrCodeTextSolicitante");
                   },
                   onConfirmarPagamentoSolicitante: () async {
-                    await _verificarPagamento();
-                    ScaffoldMessengerHelper.showSuccess(
+                    developer.log(
+                        "Iniciando verificação de pagamento para o solicitante...");
+                    ScaffoldMessengerHelper.showWarning(
                       context: context,
-                      message: 'Pagamento ao solicitante confirmado!',
+                      message: 'Verificando pagamento...',
                     );
+
+                    try {
+                      // Buscando a subcoleção de propostas
+                      final proposalSnapshot = await FirebaseFirestore.instance
+                          .collection('coletas')
+                          .doc(_coletaAtual.id)
+                          .collection('propostas')
+                          .where('status', isEqualTo: 'Aceita')
+                          .get();
+
+                      if (proposalSnapshot.docs.isNotEmpty) {
+                        final proposalData = proposalSnapshot.docs.first.data();
+                        final proposalId = proposalSnapshot.docs.first.id;
+                        final paymentIdSolicitante =
+                            proposalData['paymentIdSolicitante'];
+
+                        developer.log(
+                            "Usando paymentIdSolicitante: $paymentIdSolicitante");
+
+                        // Validação do pagamento
+                        final paymentService =
+                            PaymentService(paymentIdSolicitante);
+                        final paymentStatus =
+                            await paymentService.validatePayment();
+
+                        developer.log(
+                            "Resposta da validação de pagamento: $paymentStatus");
+
+                        if (paymentStatus == 'approved') {
+                          // Atualizando statusSolicitante para "Aprovado"
+                          await FirebaseFirestore.instance
+                              .collection('coletas')
+                              .doc(_coletaAtual.id)
+                              .collection('propostas')
+                              .doc(proposalId)
+                              .update({'statusSolicitante': 'Aprovado'});
+
+                          setState(() {
+                            _paymentStatus = 'approved';
+                          });
+
+                          ScaffoldMessengerHelper.showSuccess(
+                            context: context,
+                            message: 'Pagamento ao solicitante confirmado!',
+                          );
+                          developer.log(
+                              "Pagamento confirmado e statusSolicitante atualizado para 'Aprovado'.");
+                        } else {
+                          ScaffoldMessengerHelper.showError(
+                            context: context,
+                            message:
+                                'Pagamento ainda não foi aprovado. Status: $paymentStatus',
+                          );
+                          developer.log(
+                              "Pagamento ainda não aprovado. Status recebido: $paymentStatus");
+                        }
+                      } else {
+                        ScaffoldMessengerHelper.showError(
+                          context: context,
+                          message: 'Nenhuma proposta aceita encontrada.',
+                        );
+                        developer.log("Nenhuma proposta aceita encontrada.");
+                      }
+                    } catch (e, stackTrace) {
+                      ScaffoldMessengerHelper.showError(
+                        context: context,
+                        message: 'Erro ao verificar pagamento: $e',
+                      );
+                      developer.log("Erro ao verificar pagamento: $e",
+                          error: e, stackTrace: stackTrace);
+                    }
                   },
                 ),
 

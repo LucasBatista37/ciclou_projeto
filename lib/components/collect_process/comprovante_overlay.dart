@@ -49,7 +49,7 @@ class _ComprovanteOverlayState extends State<ComprovanteOverlay> {
         borderRadius: BorderRadius.circular(12.0),
       ),
       title: const Text(
-        'Enviar Comprovante de Pagamento',
+        'Enviar Comprovante de Pagamento do Solicitante',
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
@@ -99,8 +99,8 @@ class _ComprovanteOverlayState extends State<ComprovanteOverlay> {
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
-              padding: const EdgeInsets.symmetric(
-                  vertical: 12.0, horizontal: 16.0),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8.0),
               ),
@@ -127,8 +127,8 @@ class _ComprovanteOverlayState extends State<ComprovanteOverlay> {
               : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
-            padding: const EdgeInsets.symmetric(
-                vertical: 12.0, horizontal: 16.0),
+            padding:
+                const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8.0),
             ),

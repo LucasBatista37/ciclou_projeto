@@ -4,6 +4,7 @@ import 'package:ciclou_projeto/screens/Requestor/code_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/comprovante_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_stats_screen.dart';
+import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -221,7 +222,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const RegisterRequestorScreen(),
+                    builder: (context) => const LoginScreen(),
                   ),
                 );
               } catch (error) {

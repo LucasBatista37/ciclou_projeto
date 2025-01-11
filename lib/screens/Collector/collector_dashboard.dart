@@ -5,6 +5,7 @@ import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.
 import 'package:ciclou_projeto/screens/Collector/collects_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/manual_qr_payment_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
+import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:ciclou_projeto/screens/register_collector_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:ciclou_projeto/screens/support_screen.dart';
@@ -232,7 +233,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const RegisterCollectorScreen(),
+                    builder: (context) => const LoginScreen(),
                   ),
                   (route) => false,
                 );
