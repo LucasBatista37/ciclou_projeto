@@ -126,7 +126,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro inesperado ao registrar o coletor. Por favor, tente novamente',
+        message:
+            'Erro inesperado ao registrar o coletor. Por favor, tente novamente',
       );
     } finally {
       setState(() {

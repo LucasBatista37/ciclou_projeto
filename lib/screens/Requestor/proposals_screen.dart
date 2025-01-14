@@ -388,7 +388,6 @@ class ProposalsScreen extends StatelessWidget {
         message: 'Proposta aceita com sucesso! Coleta em andamento.',
       );
 
-      // Navegar para o dashboard
       print('Navegando para o dashboard...');
       Navigator.pushAndRemoveUntil(
         context,

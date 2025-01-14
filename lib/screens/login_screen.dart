@@ -7,7 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'register_requestor_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final VoidCallback? onLoginSuccess;
+
+  const LoginScreen({super.key, this.onLoginSuccess});
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -25,9 +27,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
     });
+
     try {
       print("Tentando login com email: ${_emailController.text}");
 
+      // Realiza a autenticação com Firebase Auth
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -38,6 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (userId != null) {
         print("Login bem-sucedido, UID do usuário: $userId");
 
+        // Verifica se o usuário está na coleção 'requestor'
         final userDoc = await FirebaseFirestore.instance
             .collection('requestor')
             .doc(userId)
@@ -45,16 +50,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (userDoc.exists) {
           final user = UserModel.fromFirestore(userDoc.data()!, userId);
-          print("Usuário encontrado em 'requestor':");
+
+          // Redireciona para o dashboard de solicitante
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => RequestorDashboard(user: user),
             ),
           );
+
+          // Executa o callback onLoginSuccess, se fornecido
+          widget.onLoginSuccess?.call();
           return;
         }
 
+        // Verifica se o usuário está na coleção 'collector'
         final collectorDoc = await FirebaseFirestore.instance
             .collection('collector')
             .doc(userId)
@@ -62,19 +72,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (collectorDoc.exists) {
           final user = UserModel.fromFirestore(collectorDoc.data()!, userId);
-          print("Usuário encontrado em 'collector':");
+
+          // Redireciona para o dashboard de coletor
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => CollectorDashboard(user: user),
             ),
           );
+
+          // Executa o callback onLoginSuccess, se fornecido
+          widget.onLoginSuccess?.call();
           return;
         }
 
+        // Caso o usuário não seja encontrado em nenhuma coleção
         throw Exception('Usuário não encontrado em nenhuma coleção.');
       } else {
         print("Erro: UID do usuário é nulo.");
+        throw Exception('UID do usuário não encontrado.');
       }
     } on FirebaseAuthException catch (e) {
       print("Erro de autenticação: ${e.code}");
@@ -102,6 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
           break;
       }
 
+      // Exibe o erro na interface
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
