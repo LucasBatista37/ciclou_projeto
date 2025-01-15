@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Ciclou App',
       theme: ThemeData(primarySwatch: Colors.green),
-      navigatorKey: navigatorKey, // Configura a chave global de navegação
+      navigatorKey: navigatorKey,
       home: const DynamicLinkHandler(),
     );
   }
@@ -37,7 +37,7 @@ class DynamicLinkHandler extends StatefulWidget {
 }
 
 class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
-  String? _pendingNotificationId;
+  String? _pendingColetaId; // Renomeado para refletir coletaId
 
   @override
   void initState() {
@@ -48,7 +48,6 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
   Future<void> _handleDynamicLinks() async {
     developer.log('Iniciando o manuseio de links dinâmicos.');
 
-    // Listener para links dinâmicos enquanto o app está aberto
     FirebaseDynamicLinks.instance.onLink.listen((PendingDynamicLinkData data) {
       final Uri? deepLink = data.link;
       if (deepLink != null) {
@@ -59,7 +58,6 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
       developer.log('Erro ao processar link dinâmico: $error');
     });
 
-    // Verifica links dinâmicos quando o app é iniciado pela primeira vez
     final PendingDynamicLinkData? initialLink =
         await FirebaseDynamicLinks.instance.getInitialLink();
 
@@ -72,11 +70,11 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
   void _processDeepLink(Uri deepLink) {
     developer.log('Processando deep link: $deepLink');
 
-    final String? notificacaoId = deepLink.queryParameters['notificacaoId'];
+    final String? coletaId = deepLink.queryParameters['coletaId'];
 
-    if (notificacaoId != null) {
+    if (coletaId != null) {
       developer.log(
-          'Parâmetro notificacaoId encontrado: $notificacaoId. Verificando estado do usuário.');
+          'Parâmetro coletaId encontrado: $coletaId. Verificando estado do usuário.');
 
       final user = FirebaseAuth.instance.currentUser;
 
@@ -87,16 +85,16 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
         navigatorKey.currentState?.push(
           MaterialPageRoute(
             builder: (context) => ColetorNotificacaoScreen(
-              notificacaoId: notificacaoId,
+              coletaId: coletaId,
             ),
           ),
         );
       } else {
         developer.log(
-            'Usuário não está logado. Salvando notificacaoId para redirecionamento após login.');
+            'Usuário não está logado. Salvando coletaId para redirecionamento após login.');
 
         setState(() {
-          _pendingNotificationId = notificacaoId;
+          _pendingColetaId = coletaId; // Ajustado para coletaId
         });
 
         navigatorKey.currentState?.pushReplacement(
@@ -109,11 +107,10 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
       }
     } else {
       developer.log(
-          'Deep link não contém o parâmetro notificacaoId. Nenhuma ação será tomada.');
-      // Exibe o SnackBar utilizando o ScaffoldMessenger
+          'Deep link não contém o parâmetro coletaId. Nenhuma ação será tomada.');
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
         const SnackBar(
-          content: Text('Link inválido ou sem informações de notificação.'),
+          content: Text('Link inválido ou sem informações de coleta.'),
           duration: Duration(seconds: 3),
         ),
       );
@@ -121,19 +118,19 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
   }
 
   void _handlePostLoginNavigation() {
-    if (_pendingNotificationId != null) {
+    if (_pendingColetaId != null) {
       developer.log(
-          'Usuário logado com sucesso. Redirecionando para ColetorNotificacaoScreen com notificacaoId: $_pendingNotificationId');
+          'Usuário logado com sucesso. Redirecionando para ColetorNotificacaoScreen com coletaId: $_pendingColetaId');
 
       navigatorKey.currentState?.pushReplacement(
         MaterialPageRoute(
           builder: (context) => ColetorNotificacaoScreen(
-            notificacaoId: _pendingNotificationId!,
+            coletaId: _pendingColetaId!, // Corrigido para coletaId
           ),
         ),
       );
 
-      _pendingNotificationId = null; 
+      _pendingColetaId = null; // Limpa o estado
     }
   }
 

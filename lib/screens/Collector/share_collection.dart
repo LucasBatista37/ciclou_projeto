@@ -50,55 +50,10 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
     });
 
     try {
-      // Buscar os dados da coleta no Firestore
-      DocumentSnapshot coletaSnapshot = await FirebaseFirestore.instance
-          .collection('coletas')
-          .doc(widget.coletaId)
-          .get();
-
-      if (!coletaSnapshot.exists) {
-        developer.log('Coleta não encontrada no Firestore.');
-        setState(() {
-          _loading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Coleta não encontrada.')),
-        );
-        return;
-      }
-
-      // Extrair os dados da coleta
-      Map<String, dynamic> coletaData =
-          coletaSnapshot.data() as Map<String, dynamic>;
-
-      // Verifique os dados extraídos
-      developer.log('Dados da coleta: $coletaData');
-
-      final notificationData = {
-        'coletaId': widget.coletaId,
-        'region': coletaData['region'] ?? 'Não informado',
-        'address': coletaData['address'] ?? 'Não informado',
-        'statusAtual': coletaData['status'] ?? 'Pendente',
-        'precoPorLitro':
-            coletaData['precoPorLitro']?.toString() ?? 'Não informado',
-        'collectorId': FirebaseAuth.instance.currentUser?.uid,
-        'timestamp': FieldValue.serverTimestamp(),
-      };
-
-      developer
-          .log('Dados para salvar na coleção notifications: $notificationData');
-
-      // Salvar os dados na coleção de notificações
-      DocumentReference notificationRef = await FirebaseFirestore.instance
-          .collection('notifications')
-          .add(notificationData);
-
-      final notificationId = notificationRef.id;
-
-      // Criar o link dinâmico com o ID da notificação
+      // Criar o link dinâmico com o coletaId
       final DynamicLinkParameters parameters = DynamicLinkParameters(
         link: Uri.parse(
-            'https://ciclouprojeto.page.link/notificacao?notificacaoId=$notificationId'),
+            'https://ciclouprojeto.page.link/coleta?coletaId=${widget.coletaId}'),
         uriPrefix: 'https://ciclouprojeto.page.link',
         androidParameters: AndroidParameters(
           packageName: 'com.example.ciclou_projeto',
@@ -109,8 +64,6 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
           minimumVersion: '1.0.0',
         ),
       );
-
-      developer.log('Parâmetros configurados: $parameters');
 
       // Gerar o link curto
       final ShortDynamicLink shortDynamicLink =

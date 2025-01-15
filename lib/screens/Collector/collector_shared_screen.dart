@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
@@ -5,9 +6,9 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'dart:developer' as developer;
 
 class ColetorNotificacaoScreen extends StatefulWidget {
-  final String notificacaoId;
+  final String coletaId; // Renomeado de notificacaoId para coletaId
 
-  const ColetorNotificacaoScreen({Key? key, required this.notificacaoId})
+  const ColetorNotificacaoScreen({Key? key, required this.coletaId})
       : super(key: key);
 
   @override
@@ -16,7 +17,7 @@ class ColetorNotificacaoScreen extends StatefulWidget {
 }
 
 class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
-  Map<String, dynamic>? notificacao;
+  Map<String, dynamic>? coleta; // Variável corrigida
   bool _loading = true;
 
   final TextEditingController _nomeController = TextEditingController();
@@ -34,43 +35,147 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
   @override
   void initState() {
     super.initState();
-    developer.log(
-        'Iniciando ColetorNotificacaoScreen com ID: ${widget.notificacaoId}');
-    _fetchNotificacao();
+    developer
+        .log('Iniciando ColetorNotificacaoScreen com ID: ${widget.coletaId}');
+    _fetchColeta(); // Atualizado para usar _fetchColeta
   }
 
-  Future<void> _fetchNotificacao() async {
-    developer.log('Buscando notificação com ID: ${widget.notificacaoId}');
+  Future<void> _fetchColeta() async {
+    developer.log('Buscando coleta com ID: ${widget.coletaId}');
 
     try {
       DocumentSnapshot snapshot = await FirebaseFirestore.instance
-          .collection('notifications')
-          .doc(widget.notificacaoId)
+          .collection('coletas')
+          .doc(widget.coletaId)
           .get();
 
       if (snapshot.exists) {
-        developer.log('Notificação encontrada: ${snapshot.data()}');
+        developer.log('Coleta encontrada: ${snapshot.data()}');
         setState(() {
-          notificacao = snapshot.data() as Map<String, dynamic>?;
+          coleta = snapshot.data() as Map<String, dynamic>?; // Variável coleta
           _loading = false;
         });
       } else {
-        developer.log('Notificação não encontrada.');
+        developer.log('Coleta não encontrada.');
         setState(() {
           _loading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notificação não encontrada.')),
+          const SnackBar(content: Text('Coleta não encontrada.')),
         );
       }
     } catch (e, stackTrace) {
-      developer.log('Erro ao buscar notificação: $e',
+      developer.log('Erro ao buscar coleta: $e',
           error: e, stackTrace: stackTrace);
       setState(() {
         _loading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar notificação: $e')),
+        SnackBar(content: Text('Erro ao carregar coleta: $e')),
+      );
+    }
+  }
+
+  Future<void> _salvarDadosColeta() async {
+    if (!_validarCampos()) {
+      developer.log('Validação de campos falhou.', name: 'Salvar Coleta');
+      return;
+    }
+
+    try {
+      developer.log(
+        'Buscando documento na subcoleção "propostas" com status "Aceita".',
+        name: 'Salvar Coleta',
+      );
+
+      // Busca o documento na subcoleção "propostas" com status "Aceita"
+      QuerySnapshot query = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(widget.coletaId) // Documento principal
+          .collection('propostas') // Subcoleção "propostas"
+          .where('status', isEqualTo: 'Aceita') // Filtro pelo campo "status"
+          .get();
+
+      if (query.docs.isNotEmpty) {
+        // Obtém o primeiro documento encontrado
+        QueryDocumentSnapshot doc = query.docs.first;
+
+        String idReal = doc.id; // ID do documento na subcoleção
+        developer.log(
+            'Documento com status "Aceita" encontrado. Atualizando ID: $idReal');
+
+        // Referência ao documento da subcoleção
+        DocumentReference propostaRef = FirebaseFirestore.instance
+            .collection('coletas')
+            .doc(widget.coletaId)
+            .collection('propostas')
+            .doc(idReal);
+
+        // Atualiza os dados no documento
+        await propostaRef.update({
+          'nome': _nomeController.text,
+          'cpf': _cpfController.text,
+          'placa': _placaController.text,
+          'veiculo': _veiculoController.text,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        developer.log('Dados atualizados com sucesso no documento $idReal.');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dados atualizados com sucesso!')),
+        );
+
+        // Obtém o documento principal da coleção "coletas"
+        DocumentSnapshot coletaAtualizada = await FirebaseFirestore.instance
+            .collection('coletas')
+            .doc(widget.coletaId)
+            .get();
+
+        // Logs detalhados de coletaAtualizada
+        developer.log(
+          'Dados do documento principal (coletaAtualizada): ${coletaAtualizada.data()}',
+          name: 'Salvar Coleta',
+        );
+
+        if (coletaAtualizada.data() == null) {
+          developer.log(
+            'Erro: Os dados de coletaAtualizada estão nulos.',
+            name: 'Salvar Coleta',
+          );
+        } else {
+          developer.log(
+            'Dados válidos em coletaAtualizada: ${coletaAtualizada.data()}',
+            name: 'Salvar Coleta',
+          );
+        }
+
+        // Redireciona para a tela CollectProcessRede com o documento principal
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CollectProcessRede(
+              coletaAtual: coletaAtualizada, // Documento principal
+            ),
+          ),
+        );
+      } else {
+        developer.log('Nenhuma proposta com status "Aceita" foi encontrada.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text('Nenhuma proposta com status "Aceita" encontrada.')),
+        );
+      }
+    } catch (e, stackTrace) {
+      developer.log(
+        'Erro ao salvar dados na subcoleção "propostas".',
+        error: e,
+        stackTrace: stackTrace,
+        name: 'Salvar Coleta',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar dados: $e')),
       );
     }
   }
@@ -115,35 +220,6 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
     return true;
   }
 
-  Future<void> _salvarDadosColeta() async {
-    if (!_validarCampos()) {
-      return;
-    }
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('notifications')
-          .doc(widget.notificacaoId)
-          .update({
-        'nome': _nomeController.text,
-        'cpf': _cpfController.text,
-        'placa': _placaController.text,
-        'veiculo': _veiculoController.text,
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dados salvos com sucesso!')),
-      );
-
-      Navigator.pop(context);
-    } catch (e) {
-      developer.log('Erro ao salvar dados: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar dados: $e')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     developer.log('Construindo interface da tela de detalhes da coleta.');
@@ -164,7 +240,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : notificacao == null
+          : coleta == null
               ? const Center(
                   child: Text('Detalhes não disponíveis.'),
                 )
@@ -253,11 +329,11 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
   }
 
   Widget _buildDetailsCard() {
-    final String region = notificacao?['region'] ?? 'Não disponível';
-    final String address = notificacao?['address'] ?? 'Não disponível';
-    final String statusAtual = notificacao?['statusAtual'] ?? 'Não disponível';
+    final String region = coleta?['region'] ?? 'Não disponível';
+    final String address = coleta?['address'] ?? 'Não disponível';
+    final String statusAtual = coleta?['statusAtual'] ?? 'Não disponível';
     final String precoPorLitro =
-        notificacao?['precoPorLitro']?.toString() ?? 'Não disponível';
+        coleta?['precoPorLitro']?.toString() ?? 'Não disponível';
 
     return Center(
       child: Card(
