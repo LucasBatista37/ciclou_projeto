@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
@@ -16,11 +17,9 @@ class _SupportScreenState extends State<SupportScreen> {
 
   Future<void> _sendEmail() async {
     if (_commentController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, preencha todos os campos.'),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Por favor, preencha todos os campos',
       );
       return;
     }
@@ -34,11 +33,9 @@ class _SupportScreenState extends State<SupportScreen> {
 
     try {
       await FlutterEmailSender.send(email);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mensagem enviada com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Mensagem enviada com sucesso',
       );
       _commentController.clear();
     } on PlatformException catch (e) {

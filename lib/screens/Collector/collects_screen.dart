@@ -109,7 +109,6 @@ class _CollectsScreenState extends State<CollectsScreen> {
                           );
                         }
 
-                        // Verifica se alguma proposta possui isShared = true
                         final isShared = snapshot.data!.docs.any((doc) {
                           final data = doc.data() as Map<String, dynamic>;
                           return data['isShared'] == true;

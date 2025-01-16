@@ -396,6 +396,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
     final stream = FirebaseFirestore.instance
         .collection('coletas')
         .where('status', isEqualTo: 'Pendente')
+        .orderBy('createdAt', descending: true)
         .snapshots();
 
     return StreamBuilder<QuerySnapshot>(

@@ -268,6 +268,9 @@ class _CollectProcessState extends State<CollectProcess> {
         message: 'Coleta confirmada com sucesso!',
       );
 
+      // ignore: use_build_context_synchronously
+      await _notificarSolicitanteFinalizacao(context);
+
       await _gerarCertificado();
 
       Future.delayed(Duration.zero, () {
@@ -305,6 +308,52 @@ class _CollectProcessState extends State<CollectProcess> {
     );
   }
 
+  Future<void> _notificarSolicitanteFinalizacao(BuildContext context) async {
+    try {
+      final coletaDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .get();
+
+      if (!coletaDoc.exists) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: coleta não encontrada.',
+        );
+        return;
+      }
+
+      final requestorId = coletaDoc.data()?['userId'];
+
+      if (requestorId == null) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: solicitante não encontrado.',
+        );
+        return;
+      }
+
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'title': 'Coleta Finalizada',
+        'message': 'A coleta foi concluída com sucesso!',
+        'timestamp': FieldValue.serverTimestamp(),
+        'requestorId': requestorId,
+        'coletaId': _coletaAtual.id,
+        'isRead': false,
+      });
+
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Solicitante notificado sobre a finalização da coleta!',
+      );
+    } catch (e) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao notificar o solicitante sobre a finalização: $e',
+      );
+    }
+  }
+
   Future<void> _notificarSolicitante(BuildContext context) async {
     try {
       final coletaDoc = await FirebaseFirestore.instance
@@ -335,7 +384,6 @@ class _CollectProcessState extends State<CollectProcess> {
           .doc(_coletaAtual.id)
           .update({
         'coletorACaminho': true,
-        'status': 'Coletor a Caminho',
       });
 
       await FirebaseFirestore.instance.collection('notifications').add({
@@ -358,7 +406,7 @@ class _CollectProcessState extends State<CollectProcess> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao notificar o solicitante: $e',
+        message: 'Erro ao notificar o solicitante',
       );
     }
   }
@@ -641,12 +689,6 @@ class _CollectProcessState extends State<CollectProcess> {
                               _coletaAtual = updatedColetaDoc;
                               _isProcessing = false;
                             });
-
-                            ScaffoldMessengerHelper.showSuccess(
-                              context: context,
-                              message:
-                                  'Solicitante notificado que você está a caminho!',
-                            );
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,

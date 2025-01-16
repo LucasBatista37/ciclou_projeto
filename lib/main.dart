@@ -125,12 +125,12 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
       navigatorKey.currentState?.pushReplacement(
         MaterialPageRoute(
           builder: (context) => ColetorNotificacaoScreen(
-            coletaId: _pendingColetaId!, // Corrigido para coletaId
+            coletaId: _pendingColetaId!,
           ),
         ),
       );
 
-      _pendingColetaId = null; // Limpa o estado
+      _pendingColetaId = null; 
     }
   }
 

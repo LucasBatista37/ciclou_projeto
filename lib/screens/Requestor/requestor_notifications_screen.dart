@@ -1,4 +1,6 @@
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Requestor/code_verification_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/comprovante_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -125,9 +127,9 @@ class RequestorNotificationsScreen extends StatelessWidget {
         return Icons.check_circle;
       case 'Proposta Aceita':
         return Icons.thumb_up;
-      case 'Coleta Concluída':
+      case 'Coleta Finalizada':
         return Icons.done_all;
-      case 'Coletor a Caminho': 
+      case 'Coletor a Caminho':
         return Icons.directions_car;
       default:
         return Icons.notifications;
@@ -176,10 +178,27 @@ class RequestorNotificationsScreen extends StatelessWidget {
           ),
         ),
       );
-    } else if (title == 'Coletor a Caminho') {
+    } else if (title == 'Coletor a Caminho' && coletaId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CodeVerificationScreen(
+            documentId: coletaId,
+          ),
+        ),
+      );
+    } else if (title == 'Coleta Finalizada' && coletaId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ComprovanteVerificationScreen(documentId: coletaId),
+        ),
+      );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('O coletor já está a caminho.'),
+          content: Text('Ação não suportada para esta notificação.'),
         ),
       );
     }

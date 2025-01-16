@@ -5,14 +5,12 @@ import 'package:ciclou_projeto/screens/Requestor/comprovante_verification_screen
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_stats_screen.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
-import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/components/requestor_drawer.dart';
 import 'package:ciclou_projeto/components/custom_requestor_navigationbar.dart';
 import 'package:ciclou_projeto/screens/Requestor/create_collection_screen.dart';
-import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_history_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
 
@@ -22,6 +20,7 @@ class RequestorDashboard extends StatefulWidget {
   const RequestorDashboard({super.key, required this.user});
 
   @override
+  // ignore: library_private_types_in_public_api
   _RequestorDashboardState createState() => _RequestorDashboardState();
 }
 
