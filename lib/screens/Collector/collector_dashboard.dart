@@ -567,7 +567,8 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                         tipoEstabelecimento: title,
                         quantidadeOleo: quantity,
                         prazo: prazo,
-                        endereco: 'Endereço não disponível',
+                        endereco:
+                            'Diponível após o pagamento para a plataforma',
                         observacoes: region,
                         documentId: documentId,
                         funcionamentoDias: funcionamentoDias,

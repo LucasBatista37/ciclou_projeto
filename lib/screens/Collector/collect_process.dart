@@ -31,6 +31,8 @@ class _CollectProcessState extends State<CollectProcess> {
   String? _qrCodeBase64;
   String? _qrCodeText;
   String? _confirmationCode;
+  bool _isLoading = false;
+  bool _isProcessing = false;
 
   double _quantidadeReal = 0.0;
   bool _coletaFinalizada = false;
@@ -133,7 +135,21 @@ class _CollectProcessState extends State<CollectProcess> {
       return;
     }
 
+    setState(() {
+      _isProcessing = true;
+    });
+
     try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) {
         throw Exception('Usuário não autenticado.');
@@ -154,15 +170,24 @@ class _CollectProcessState extends State<CollectProcess> {
         'comprovantePagamento': downloadUrl,
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Comprovante enviado com sucesso!')),
-      );
-
       await _finalizarColeta();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content:
+                Text('Comprovante enviado e coleta finalizada com sucesso!')),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao enviar comprovante: $e')),
+        SnackBar(
+            content:
+                Text('Erro ao enviar comprovante ou finalizar coleta: $e')),
       );
+    } finally {
+      Navigator.pop(context);
+      setState(() {
+        _isProcessing = false;
+      });
     }
   }
 
@@ -280,6 +305,87 @@ class _CollectProcessState extends State<CollectProcess> {
     );
   }
 
+  Future<void> _notificarSolicitante(BuildContext context) async {
+    try {
+      final coletaDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .get();
+
+      if (!coletaDoc.exists) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: coleta não encontrada.',
+        );
+        return;
+      }
+
+      final requestorId = coletaDoc.data()?['userId'];
+
+      if (requestorId == null) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: solicitante não encontrado.',
+        );
+        return;
+      }
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .update({
+        'coletorACaminho': true,
+        'status': 'Coletor a Caminho',
+      });
+
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'title': 'Coletor a Caminho',
+        'message': 'O coletor está a caminho da coleta.',
+        'timestamp': FieldValue.serverTimestamp(),
+        'requestorId': requestorId,
+        'coletaId': _coletaAtual.id,
+        'isRead': false,
+      });
+
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Solicitante notificado que você está a caminho!',
+      );
+
+      setState(() {
+        _coletaAtual = coletaDoc;
+      });
+    } catch (e) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao notificar o solicitante: $e',
+      );
+    }
+  }
+
+  Widget _buildEstouIndoButton(BuildContext context) {
+    final data = _coletaAtual.data() as Map<String, dynamic>;
+    final coletorACaminho = data['coletorACaminho'] ?? false;
+
+    if (coletorACaminho) {
+      return const SizedBox.shrink();
+    }
+
+    return ElevatedButton(
+      onPressed: () async {
+        await _notificarSolicitante(context);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+      ),
+      child: const Text(
+        'Estou indo',
+        style: TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_carregando) {
@@ -329,10 +435,88 @@ class _CollectProcessState extends State<CollectProcess> {
                 mostrarEndereco: _paymentStatus == 'approved',
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
+              if (_paymentStatus == 'approved' &&
+                  (data['status'] ?? '') == 'Aprovado') ...[
+                const Text(
+                  'Digite a quantidade real coletada',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide:
+                          const BorderSide(color: Colors.green, width: 2),
+                    ),
+                    labelText: 'Quantidade em Litros',
+                    labelStyle: const TextStyle(color: Colors.green),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide:
+                          const BorderSide(color: Colors.green, width: 2),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _quantidadeReal = double.tryParse(value) ?? 0.0;
 
-              // Informações de Pagamento
-              if (_paymentStatus == 'approved')
+                      double precoPorLitro = double.tryParse(
+                              data['precoPorLitro']?.toString() ?? '0.0') ??
+                          0.0;
+
+                      _valorTotalPago = _quantidadeReal * precoPorLitro;
+                    });
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'R\$',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    Text(
+                      _valorTotalPago.toStringAsFixed(2),
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+
+                if (_paymentStatus == 'approved' &&
+                    (data['status'] ?? '') == 'Aprovado' &&
+                    _valorTotalPago > 0) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Faça o pagamento de R\$ ${_valorTotalPago.toStringAsFixed(2)} para a chave Pix abaixo.',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Informações de Pagamento
                 PagamentoInfoCard(
                   tipoChavePix: data['tipoChavePix'] ?? 'N/A',
                   chavePix: data['chavePix'] ?? 'N/A',
@@ -348,8 +532,8 @@ class _CollectProcessState extends State<CollectProcess> {
                     );
                   },
                 ),
-
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
 
               // Exibe o código de confirmação
               if (_confirmationCode != null &&
@@ -384,9 +568,104 @@ class _CollectProcessState extends State<CollectProcess> {
                             ),
                             textAlign: TextAlign.center,
                           ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () async {
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+
+                                    ScaffoldMessengerHelper.showWarning(
+                                      context: context,
+                                      message: 'Atualizando...',
+                                    );
+
+                                    await Future.delayed(
+                                        const Duration(seconds: 2));
+
+                                    setState(() {
+                                      _isLoading = false;
+                                      _verificarPagamento();
+                                    });
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  _isLoading ? Colors.grey : Colors.green,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24.0, vertical: 12.0),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Já confirmado',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                          ),
                         ],
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (_confirmationCode != null &&
+                  !(data['coletorACaminho'] ?? false) &&
+                  (data['status'] ?? '') != 'Aprovado') ...[
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _isProcessing
+                        ? null
+                        : () async {
+                            setState(() {
+                              _isProcessing = true;
+                            });
+
+                            await _notificarSolicitante(context);
+
+                            final updatedColetaDoc = await FirebaseFirestore
+                                .instance
+                                .collection('coletas')
+                                .doc(_coletaAtual.id)
+                                .get();
+
+                            setState(() {
+                              _coletaAtual = updatedColetaDoc;
+                              _isProcessing = false;
+                            });
+
+                            ScaffoldMessengerHelper.showSuccess(
+                              context: context,
+                              message:
+                                  'Solicitante notificado que você está a caminho!',
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 12.0),
+                    ),
+                    child: _isProcessing
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Estou indo',
+                            style: TextStyle(color: Colors.white),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -404,7 +683,7 @@ class _CollectProcessState extends State<CollectProcess> {
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: const Text(
-                            'Pagamento aprovado e coleta aprovada! Você pode prosseguir com a coleta.',
+                            'Pagamento aprovado e coleta aprovada! Faça o pagamento para o solicitante para prosseguir com a coleta.',
                             style: TextStyle(fontSize: 16, color: Colors.green),
                             textAlign: TextAlign.center,
                           ),
@@ -412,25 +691,6 @@ class _CollectProcessState extends State<CollectProcess> {
                       ),
                     ),
                     const Divider(),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Registrar Quantidade Real Coletada',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Quantidade em Litros',
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _quantidadeReal = double.tryParse(value) ?? 0.0;
-                        });
-                      },
-                    ),
                     const SizedBox(height: 16),
                     Center(
                       child: ElevatedButton(
@@ -441,7 +701,7 @@ class _CollectProcessState extends State<CollectProcess> {
                         ),
                         onPressed: _coletaFinalizada ? null : _confirmarColeta,
                         child: const Text(
-                          'Finalizar Coleta',
+                          'Já paguei',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
@@ -456,7 +716,7 @@ class _CollectProcessState extends State<CollectProcess> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: const Text(
-                        'Pagamento aprovado, peça que o solicitante preencha o código acima para poder finalizar a coleta.',
+                        'Pagamento aprovado, peça que o solicitante preencha o código acima para poder prosseguir com a coleta.',
                         style: TextStyle(fontSize: 16, color: Colors.green),
                         textAlign: TextAlign.center,
                       ),

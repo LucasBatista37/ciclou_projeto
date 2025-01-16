@@ -127,6 +127,8 @@ class RequestorNotificationsScreen extends StatelessWidget {
         return Icons.thumb_up;
       case 'Coleta Concluída':
         return Icons.done_all;
+      case 'Coletor a Caminho': 
+        return Icons.directions_car;
       default:
         return Icons.notifications;
     }
@@ -142,6 +144,8 @@ class RequestorNotificationsScreen extends StatelessWidget {
         return Colors.orange;
       case 'Coleta Finalizada':
         return Colors.teal;
+      case 'Coletor a Caminho':
+        return Colors.amber;
       default:
         return Colors.grey;
     }
@@ -157,8 +161,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
     final title = data['title'];
     final coletaId = data['coletaId'];
     final solicitationTitle = data['solicitationTitle'];
-    final userData =
-        data['user'] as Map<String, dynamic>?; 
+    final userData = data['user'] as Map<String, dynamic>?;
 
     if (title == 'Nova Proposta Recebida!' &&
         coletaId != null &&
@@ -171,6 +174,12 @@ class RequestorNotificationsScreen extends StatelessWidget {
             documentId: coletaId,
             user: UserModel.fromFirestore(userData, userData['userId']),
           ),
+        ),
+      );
+    } else if (title == 'Coletor a Caminho') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('O coletor já está a caminho.'),
         ),
       );
     }

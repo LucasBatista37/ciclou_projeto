@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class PagamentoInfoCard extends StatelessWidget {
   final String tipoChavePix;
@@ -9,13 +8,13 @@ class PagamentoInfoCard extends StatelessWidget {
   final VoidCallback onCopiarChavePix;
 
   const PagamentoInfoCard({
-    Key? key,
+    super.key,
     required this.tipoChavePix,
     required this.chavePix,
     required this.banco,
     required this.valorTotalPago,
     required this.onCopiarChavePix,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -71,8 +70,7 @@ class PagamentoInfoCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.account_balance,
-                    color: Colors.grey, size: 20),
+                const Icon(Icons.account_balance, color: Colors.grey, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -89,12 +87,11 @@ class PagamentoInfoCard extends StatelessWidget {
             const SizedBox(height: 20),
             Row(
               children: [
-                const Icon(Icons.monetization_on,
-                    color: Colors.grey, size: 20),
+                const Icon(Icons.monetization_on, color: Colors.grey, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Valor Total Pago:',
+                    'Valor Total a Pagar:',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
