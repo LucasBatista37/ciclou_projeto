@@ -136,12 +136,18 @@ class _SendProposalState extends State<SendProposal> {
       final valorTotalPago = _quantidadeOleo * (double.tryParse(preco) ?? 0.0);
 
       try {
+        print('Iniciando envio de proposta...');
+        print('Preço por litro: $preco');
+        print('Valor total pago calculado: $valorTotalPago');
+
+        // Buscar dados da coleta
         final coletaDoc = await FirebaseFirestore.instance
             .collection('coletas')
             .doc(widget.documentId)
             .get();
 
         if (!coletaDoc.exists) {
+          print('Erro: coleta não encontrada');
           ScaffoldMessengerHelper.showError(
             context: context,
             message: 'Erro: coleta não encontrada',
@@ -151,6 +157,10 @@ class _SendProposalState extends State<SendProposal> {
 
         final requestorId = coletaDoc.data()?['userId'];
         final solicitationTitle = coletaDoc.data()?['titulo'] ?? 'Coleta';
+        print('Requestor ID: $requestorId');
+        print('Título da solicitação: $solicitationTitle');
+
+        print('Photo URL do usuário: ${widget.user.photoUrl}');
 
         await FirebaseFirestore.instance
             .collection('coletas')
@@ -165,6 +175,7 @@ class _SendProposalState extends State<SendProposal> {
           'collectorId': widget.user.userId,
           'photoUrl': widget.user.photoUrl,
           'valorTotalPago': valorTotalPago.toStringAsFixed(2),
+          'isShared': false,
         });
 
         await FirebaseFirestore.instance.collection('notifications').add({
@@ -179,6 +190,8 @@ class _SendProposalState extends State<SendProposal> {
           'isRead': false,
         });
 
+        print('Notificação enviada para o requestor ID: $requestorId.');
+
         ScaffoldMessengerHelper.showSuccess(
           context: context,
           message: 'Proposta enviada com sucesso!',
@@ -190,6 +203,7 @@ class _SendProposalState extends State<SendProposal> {
               builder: (context) => CollectorDashboard(user: widget.user)),
         );
       } catch (e) {
+        print('Erro ao enviar proposta: $e');
         ScaffoldMessengerHelper.showError(
           context: context,
           message: 'Erro ao enviar proposta',

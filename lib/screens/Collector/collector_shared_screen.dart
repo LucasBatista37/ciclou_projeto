@@ -6,7 +6,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'dart:developer' as developer;
 
 class ColetorNotificacaoScreen extends StatefulWidget {
-  final String coletaId; // Renomeado de notificacaoId para coletaId
+  final String coletaId;
 
   const ColetorNotificacaoScreen({Key? key, required this.coletaId})
       : super(key: key);
@@ -17,7 +17,7 @@ class ColetorNotificacaoScreen extends StatefulWidget {
 }
 
 class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
-  Map<String, dynamic>? coleta; // Variável corrigida
+  Map<String, dynamic>? coleta;
   bool _loading = true;
 
   final TextEditingController _nomeController = TextEditingController();
@@ -37,7 +37,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
     super.initState();
     developer
         .log('Iniciando ColetorNotificacaoScreen com ID: ${widget.coletaId}');
-    _fetchColeta(); // Atualizado para usar _fetchColeta
+    _fetchColeta();
   }
 
   Future<void> _fetchColeta() async {
@@ -52,7 +52,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
       if (snapshot.exists) {
         developer.log('Coleta encontrada: ${snapshot.data()}');
         setState(() {
-          coleta = snapshot.data() as Map<String, dynamic>?; // Variável coleta
+          coleta = snapshot.data() as Map<String, dynamic>?;
           _loading = false;
         });
       } else {
@@ -88,51 +88,53 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
         name: 'Salvar Coleta',
       );
 
-      // Busca o documento na subcoleção "propostas" com status "Aceita"
       QuerySnapshot query = await FirebaseFirestore.instance
           .collection('coletas')
-          .doc(widget.coletaId) // Documento principal
-          .collection('propostas') // Subcoleção "propostas"
-          .where('status', isEqualTo: 'Aceita') // Filtro pelo campo "status"
+          .doc(widget.coletaId)
+          .collection('propostas')
+          .where('status', isEqualTo: 'Aceita')
           .get();
 
       if (query.docs.isNotEmpty) {
-        // Obtém o primeiro documento encontrado
         QueryDocumentSnapshot doc = query.docs.first;
 
-        String idReal = doc.id; // ID do documento na subcoleção
+        String idReal = doc.id;
         developer.log(
             'Documento com status "Aceita" encontrado. Atualizando ID: $idReal');
 
-        // Referência ao documento da subcoleção
         DocumentReference propostaRef = FirebaseFirestore.instance
             .collection('coletas')
             .doc(widget.coletaId)
             .collection('propostas')
             .doc(idReal);
 
-        // Atualiza os dados no documento
         await propostaRef.update({
           'nome': _nomeController.text,
           'cpf': _cpfController.text,
           'placa': _placaController.text,
           'veiculo': _veiculoController.text,
           'timestamp': FieldValue.serverTimestamp(),
+          'isShared': true,
         });
 
         developer.log('Dados atualizados com sucesso no documento $idReal.');
+
+        await FirebaseFirestore.instance
+            .collection('coletas')
+            .doc(widget.coletaId)
+            .update({
+          'isShared': true,
+        });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Dados atualizados com sucesso!')),
         );
 
-        // Obtém o documento principal da coleção "coletas"
         DocumentSnapshot coletaAtualizada = await FirebaseFirestore.instance
             .collection('coletas')
             .doc(widget.coletaId)
             .get();
 
-        // Logs detalhados de coletaAtualizada
         developer.log(
           'Dados do documento principal (coletaAtualizada): ${coletaAtualizada.data()}',
           name: 'Salvar Coleta',
@@ -150,12 +152,11 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
           );
         }
 
-        // Redireciona para a tela CollectProcessRede com o documento principal
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => CollectProcessRede(
-              coletaAtual: coletaAtualizada, // Documento principal
+              coletaAtual: coletaAtualizada,
             ),
           ),
         );
@@ -250,15 +251,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Detalhes da Coleta',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                         _buildDetailsCard(),
                         const Divider(height: 32),
                         const Text(

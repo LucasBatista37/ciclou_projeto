@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -50,7 +51,6 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
     });
 
     try {
-      // Criar o link dinâmico com o coletaId
       final DynamicLinkParameters parameters = DynamicLinkParameters(
         link: Uri.parse(
             'https://ciclouprojeto.page.link/coleta?coletaId=${widget.coletaId}'),
@@ -65,7 +65,6 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
         ),
       );
 
-      // Gerar o link curto
       final ShortDynamicLink shortDynamicLink =
           await FirebaseDynamicLinks.instance.buildShortLink(parameters);
 
@@ -77,11 +76,9 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
         _loading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Link gerado com sucesso!'),
-          duration: Duration(seconds: 3),
-        ),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Link gerado com sucesso!',
       );
     } catch (e, stackTrace) {
       developer.log('Erro ao gerar o link dinâmico',
@@ -89,8 +86,9 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
       setState(() {
         _loading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao gerar o link: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao gerar link',
       );
     }
   }
@@ -98,10 +96,9 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
   void _copyToClipboard(String text) {
     developer.log('Copiando link para área de transferência: $text');
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Link copiado para a área de transferência!'),
-      ),
+    ScaffoldMessengerHelper.showSuccess(
+      context: context,
+      message: 'Link copiado para área de transferência!',
     );
   }
 
@@ -164,10 +161,17 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
                       developer.log('Botão de gerar link clicado.');
                       await _generateLink();
                     },
-              icon: const Icon(Icons.link),
+              icon: const Icon(Icons.link,
+                  color: Colors.white), 
               label: _loading
-                  ? const Text('Gerando link...')
-                  : const Text('Gerar Link'),
+                  ? const Text(
+                      'Gerando link...',
+                      style: TextStyle(color: Colors.white), 
+                    )
+                  : const Text(
+                      'Gerar Link',
+                      style: TextStyle(color: Colors.white),
+                    ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 padding: const EdgeInsets.symmetric(

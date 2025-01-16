@@ -387,6 +387,50 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              FutureBuilder<QuerySnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('coletas')
+                    .doc(_coletaAtual.id)
+                    .collection('propostas')
+                    .where('isShared', isEqualTo: true)
+                    .get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return const SizedBox(); 
+                  }
+
+                  if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      color: Colors.amber.shade100,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.warning, color: Colors.amber),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Esta coleta é compartilhada.',
+                                style: TextStyle(
+                                  color: Colors.amber,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  return const SizedBox(); 
+                },
+              ),
+
               ColetaInfoCard(
                 tipoEstabelecimento: data['tipoEstabelecimento'] ?? 'N/A',
                 quantidadeOleo: (data['quantidadeOleo'] ?? 'N/A').toString(),
@@ -496,35 +540,31 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                         }
                       },
                     ),
-
-                    // Botão Compartilhar Coleta
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CompartilharColetaScreen(
-                              coletaId: _coletaAtual.id,
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.share, color: Colors.white),
-                      label: const Text(
-                        'Compartilhar Coleta',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ),
                   ],
+                ),
+
+              const SizedBox(height: 8),
+
+              if (_qrCodeBase64 != null && _paymentStatus != 'approved')
+                PagamentoQRCodeCard(
+                  qrCodeBase64: _qrCodeBase64!,
+                  qrCodeText: _qrCodeText,
+                  onCopiarCodigo: () {
+                    if (_qrCodeText != null) {
+                      Clipboard.setData(ClipboardData(text: _qrCodeText!));
+                      ScaffoldMessengerHelper.showSuccess(
+                        context: context,
+                        message: 'Código Copiado!',
+                      );
+                    }
+                  },
+                  onRevalidarPagamento: () async {
+                    await _verificarPagamento();
+                    ScaffoldMessengerHelper.showWarning(
+                      context: context,
+                      message: 'Revalidando Pagamento...',
+                    );
+                  },
                 ),
 
               const SizedBox(height: 16),
@@ -532,40 +572,73 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
               // Exibe o código de confirmação
               if (_confirmationCode != null &&
                   (data['status'] ?? '') != 'Aprovado') ...[
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  elevation: 3,
-                  color: Colors.green[50],
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Código de Confirmação da Coleta',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                Center(
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    elevation: 3,
+                    color: Colors.green[50],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Código de Confirmação da Coleta',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _confirmationCode!,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                          const SizedBox(height: 8),
+                          Text(
+                            _confirmationCode!,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
               ],
+
+              // Botão Compartilhar Coleta
+              Center(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CompartilharColetaScreen(
+                          coletaId: _coletaAtual.id,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.share, color: Colors.white),
+                  label: const Text(
+                    'Compartilhar Coleta',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // Pagamento Aprovado e Registro da Coleta
               if (_paymentStatus == 'approved' &&
@@ -637,28 +710,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                       ),
                     ),
                   ),
-                ),
-
-              if (_qrCodeBase64 != null && _paymentStatus != 'approved')
-                PagamentoQRCodeCard(
-                  qrCodeBase64: _qrCodeBase64!,
-                  qrCodeText: _qrCodeText,
-                  onCopiarCodigo: () {
-                    if (_qrCodeText != null) {
-                      Clipboard.setData(ClipboardData(text: _qrCodeText!));
-                      ScaffoldMessengerHelper.showSuccess(
-                        context: context,
-                        message: 'Código Copiado!',
-                      );
-                    }
-                  },
-                  onRevalidarPagamento: () async {
-                    await _verificarPagamento();
-                    ScaffoldMessengerHelper.showWarning(
-                      context: context,
-                      message: 'Revalidando Pagamento...',
-                    );
-                  },
                 ),
 
               if (_qrCodeBase64 == null && _paymentStatus != 'approved')

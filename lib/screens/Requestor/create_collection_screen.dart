@@ -168,6 +168,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           'funcionamentoDias': _diasFuncionamento,
           'funcionamentoHorario': _horarioFuncionamentoController.text.trim(),
           'IsNetCollection': widget.user.IsNet,
+          'isShared': false,
         };
 
         if (widget.user.precoFixoOleo > 0.0) {
