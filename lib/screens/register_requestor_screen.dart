@@ -108,6 +108,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'createdAt': FieldValue.serverTimestamp(),
           'establishmentType': _selectedEstablishmentType,
           'IsNet': false,
+          'realQuantityCollected': false,
         });
 
         ScaffoldMessengerHelper.showSuccess(
@@ -147,7 +148,8 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro inesperado ao registrar solicitante. Por favor, tente novamente.',
+        message:
+            'Erro inesperado ao registrar solicitante. Por favor, tente novamente.',
       );
     } finally {
       setState(() {

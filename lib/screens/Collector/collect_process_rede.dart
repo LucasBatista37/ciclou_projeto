@@ -7,6 +7,7 @@ import 'package:ciclou_projeto/components/collect_process/Pagamento_plataforma.d
 import 'package:ciclou_projeto/components/collect_process/Pagamento_solicitante.dart';
 import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
 import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
+import 'package:ciclou_projeto/components/collect_process/status_card.dart';
 import 'package:ciclou_projeto/components/payment_service.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
@@ -34,6 +35,9 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
   String? _qrCodeBase64;
   String? _qrCodeText;
   String? _confirmationCode;
+  bool _isLoading = false;
+  bool _isProcessing = false;
+  bool _isGeneratingQRCode = false;
 
   double _quantidadeReal = 0.0;
   bool _coletaFinalizada = false;
@@ -311,6 +315,9 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         message: 'Coleta confirmada com sucesso!',
       );
 
+      // ignore: use_build_context_synchronously
+      await _notificarSolicitanteFinalizacao(context);
+
       await _gerarCertificado();
 
       Future.delayed(Duration.zero, () {
@@ -345,6 +352,132 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
           },
         );
       },
+    );
+  }
+
+  Future<void> _notificarSolicitanteFinalizacao(BuildContext context) async {
+    try {
+      final coletaDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .get();
+
+      if (!coletaDoc.exists) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: coleta não encontrada.',
+        );
+        return;
+      }
+
+      final requestorId = coletaDoc.data()?['userId'];
+
+      if (requestorId == null) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: solicitante não encontrado.',
+        );
+        return;
+      }
+
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'title': 'Coleta Finalizada',
+        'message': 'A coleta foi concluída com sucesso!',
+        'timestamp': FieldValue.serverTimestamp(),
+        'requestorId': requestorId,
+        'coletaId': _coletaAtual.id,
+        'isRead': false,
+      });
+
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Solicitante notificado sobre a finalização da coleta!',
+      );
+    } catch (e) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao notificar o solicitante sobre a finalização.',
+      );
+    }
+  }
+
+  Future<void> _notificarSolicitante(BuildContext context) async {
+    try {
+      final coletaDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .get();
+
+      if (!coletaDoc.exists) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: coleta não encontrada.',
+        );
+        return;
+      }
+
+      final requestorId = coletaDoc.data()?['userId'];
+
+      if (requestorId == null) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Erro: solicitante não encontrado.',
+        );
+        return;
+      }
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .update({
+        'coletorACaminho': true,
+      });
+
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'title': 'Coletor a Caminho',
+        'message': 'O coletor está a caminho da coleta.',
+        'timestamp': FieldValue.serverTimestamp(),
+        'requestorId': requestorId,
+        'coletaId': _coletaAtual.id,
+        'isRead': false,
+      });
+
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Solicitante notificado que você está a caminho!',
+      );
+
+      setState(() {
+        _coletaAtual = coletaDoc;
+      });
+    } catch (e) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao notificar o solicitante.',
+      );
+    }
+  }
+
+  Widget _buildEstouIndoButton(BuildContext context) {
+    final data = _coletaAtual.data() as Map<String, dynamic>;
+    final coletorACaminho = data['coletorACaminho'] ?? false;
+
+    if (coletorACaminho) {
+      return const SizedBox.shrink();
+    }
+
+    return ElevatedButton(
+      onPressed: () async {
+        await _notificarSolicitante(context);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+      ),
+      child: const Text(
+        'Estou indo',
+        style: TextStyle(color: Colors.white),
+      ),
     );
   }
 
@@ -402,7 +535,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
-                    return const SizedBox(); 
+                    return const SizedBox();
                   }
 
                   if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
@@ -430,7 +563,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                     );
                   }
 
-                  return const SizedBox(); 
+                  return const SizedBox();
                 },
               ),
 
@@ -441,12 +574,168 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                 mostrarEndereco: _paymentStatus == 'approved',
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
+
+              if (_paymentStatus == 'approved' &&
+                  (data['status'] ?? '') == 'Aprovado' &&
+                  !(data['realQuantityCollected'] ?? false)) ...[
+                const Text(
+                  'Digite a quantidade real coletada',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide:
+                          const BorderSide(color: Colors.green, width: 2),
+                    ),
+                    labelText: 'Quantidade em Litros',
+                    labelStyle: const TextStyle(color: Colors.green),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide:
+                          const BorderSide(color: Colors.green, width: 2),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _quantidadeReal = double.tryParse(value) ?? 0.0;
+
+                      double precoPorLitro = double.tryParse(
+                              data['precoPorLitro']?.toString() ?? '0.0') ??
+                          0.0;
+
+                      _valorTotalPago = _quantidadeReal * precoPorLitro;
+                    });
+                  },
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'R\$',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    Text(
+                      _valorTotalPago.toStringAsFixed(2),
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+              ],
+
+              if (_paymentStatus == 'approved' &&
+                  _confirmationCode != null &&
+                  (data['status'] ?? '') == 'Aprovado' &&
+                  !(data['realQuantityCollected'] ?? false)) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Gere o QR Code com o valor de R\$ ${_valorTotalPago.toStringAsFixed(2)} para o Solicitante.',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: _isGeneratingQRCode
+                        ? null
+                        : () async {
+                            setState(() {
+                              _isGeneratingQRCode = true;
+                            });
+
+                            try {
+                              await FirebaseFirestore.instance
+                                  .collection('coletas')
+                                  .doc(_coletaAtual.id)
+                                  .update({'realQuantityCollected': true});
+
+                              final updatedColetaDoc = await FirebaseFirestore
+                                  .instance
+                                  .collection('coletas')
+                                  .doc(_coletaAtual.id)
+                                  .get();
+
+                              setState(() {
+                                _coletaAtual = updatedColetaDoc;
+                                _isGeneratingQRCode = false;
+                              });
+
+                              ScaffoldMessengerHelper.showSuccess(
+                                context: context,
+                                message:
+                                    'QR Code gerado e valor atualizado com sucesso!',
+                              );
+                            } catch (e) {
+                              setState(() {
+                                _isGeneratingQRCode = false;
+                              });
+
+                              ScaffoldMessengerHelper.showError(
+                                context: context,
+                                message:
+                                    'Erro ao gerar QR Code e atualizar valor.',
+                              );
+
+                              developer.log(
+                                  'Erro ao gerar QR Code e atualizar Firestore:',
+                                  error: e);
+                            }
+                          },
+                    icon: _isGeneratingQRCode
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.qr_code, color: Colors.white),
+                    label: const Text(
+                      'Gerar QR Code para Solicitante',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          _isGeneratingQRCode ? Colors.grey : Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // Informações de Pagamento
               if (_paymentStatus == 'approved' &&
-                  _qrCodeSolicitanteBase64 != null &&
-                  _qrCodeTextSolicitante != null)
+                  _confirmationCode != null &&
+                  (data['status'] ?? '') == 'Aprovado' &&
+                  (data['realQuantityCollected'] ?? false) == true)
                 Column(
                   children: [
                     PagamentoSolicitanteQRCodeCard(
@@ -519,11 +808,9 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                             } else {
                               ScaffoldMessengerHelper.showWarning(
                                 context: context,
-                                message:
-                                    'Pagamento ainda não foi aprovado.',
+                                message: 'Pagamento ainda não foi aprovado.',
                               );
-                              developer.log(
-                                  "Pagamento ainda não aprovado.");
+                              developer.log("Pagamento ainda não aprovado.");
                             }
                           } else {
                             ScaffoldMessengerHelper.showError(
@@ -570,7 +857,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                   },
                 ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               // Exibe o código de confirmação
               if (_confirmationCode != null &&
@@ -605,9 +892,98 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                             ),
                             textAlign: TextAlign.center,
                           ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () async {
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+
+                                    ScaffoldMessengerHelper.showWarning(
+                                      context: context,
+                                      message: 'Atualizando...',
+                                    );
+
+                                    await Future.delayed(
+                                        const Duration(seconds: 2));
+
+                                    setState(() {
+                                      _isLoading = false;
+                                      _verificarPagamento();
+                                    });
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  _isLoading ? Colors.grey : Colors.green,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24.0, vertical: 12.0),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Já confirmado',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                          ),
                         ],
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (_confirmationCode != null &&
+                  !(data['coletorACaminho'] ?? false) &&
+                  (data['status'] ?? '') != 'Aprovado') ...[
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _isProcessing
+                        ? null
+                        : () async {
+                            setState(() {
+                              _isProcessing = true;
+                            });
+
+                            await _notificarSolicitante(context);
+
+                            final updatedColetaDoc = await FirebaseFirestore
+                                .instance
+                                .collection('coletas')
+                                .doc(_coletaAtual.id)
+                                .get();
+
+                            setState(() {
+                              _coletaAtual = updatedColetaDoc;
+                              _isProcessing = false;
+                            });
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 12.0),
+                    ),
+                    child: _isProcessing
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Estou indo',
+                            style: TextStyle(color: Colors.white),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -645,43 +1021,18 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
               // Pagamento Aprovado e Registro da Coleta
               if (_paymentStatus == 'approved' &&
-                  (data['status'] ?? '') == 'Aprovado')
+                  (data['status'] ?? '') == 'Aprovado' &&
+                  (data['realQuantityCollected'] ?? false) == true)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Card(
-                        color: Colors.green[50],
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: const Text(
-                            'Pagamento aprovado e coleta aprovada! Você pode prosseguir com a coleta.',
-                            style: TextStyle(fontSize: 16, color: Colors.green),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
+                    StatusCard(
+                      message:
+                          'Pagamento aprovado e coleta aprovada! Faça o pagamento para o solicitante para prosseguir com a coleta.',
+                      backgroundColor: Colors.green[50]!,
+                      textColor: Colors.green,
                     ),
                     const Divider(),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Registrar Quantidade Real Coletada',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Quantidade em Litros',
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _quantidadeReal = double.tryParse(value) ?? 0.0;
-                        });
-                      },
-                    ),
                     const SizedBox(height: 16),
                     Center(
                       child: ElevatedButton(
@@ -701,18 +1052,27 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                 )
               else if (_paymentStatus == 'approved' &&
                   (data['status'] ?? '') != 'Aprovado')
-                Center(
-                  child: Card(
-                    color: Colors.green[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: const Text(
-                        'Pagamento aprovado, peça que o solicitante preencha o código acima para poder finalizar a coleta.',
-                        style: TextStyle(fontSize: 16, color: Colors.green),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
+                StatusCard(
+                  message:
+                      'Pagamento aprovado, peça que o solicitante preencha o código acima para poder prosseguir com a coleta.',
+                  backgroundColor: Colors.green[50]!,
+                  textColor: Colors.green,
+                ),
+
+              if (_paymentStatus == 'pending')
+                StatusCard(
+                  message:
+                      'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
+                  backgroundColor: Colors.red[50]!,
+                  textColor: Colors.red,
+                ),
+
+              if (_paymentStatus == 'rejected')
+                StatusCard(
+                  message:
+                      'Pagamento rejeitado. Entre em contato com o suporte.',
+                  backgroundColor: Colors.red[50]!,
+                  textColor: Colors.red,
                 ),
 
               if (_qrCodeBase64 == null && _paymentStatus != 'approved')
@@ -720,36 +1080,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                   child: Text(
                     'QR Code não disponível.',
                     style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ),
-
-              if (_paymentStatus == 'pending')
-                Center(
-                  child: Card(
-                    color: Colors.red[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: const Text(
-                        'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
-                        style: TextStyle(fontSize: 16, color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
-
-              if (_paymentStatus == 'rejected')
-                Center(
-                  child: Card(
-                    color: Colors.red[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: const Text(
-                        'Pagamento rejeitado. Entre em contato com o suporte.',
-                        style: TextStyle(fontSize: 16, color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
                   ),
                 ),
             ],
