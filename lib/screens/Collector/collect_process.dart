@@ -6,6 +6,7 @@ import 'package:ciclou_projeto/components/collect_process/Pagamento_info.dart';
 import 'package:ciclou_projeto/components/collect_process/Pagamento_plataforma.dart';
 import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
 import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
+import 'package:ciclou_projeto/components/collect_process/status_card.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -718,18 +719,11 @@ class _CollectProcessState extends State<CollectProcess> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Card(
-                        color: Colors.green[50],
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: const Text(
-                            'Pagamento aprovado e coleta aprovada! Faça o pagamento para o solicitante para prosseguir com a coleta.',
-                            style: TextStyle(fontSize: 16, color: Colors.green),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
+                    StatusCard(
+                      message:
+                          'Pagamento aprovado e coleta aprovada! Faça o pagamento para o solicitante para prosseguir com a coleta.',
+                      backgroundColor: Colors.green[50]!,
+                      textColor: Colors.green,
                     ),
                     const Divider(),
                     const SizedBox(height: 16),
@@ -751,18 +745,11 @@ class _CollectProcessState extends State<CollectProcess> {
                 )
               else if (_paymentStatus == 'approved' &&
                   (data['status'] ?? '') != 'Aprovado')
-                Center(
-                  child: Card(
-                    color: Colors.green[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: const Text(
-                        'Pagamento aprovado, peça que o solicitante preencha o código acima para poder prosseguir com a coleta.',
-                        style: TextStyle(fontSize: 16, color: Colors.green),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
+                StatusCard(
+                  message:
+                      'Pagamento aprovado, peça que o solicitante preencha o código acima para poder prosseguir com a coleta.',
+                  backgroundColor: Colors.green[50]!,
+                  textColor: Colors.green,
                 ),
 
               if (_qrCodeBase64 != null && _paymentStatus != 'approved')
@@ -787,41 +774,27 @@ class _CollectProcessState extends State<CollectProcess> {
                   },
                 ),
 
+              if (_paymentStatus == 'pending')
+                StatusCard(
+                  message:
+                      'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
+                  backgroundColor: Colors.red[50]!,
+                  textColor: Colors.red,
+                ),
+
+              if (_paymentStatus == 'rejected')
+                StatusCard(
+                  message:
+                      'Pagamento rejeitado. Entre em contato com o suporte.',
+                  backgroundColor: Colors.red[50]!,
+                  textColor: Colors.red,
+                ),
+
               if (_qrCodeBase64 == null && _paymentStatus != 'approved')
                 const Center(
                   child: Text(
                     'QR Code não disponível.',
                     style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ),
-
-              if (_paymentStatus == 'pending')
-                Center(
-                  child: Card(
-                    color: Colors.red[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: const Text(
-                        'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
-                        style: TextStyle(fontSize: 16, color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
-
-              if (_paymentStatus == 'rejected')
-                Center(
-                  child: Card(
-                    color: Colors.red[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: const Text(
-                        'Pagamento rejeitado. Entre em contato com o suporte.',
-                        style: TextStyle(fontSize: 16, color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
                   ),
                 ),
             ],

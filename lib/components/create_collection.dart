@@ -9,14 +9,14 @@ class PagamentoForm extends StatelessWidget {
   final Future<List<String>> Function() carregarBancos;
 
   const PagamentoForm({
-    Key? key,
+    super.key,
     required this.formaRecebimento,
     required this.onFormaRecebimentoChanged,
     required this.chavePixController,
     required this.bancoController,
     required this.validarChavePix,
     required this.carregarBancos,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
