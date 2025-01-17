@@ -85,7 +85,7 @@ class _CreateCollectionState extends State<CreateCollection> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao carregar bancos',
+        message: 'Erro ao carregar bancos.',
       );
       return [];
     }
@@ -112,7 +112,7 @@ class _CreateCollectionState extends State<CreateCollection> {
     if (_quantidadeOleo == null || _quantidadeOleo! < 20) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'A quantidade estimada de óleo deve ser no mínimo 20 litros',
+        message: 'A quantidade estimada de óleo deve ser no mínimo 20 litros.',
       );
       return;
     }
@@ -121,7 +121,7 @@ class _CreateCollectionState extends State<CreateCollection> {
         _horarioFinalController.text.isEmpty) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Informe o horário inicial e final de funcionamento',
+        message: 'Informe o horário inicial e final de funcionamento.',
       );
       return;
     }
@@ -192,7 +192,7 @@ class _CreateCollectionState extends State<CreateCollection> {
       } catch (e) {
         ScaffoldMessengerHelper.showError(
           context: context,
-          message: 'Erro ao enviar solicitação: $e',
+          message: 'Erro ao enviar solicitação.',
         );
       } finally {
         setState(() {
@@ -202,7 +202,7 @@ class _CreateCollectionState extends State<CreateCollection> {
     } else {
       ScaffoldMessengerHelper.showWarning(
         context: context,
-        message: 'Preencha todos os campos obrigatórios',
+        message: 'Preencha todos os campos obrigatórios.',
       );
     }
   }
@@ -270,7 +270,7 @@ class _CreateCollectionState extends State<CreateCollection> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao obter localização',
+        message: 'Erro ao obter localização.',
       );
     }
   }

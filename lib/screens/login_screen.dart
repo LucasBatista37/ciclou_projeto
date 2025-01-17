@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
@@ -119,21 +120,15 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // Exibe o erro na interface
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: errorMessage,
       );
     } catch (e) {
       print("Erro durante o login: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Erro inesperado ao tentar login. Tente novamente mais tarde.',
-          ),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro inesperado ao tentar login. Tente novamente mais tarde.',
       );
     } finally {
       setState(() {

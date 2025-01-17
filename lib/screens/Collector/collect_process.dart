@@ -63,7 +63,7 @@ class _CollectProcessState extends State<CollectProcess> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao verificar pagamento: $e',
+        message: 'Erro ao verificar pagamento.',
       );
     }
   }
@@ -77,7 +77,7 @@ class _CollectProcessState extends State<CollectProcess> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao carregar valor total pago: $e',
+        message: 'Erro ao carregar valor total pago.',
       );
     }
   }
@@ -122,15 +122,16 @@ class _CollectProcessState extends State<CollectProcess> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao gerar certificado: $e',
+        message: 'Erro ao gerar certificado',
       );
     }
   }
 
   Future<void> _enviarComprovantePagamento() async {
     if (_comprovantePagamento == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum comprovante selecionado.')),
+      ScaffoldMessengerHelper.showWarning(
+        context: context,
+        message: 'Nenhum comprovante selecionado.',
       );
       return;
     }
@@ -172,16 +173,14 @@ class _CollectProcessState extends State<CollectProcess> {
 
       await _finalizarColeta();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('Comprovante enviado e coleta finalizada com sucesso!')),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Comprovante enviado e coleta finalizada com sucesso!',
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Erro ao enviar comprovante ou finalizar coleta: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao enviar o comprovante ou finalizar coleta.',
       );
     } finally {
       Navigator.pop(context);
@@ -210,11 +209,11 @@ class _CollectProcessState extends State<CollectProcess> {
         transaction.update(collectorDocRef, {'amountOil': newAmount});
       });
     } catch (e, stack) {
-      developer.log("Erro ao atualizar quantidade de óleo pelo coletor: $e",
+      developer.log("Erro ao atualizar quantidade de óleo pelo coletor.",
           error: e, stackTrace: stack);
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao atualizar quantidade de óleo pelo coletor: $e',
+        message: 'Erro ao atualizar quantidade de óleo pelo coletor.',
       );
     }
   }
@@ -283,7 +282,7 @@ class _CollectProcessState extends State<CollectProcess> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao finalizar coleta: $e',
+        message: 'Erro ao finalizar coleta.',
       );
     }
   }
@@ -349,7 +348,7 @@ class _CollectProcessState extends State<CollectProcess> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao notificar o solicitante sobre a finalização: $e',
+        message: 'Erro ao notificar o solicitante sobre a finalização.',
       );
     }
   }
@@ -406,7 +405,7 @@ class _CollectProcessState extends State<CollectProcess> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao notificar o solicitante',
+        message: 'Erro ao notificar o solicitante.',
       );
     }
   }

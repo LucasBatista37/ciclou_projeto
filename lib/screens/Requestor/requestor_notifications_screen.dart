@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/code_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/comprovante_verification_screen.dart';
@@ -196,10 +197,9 @@ class RequestorNotificationsScreen extends StatelessWidget {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ação não suportada para esta notificação.'),
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Ação não suportada para essa notificação.',
       );
     }
   }

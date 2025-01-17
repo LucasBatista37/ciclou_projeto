@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -60,8 +61,9 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
         setState(() {
           _loading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Coleta não encontrada.')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Coleta não encontrada.',
         );
       }
     } catch (e, stackTrace) {
@@ -70,8 +72,9 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
       setState(() {
         _loading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar coleta: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao carregar coleta.',
       );
     }
   }
@@ -126,8 +129,9 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
           'isShared': true,
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dados atualizados com sucesso!')),
+        ScaffoldMessengerHelper.showSuccess(
+          context: context,
+          message: 'Dados atualizados com sucesso!',
         );
 
         DocumentSnapshot coletaAtualizada = await FirebaseFirestore.instance
@@ -162,10 +166,9 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
         );
       } else {
         developer.log('Nenhuma proposta com status "Aceita" foi encontrada.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content:
-                  Text('Nenhuma proposta com status "Aceita" encontrada.')),
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Nenhuma proposta com os status "Aceita" encotrada.',
         );
       }
     } catch (e, stackTrace) {
@@ -175,8 +178,9 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
         stackTrace: stackTrace,
         name: 'Salvar Coleta',
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar dados: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao salvar dados.',
       );
     }
   }

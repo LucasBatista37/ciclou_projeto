@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/code_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/comprovante_verification_screen.dart';
@@ -225,8 +226,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                   ),
                 );
               } catch (error) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Erro ao fazer logout: $error')),
+                ScaffoldMessengerHelper.showError(
+                  context: context,
+                  message: 'Erro ao tentar fazer o logout.',
                 );
               }
             },

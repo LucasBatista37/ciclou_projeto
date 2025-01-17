@@ -81,14 +81,14 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
         message: 'Link gerado com sucesso!',
       );
     } catch (e, stackTrace) {
-      developer.log('Erro ao gerar o link dinâmico',
+      developer.log('Erro ao gerar o link dinâmico.',
           error: e, stackTrace: stackTrace);
       setState(() {
         _loading = false;
       });
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao gerar link',
+        message: 'Erro ao gerar link.',
       );
     }
   }

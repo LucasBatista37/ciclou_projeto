@@ -64,7 +64,7 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
       } catch (e) {
         ScaffoldMessengerHelper.showError(
           context: context,
-          message: 'Erro ao carregar dados',
+          message: 'Erro ao carregar dados.',
         );
       }
     }
@@ -100,7 +100,7 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
       } catch (e) {
         ScaffoldMessengerHelper.showError(
           context: context,
-          message: 'Erro ao salvar dados',
+          message: 'Erro ao salvar dados.',
         );
       } finally {
         setState(() {
@@ -139,13 +139,13 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
       } catch (e) {
         ScaffoldMessengerHelper.showError(
           context: context,
-          message: 'Erro ao atualizar foto',
+          message: 'Erro ao atualizar foto.',
         );
       }
     } else {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Usuário não autenticado',
+        message: 'Usuário não autenticado.',
       );
     }
   }
@@ -164,7 +164,7 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
     } else {
       ScaffoldMessengerHelper.showWarning(
         context: context,
-        message: 'Nenhuma imagem selecionada',
+        message: 'Nenhuma imagem selecionada.',
       );
     }
   }

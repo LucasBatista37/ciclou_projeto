@@ -70,7 +70,7 @@ class _SendProposalState extends State<SendProposal> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao buscar quantidade de óleo',
+        message: 'Erro ao buscar quantidade de óleo.',
       );
     }
   }
@@ -150,7 +150,7 @@ class _SendProposalState extends State<SendProposal> {
           print('Erro: coleta não encontrada');
           ScaffoldMessengerHelper.showError(
             context: context,
-            message: 'Erro: coleta não encontrada',
+            message: 'Erro: coleta não encontrada.',
           );
           return;
         }
@@ -206,7 +206,7 @@ class _SendProposalState extends State<SendProposal> {
         print('Erro ao enviar proposta: $e');
         ScaffoldMessengerHelper.showError(
           context: context,
-          message: 'Erro ao enviar proposta',
+          message: 'Erro ao enviar proposta.',
         );
       }
     }

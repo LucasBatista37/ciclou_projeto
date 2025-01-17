@@ -161,7 +161,7 @@ class _CollectorStatsScreenState extends State<CollectorStatsScreen> {
             style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
-              fontWeight: FontWeight.w400, // Removendo bold
+              fontWeight: FontWeight.w400, 
             ),
           ),
         ],

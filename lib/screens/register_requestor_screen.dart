@@ -110,7 +110,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'IsNet': false,
         });
 
-        ScaffoldMessengerHelper.showError(
+        ScaffoldMessengerHelper.showSuccess(
           context: context,
           message: 'Solicitante registrado com sucesso!',
         );
@@ -147,7 +147,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro inesperado ao registrar solicitante. Por favor, tente novamente',
+        message: 'Erro inesperado ao registrar solicitante. Por favor, tente novamente.',
       );
     } finally {
       setState(() {

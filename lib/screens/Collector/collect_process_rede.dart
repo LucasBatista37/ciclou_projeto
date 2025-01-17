@@ -76,7 +76,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
           error: e, name: "_verificarPagamento");
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao verificar pagamento: $e',
+        message: 'Erro ao verificar pagamento.',
       );
     }
   }
@@ -129,7 +129,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
           error: e, name: "_carregarValorTotalPago");
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao carregar valor total pago: $e',
+        message: 'Erro ao carregar valor total pago.',
       );
     }
   }
@@ -185,15 +185,16 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao gerar certificado: $e',
+        message: 'Erro ao gerar certificado.',
       );
     }
   }
 
   Future<void> _enviarComprovantePagamento() async {
     if (_comprovantePagamento == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum comprovante selecionado.')),
+      ScaffoldMessengerHelper.showWarning(
+        context: context,
+        message: 'Nenhum comprovante selecionado.',
       );
       return;
     }
@@ -219,14 +220,16 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         'comprovantePagamento': downloadUrl,
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Comprovante enviado com sucesso!')),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Comprovante enviado com sucesso!',
       );
 
       await _finalizarColeta();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao enviar comprovante: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao enviar comprovante.',
       );
     }
   }
@@ -250,11 +253,11 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         transaction.update(collectorDocRef, {'amountOil': newAmount});
       });
     } catch (e, stack) {
-      developer.log("Erro ao atualizar quantidade de óleo pelo coletor: $e",
+      developer.log("Erro ao atualizar quantidade de óleo pelo coletor.",
           error: e, stackTrace: stack);
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao atualizar quantidade de óleo pelo coletor: $e',
+        message: 'Erro ao atualizar quantidade de óleo pelo coletor.',
       );
     }
   }
@@ -320,7 +323,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao finalizar coleta: $e',
+        message: 'Erro ao finalizar coleta.',
       );
     }
   }
@@ -514,13 +517,13 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                               developer.log(
                                   "Pagamento confirmado e statusSolicitante atualizado para 'Aprovado'.");
                             } else {
-                              ScaffoldMessengerHelper.showError(
+                              ScaffoldMessengerHelper.showWarning(
                                 context: context,
                                 message:
-                                    'Pagamento ainda não foi aprovado. Status: $paymentStatus',
+                                    'Pagamento ainda não foi aprovado.',
                               );
                               developer.log(
-                                  "Pagamento ainda não aprovado. Status recebido: $paymentStatus");
+                                  "Pagamento ainda não aprovado.");
                             }
                           } else {
                             ScaffoldMessengerHelper.showError(
@@ -533,9 +536,9 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                         } catch (e, stackTrace) {
                           ScaffoldMessengerHelper.showError(
                             context: context,
-                            message: 'Erro ao verificar pagamento: $e',
+                            message: 'Erro ao verificar pagamento.',
                           );
-                          developer.log("Erro ao verificar pagamento: $e",
+                          developer.log("Erro ao verificar pagamento.",
                               error: e, stackTrace: stackTrace);
                         }
                       },

@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
@@ -189,19 +190,21 @@ class CollectorNotificationsScreen extends StatelessWidget {
               }
             });
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Coleta não encontrada.')),
+            ScaffoldMessengerHelper.showWarning(
+              context: context,
+              message: 'Coleta não encontrada.',
             );
           }
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao buscar coleta: $e')),
+          ScaffoldMessengerHelper.showError(
+            context: context,
+            message: 'Erro ao buscar coleta.',
           );
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('ID da coleta não encontrado na notificação.')),
+        ScaffoldMessengerHelper.showWarning(
+          context: context,
+          message: 'ID da coleta não encontrado na notificação.',
         );
       }
     } else if (title == 'Pagamento Recebido') {
@@ -226,9 +229,9 @@ class CollectorNotificationsScreen extends StatelessWidget {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('ID da coleta não encontrado na notificação.')),
+        ScaffoldMessengerHelper.showWarning(
+          context: context,
+          message: 'ID da coleta não encontrado na notificação.',
         );
       }
     }

@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -214,11 +215,9 @@ class CodeVerificationScreen extends StatelessWidget {
                         final code = codeController.text.trim();
 
                         if (code.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Por favor, insira um código.'),
-                              backgroundColor: Colors.red,
-                            ),
+                          ScaffoldMessengerHelper.showError(
+                            context: context,
+                            message: 'Por favor, insira um código.',
                           );
                           return;
                         }
@@ -230,11 +229,9 @@ class CodeVerificationScreen extends StatelessWidget {
                               .get();
 
                           if (!doc.exists) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Coleta não encontrada.'),
-                                backgroundColor: Colors.red,
-                              ),
+                            ScaffoldMessengerHelper.showError(
+                              context: context,
+                              message: 'Coleta não encontrada!',
                             );
                             return;
                           }
@@ -249,29 +246,23 @@ class CodeVerificationScreen extends StatelessWidget {
                               'aprovadoEm': DateTime.now(),
                             });
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Coleta aprovada com sucesso!'),
-                                backgroundColor: Colors.green,
-                              ),
+                            ScaffoldMessengerHelper.showSuccess(
+                              context: context,
+                              message: 'Coleta aprovada com sucesso!',
                             );
 
                             Navigator.pop(context);
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'Código incorreto. Por favor, tente novamente.'),
-                                backgroundColor: Colors.red,
-                              ),
+                            ScaffoldMessengerHelper.showError(
+                              context: context,
+                              message:
+                                  'Código incorreto. Por favor, tente novamente',
                             );
                           }
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Erro ao validar código: $e'),
-                              backgroundColor: Colors.red,
-                            ),
+                          ScaffoldMessengerHelper.showError(
+                            context: context,
+                            message: 'Erro ao validar o código.',
                           );
                         }
                       },

@@ -88,7 +88,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'IsNet': false,
         });
 
-        ScaffoldMessengerHelper.showError(
+        ScaffoldMessengerHelper.showSuccess(
           context: context,
           message: 'Coletor registrado com sucesso!',
         );
@@ -127,7 +127,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
       ScaffoldMessengerHelper.showError(
         context: context,
         message:
-            'Erro inesperado ao registrar o coletor. Por favor, tente novamente',
+            'Erro inesperado ao registrar o coletor. Por favor, tente novamente.',
       );
     } finally {
       setState(() {

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -33,11 +34,9 @@ class _ComprovanteOverlayState extends State<ComprovanteOverlay> {
 
       widget.onComprovanteSelecionado(_comprovanteSelecionado);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Comprovante selecionado com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Comprovante selecionado com sucesso!',
       );
     }
   }

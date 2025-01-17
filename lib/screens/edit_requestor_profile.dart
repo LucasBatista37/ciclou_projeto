@@ -104,13 +104,13 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
       } catch (e) {
         ScaffoldMessengerHelper.showError(
           context: context,
-          message: 'Erro ao atualizar foto',
+          message: 'Erro ao atualizar foto.',
         );
       }
     } else {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Usuário não autenticado',
+        message: 'Usuário não autenticado.',
       );
     }
   }
@@ -124,7 +124,7 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
     if (uid == null) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Usuário não autenticado',
+        message: 'Usuário não autenticado.',
       );
       return;
     }
@@ -154,7 +154,7 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao salvar dados',
+        message: 'Erro ao salvar dados.',
       );
     } finally {
       setState(() {
@@ -187,7 +187,7 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
     } else {
       ScaffoldMessengerHelper.showWarning(
         context: context,
-        message: 'Nenhuma imagem selecionada',
+        message: 'Nenhuma imagem selecionada.',
       );
     }
   }

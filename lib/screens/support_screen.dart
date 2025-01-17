@@ -19,7 +19,7 @@ class _SupportScreenState extends State<SupportScreen> {
     if (_commentController.text.isEmpty) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Por favor, preencha todos os campos',
+        message: 'Por favor, preencha todos os campos.',
       );
       return;
     }
@@ -35,22 +35,18 @@ class _SupportScreenState extends State<SupportScreen> {
       await FlutterEmailSender.send(email);
       ScaffoldMessengerHelper.showSuccess(
         context: context,
-        message: 'Mensagem enviada com sucesso',
+        message: 'Mensagem enviada com sucesso!',
       );
       _commentController.clear();
     } on PlatformException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao enviar mensagem: \${e.message}'),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao enviar mensagem.',
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao enviar mensagem: $e'),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao enviar mensagem.',
       );
     } finally {
       if (mounted) {
@@ -79,10 +75,9 @@ class _SupportScreenState extends State<SupportScreen> {
           IconButton(
             icon: const Icon(Icons.help_outline, color: Colors.white),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content:
-                        Text('Entre em contato com o suporte para ajuda!')),
+              ScaffoldMessengerHelper.showWarning(
+                context: context,
+                message: 'Entre em contato com suporte para ajuda.',
               );
             },
           ),

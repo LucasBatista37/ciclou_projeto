@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:flutter/material.dart';
@@ -39,8 +40,9 @@ class _CollectsScreenState extends State<CollectsScreen> {
       setState(() {
         _carregando = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar coletas: $e')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao carregar coletas.',
       );
     }
   }

@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Requestor/verificacao_concluida_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -147,11 +148,9 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                             .doc(documentId)
                             .update({'comprovanteStatus': 'Inválido'});
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Comprovante marcado como inválido!'),
-                            backgroundColor: Colors.red,
-                          ),
+                        ScaffoldMessengerHelper.showWarning(
+                          context: context,
+                          message: 'Comprovante marcado como inválido.',
                         );
 
                         Navigator.pushReplacement(
@@ -183,11 +182,9 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                             .doc(documentId)
                             .update({'comprovanteStatus': 'Válido'});
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Comprovante marcado como válido!'),
-                            backgroundColor: Colors.green,
-                          ),
+                        ScaffoldMessengerHelper.showSuccess(
+                          context: context,
+                          message: 'Comprovante marcado como válido!',
                         );
 
                         Navigator.pushReplacement(

@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -83,18 +83,14 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
           .doc(userId)
           .update({firestoreField: downloadUrl});
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Documento enviado com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Documento enviado com sucesso!',
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao enviar documento: $e'),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao enviar documento.',
       );
     }
   }
@@ -110,11 +106,9 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
           _uploadedFiles.map((key, value) => MapEntry(key, value?.path));
       debugPrint('Arquivos enviados: $allFiles');
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Todos os documentos foram enviados com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
+      ScaffoldMessengerHelper.showSuccess(
+        context: context,
+        message: 'Todos os documento foram enviado com sucesso!',
       );
 
       Navigator.pushReplacement(
@@ -122,11 +116,9 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao enviar documentos: $e'),
-          backgroundColor: Colors.red,
-        ),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao enviar documentos.',
       );
     }
   }

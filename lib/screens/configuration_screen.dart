@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/upload_documents.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
@@ -69,12 +70,14 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro: Usuário não encontrado.')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro: usuário não encontrado.',
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuário não autenticado.')),
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Usuário não autenticado.',
       );
     }
   }

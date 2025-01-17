@@ -470,7 +470,7 @@ class ProposalsScreen extends StatelessWidget {
         documentId,
       );
 
-      ScaffoldMessengerHelper.showSuccess(
+      ScaffoldMessengerHelper.showWarning(
         context: context,
         message: 'Proposta Rejeitada',
       );
