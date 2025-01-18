@@ -245,6 +245,33 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
     }
   }
 
+  Future<bool> _verificarPermissaoCompartilhar() async {
+    try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+      if (currentUserId == null) return false;
+
+      // Obtém os dados da proposta aceita
+      final propostasSnapshot = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .collection('propostas')
+          .where('status', isEqualTo: 'Aceita')
+          .get();
+
+      if (propostasSnapshot.docs.isEmpty) return false;
+
+      // Verifica se o collectorId da proposta aceita corresponde ao usuário atual
+      final proposalData = propostasSnapshot.docs.first.data();
+      final String? collectorId = proposalData['collectorId'];
+
+      return collectorId == currentUserId;
+    } catch (e) {
+      developer.log("Erro ao verificar permissão para compartilhar: $e");
+      return false;
+    }
+  }
+
   Future<void> _atualizarQuantidadeOleo(String collectorId) async {
     developer.log("Atualizando quantidade de óleo pelo coletor...");
     try {
@@ -797,8 +824,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                 ),
               ],
 
-              const SizedBox(height: 8),
-
               if (_qrCodeBase64 != null && _paymentStatus != 'approved')
                 PagamentoQRCodeCard(
                   qrCodeBase64: _qrCodeBase64!,
@@ -954,32 +979,45 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
               ],
 
               // Botão Compartilhar Coleta
-              Center(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CompartilharColetaScreen(
-                          coletaId: _coletaAtual.id,
+              FutureBuilder<bool>(
+                future: _verificarPermissaoCompartilhar(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasData && snapshot.data == true) {
+                    return Center(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CompartilharColetaScreen(
+                                coletaId: _coletaAtual.id,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.share, color: Colors.white),
+                        label: const Text(
+                          'Compartilhar Coleta',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
                       ),
                     );
-                  },
-                  icon: const Icon(Icons.share, color: Colors.white),
-                  label: const Text(
-                    'Compartilhar Coleta',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
+                  }
+
+                  return const SizedBox.shrink();
+                },
               ),
               const SizedBox(height: 16),
 

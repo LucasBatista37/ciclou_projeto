@@ -93,12 +93,14 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
     }
   }
 
-  void _copyToClipboard(String text) {
-    developer.log('Copiando link para área de transferência: $text');
-    Clipboard.setData(ClipboardData(text: text));
+  void _copyToClipboard(String link) {
+    final message = 'Confira esta coleta no Ciclou: $link';
+
+    Clipboard.setData(ClipboardData(text: message));
+
     ScaffoldMessengerHelper.showSuccess(
       context: context,
-      message: 'Link copiado para área de transferência!',
+      message: 'Mensagem copiada para área de transferência!',
     );
   }
 
@@ -161,12 +163,11 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
                       developer.log('Botão de gerar link clicado.');
                       await _generateLink();
                     },
-              icon: const Icon(Icons.link,
-                  color: Colors.white), 
+              icon: const Icon(Icons.link, color: Colors.white),
               label: _loading
                   ? const Text(
                       'Gerando link...',
-                      style: TextStyle(color: Colors.white), 
+                      style: TextStyle(color: Colors.white),
                     )
                   : const Text(
                       'Gerar Link',

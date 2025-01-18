@@ -1,6 +1,9 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
+import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
+import 'package:ciclou_projeto/screens/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
@@ -48,6 +51,18 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
 
   Future<void> _fetchColeta() async {
     developer.log('Buscando coleta com ID: ${widget.coletaId}');
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      developer
+          .log('Usuário não autenticado. Redirecionando para a tela de login.');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+      return;
+    }
 
     try {
       DocumentSnapshot snapshot = await FirebaseFirestore.instance
@@ -245,7 +260,13 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CollectorDashboard(user: widget.user),
+              ),
+              (route) => false, 
+            );
           },
         ),
       ),
@@ -334,7 +355,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
   Widget _buildDetailsCard() {
     final String region = coleta?['region'] ?? 'Não disponível';
     final String address = coleta?['address'] ?? 'Não disponível';
-    final String statusAtual = coleta?['statusAtual'] ?? 'Não disponível';
+    final String statusAtual = coleta?['status'] ?? 'Não disponível';
     final String precoPorLitro =
         coleta?['precoPorLitro']?.toString() ?? 'Não disponível';
 
