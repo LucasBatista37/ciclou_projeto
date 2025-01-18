@@ -175,6 +175,7 @@ class CollectorNotificationsScreen extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => CollectProcessRede(
                       coletaAtual: coletaDoc,
+                      user: user,
                     ),
                   ),
                 );

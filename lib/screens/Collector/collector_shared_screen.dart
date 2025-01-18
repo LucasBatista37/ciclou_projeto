@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,9 +9,13 @@ import 'dart:developer' as developer;
 
 class ColetorNotificacaoScreen extends StatefulWidget {
   final String coletaId;
+  final UserModel user;
 
-  const ColetorNotificacaoScreen({Key? key, required this.coletaId})
-      : super(key: key);
+  const ColetorNotificacaoScreen({
+    Key? key,
+    required this.coletaId,
+    required this.user,
+  }) : super(key: key);
 
   @override
   State<ColetorNotificacaoScreen> createState() =>
@@ -161,6 +166,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
           MaterialPageRoute(
             builder: (context) => CollectProcessRede(
               coletaAtual: coletaAtualizada,
+              user: widget.user,
             ),
           ),
         );

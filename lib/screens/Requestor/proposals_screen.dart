@@ -248,7 +248,6 @@ class ProposalsScreen extends StatelessWidget {
   Future<void> _acceptProposal(BuildContext context, String proposalId,
       Map<String, dynamic> proposal) async {
     try {
-      // Exibir indicador de progresso
       showDialog(
         context: context,
         barrierDismissible: false,

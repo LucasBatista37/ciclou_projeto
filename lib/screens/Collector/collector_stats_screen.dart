@@ -1,10 +1,16 @@
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CollectorStatsScreen extends StatefulWidget {
   final String collectorId;
+  final UserModel user;
 
-  const CollectorStatsScreen({super.key, required this.collectorId});
+  const CollectorStatsScreen({
+    super.key,
+    required this.collectorId,
+    required this.user,
+  });
 
   @override
   State<CollectorStatsScreen> createState() => _CollectorStatsScreenState();
@@ -161,7 +167,7 @@ class _CollectorStatsScreenState extends State<CollectorStatsScreen> {
             style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
-              fontWeight: FontWeight.w400, 
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],
@@ -193,7 +199,7 @@ class _CollectorStatsScreenState extends State<CollectorStatsScreen> {
             style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
-              fontWeight: FontWeight.w400, 
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],

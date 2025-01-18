@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +7,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CollectsScreen extends StatefulWidget {
   final String collectorId;
+  final UserModel user;
 
-  const CollectsScreen({super.key, required this.collectorId});
+  const CollectsScreen({
+    super.key,
+    required this.collectorId,
+    required this.user,
+  });
 
   @override
   _CollectsScreenState createState() => _CollectsScreenState();
@@ -203,7 +209,7 @@ class _CollectsScreenState extends State<CollectsScreen> {
                                             builder: (context) =>
                                                 CollectProcessRede(
                                               coletaAtual: coleta,
-                                            ),
+                                              user: widget.user,                                            ),
                                           ),
                                         );
                                       } else {

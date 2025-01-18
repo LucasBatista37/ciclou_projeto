@@ -263,6 +263,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       case 1:
         return CollectsScreen(
           collectorId: widget.user.userId,
+          user: widget.user,
         );
       case 2:
         return CollectorHistoryScreen(
@@ -704,6 +705,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
             MaterialPageRoute(
               builder: (context) => CollectsScreen(
                 collectorId: widget.user.userId,
+                user: widget.user,
               ),
             ),
           );
@@ -713,6 +715,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
             MaterialPageRoute(
               builder: (context) => CollectorStatsScreen(
                 collectorId: widget.user.userId,
+                user: widget.user,
               ),
             ),
           );

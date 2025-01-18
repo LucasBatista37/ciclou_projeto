@@ -1,5 +1,7 @@
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_shared_screen.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
@@ -37,7 +39,7 @@ class DynamicLinkHandler extends StatefulWidget {
 }
 
 class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
-  String? _pendingColetaId; // Renomeado para refletir coletaId
+  String? _pendingColetaId;
 
   @override
   void initState() {
@@ -51,7 +53,6 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
     FirebaseDynamicLinks.instance.onLink.listen((PendingDynamicLinkData data) {
       final Uri? deepLink = data.link;
       if (deepLink != null) {
-        developer.log('Link dinâmico recebido: $deepLink');
         _processDeepLink(deepLink);
       }
     }).onError((error) {
@@ -62,39 +63,27 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
         await FirebaseDynamicLinks.instance.getInitialLink();
 
     if (initialLink?.link != null) {
-      developer.log('Link dinâmico inicial recebido: ${initialLink!.link}');
-      _processDeepLink(initialLink.link!);
+      _processDeepLink(initialLink!.link!);
     }
   }
 
-  void _processDeepLink(Uri deepLink) {
+  void _processDeepLink(Uri deepLink) async {
     developer.log('Processando deep link: $deepLink');
 
     final String? coletaId = deepLink.queryParameters['coletaId'];
 
     if (coletaId != null) {
-      developer.log(
-          'Parâmetro coletaId encontrado: $coletaId. Verificando estado do usuário.');
+      developer.log('Parâmetro coletaId encontrado: $coletaId.');
 
-      final user = FirebaseAuth.instance.currentUser;
+      final currentUser = FirebaseAuth.instance.currentUser;
 
-      if (user != null) {
-        developer.log(
-            'Usuário está logado (${user.email}). Redirecionando para ColetorNotificacaoScreen.');
-
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(
-            builder: (context) => ColetorNotificacaoScreen(
-              coletaId: coletaId,
-            ),
-          ),
-        );
+      if (currentUser != null) {
+        await _redirectToScreen(currentUser.uid, coletaId);
       } else {
-        developer.log(
-            'Usuário não está logado. Salvando coletaId para redirecionamento após login.');
+        developer.log('Usuário não está logado. Salvando coletaId.');
 
         setState(() {
-          _pendingColetaId = coletaId; // Ajustado para coletaId
+          _pendingColetaId = coletaId;
         });
 
         navigatorKey.currentState?.pushReplacement(
@@ -106,8 +95,7 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
         );
       }
     } else {
-      developer.log(
-          'Deep link não contém o parâmetro coletaId. Nenhuma ação será tomada.');
+      developer.log('Deep link inválido ou sem coletaId.');
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
         const SnackBar(
           content: Text('Link inválido ou sem informações de coleta.'),
@@ -117,20 +105,51 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
     }
   }
 
-  void _handlePostLoginNavigation() {
-    if (_pendingColetaId != null) {
+  Future<void> _redirectToScreen(String userId, String coletaId) async {
+    try {
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('collector')
+          .doc(userId)
+          .get();
+
+      if (!userSnapshot.exists) {
+        throw Exception('Usuário não encontrado no Firestore.');
+      }
+
+      final userModel = UserModel.fromFirestore(
+        userSnapshot.data()!,
+        userId,
+      );
+
       developer.log(
-          'Usuário logado com sucesso. Redirecionando para ColetorNotificacaoScreen com coletaId: $_pendingColetaId');
+          'Usuário logado (${userModel.email}). Redirecionando para ColetorNotificacaoScreen.');
 
       navigatorKey.currentState?.pushReplacement(
         MaterialPageRoute(
           builder: (context) => ColetorNotificacaoScreen(
-            coletaId: _pendingColetaId!,
+            coletaId: coletaId,
+            user: userModel,
           ),
         ),
       );
+    } catch (e) {
+      developer.log('Erro ao buscar dados do usuário: $e');
+      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+        const SnackBar(
+          content: Text('Erro ao carregar informações do usuário.'),
+        ),
+      );
+    }
+  }
 
-      _pendingColetaId = null; 
+  void _handlePostLoginNavigation() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null && _pendingColetaId != null) {
+      developer.log(
+          'Usuário logado. Redirecionando para coletaId: $_pendingColetaId');
+      await _redirectToScreen(currentUser.uid, _pendingColetaId!);
+      _pendingColetaId = null;
     }
   }
 

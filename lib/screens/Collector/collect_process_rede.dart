@@ -7,9 +7,11 @@ import 'package:ciclou_projeto/components/collect_process/Pagamento_plataforma.d
 import 'package:ciclou_projeto/components/collect_process/Pagamento_solicitante.dart';
 import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
 import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
+import 'package:ciclou_projeto/components/collect_process/generete_button.dart';
 import 'package:ciclou_projeto/components/collect_process/status_card.dart';
 import 'package:ciclou_projeto/components/payment_service.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
 import 'package:ciclou_projeto/screens/Collector/share_collection.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,8 +23,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CollectProcessRede extends StatefulWidget {
   final DocumentSnapshot<Object?> coletaAtual;
+  final UserModel user;
 
-  const CollectProcessRede({super.key, required this.coletaAtual});
+  const CollectProcessRede({
+    super.key,
+    required this.coletaAtual,
+    required this.user,
+  });
 
   @override
   _CollectProcessRedeState createState() => _CollectProcessRedeState();
@@ -646,192 +653,149 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                   (data['status'] ?? '') == 'Aprovado' &&
                   !(data['realQuantityCollected'] ?? false)) ...[
                 const SizedBox(height: 12),
-                Text(
-                  'Gere o QR Code com o valor de R\$ ${_valorTotalPago.toStringAsFixed(2)} para o Solicitante.',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: ElevatedButton.icon(
-                    onPressed: _isGeneratingQRCode
-                        ? null
-                        : () async {
-                            setState(() {
-                              _isGeneratingQRCode = true;
-                            });
+                FutureBuilder<QuerySnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('coletas')
+                      .doc(_coletaAtual.id)
+                      .collection('propostas')
+                      .where('status', isEqualTo: 'Aceita')
+                      .get(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                            try {
-                              await FirebaseFirestore.instance
-                                  .collection('coletas')
-                                  .doc(_coletaAtual.id)
-                                  .update({'realQuantityCollected': true});
+                    if (snapshot.hasError) {
+                      return const Center(
+                        child: Text(
+                          'Erro ao carregar propostas. Por favor, tente novamente.',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      );
+                    }
+                    developer.log(
+                        "Valor de realQuantityCollected: ${data['realQuantityCollected']}");
 
-                              final updatedColetaDoc = await FirebaseFirestore
-                                  .instance
-                                  .collection('coletas')
-                                  .doc(_coletaAtual.id)
-                                  .get();
+                    if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                      final proposalId = snapshot.data!.docs.first.id;
 
+                      return Column(
+                        children: [
+                          GenerateQRCodeButton(
+                            documentId: _coletaAtual.id,
+                            proposalId: proposalId,
+                            amount: _valorTotalPago,
+                            user: widget.user,
+                            onSuccess: (qrCodeBase64, qrCodeText) {
                               setState(() {
-                                _coletaAtual = updatedColetaDoc;
-                                _isGeneratingQRCode = false;
+                                _qrCodeSolicitanteBase64 = qrCodeBase64;
+                                _qrCodeTextSolicitante = qrCodeText;
                               });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    }
 
-                              ScaffoldMessengerHelper.showSuccess(
-                                context: context,
-                                message:
-                                    'QR Code gerado e valor atualizado com sucesso!',
-                              );
-                            } catch (e) {
-                              setState(() {
-                                _isGeneratingQRCode = false;
-                              });
-
-                              ScaffoldMessengerHelper.showError(
-                                context: context,
-                                message:
-                                    'Erro ao gerar QR Code e atualizar valor.',
-                              );
-
-                              developer.log(
-                                  'Erro ao gerar QR Code e atualizar Firestore:',
-                                  error: e);
-                            }
-                          },
-                    icon: _isGeneratingQRCode
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(Icons.qr_code, color: Colors.white),
-                    label: const Text(
-                      'Gerar QR Code para Solicitante',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          _isGeneratingQRCode ? Colors.grey : Colors.green,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
+                    return const Center(
+                      child: Text(
+                        'Nenhuma proposta aceita encontrada.',
+                        style: TextStyle(color: Colors.grey),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
               ],
 
-              // Informações de Pagamento
               if (_paymentStatus == 'approved' &&
                   _confirmationCode != null &&
                   (data['status'] ?? '') == 'Aprovado' &&
-                  (data['realQuantityCollected'] ?? false) == true)
+                  (data['realQuantityCollected'] ?? false)) ...[
                 Column(
                   children: [
-                    PagamentoSolicitanteQRCodeCard(
-                      qrCodeSolicitanteBase64: _qrCodeSolicitanteBase64!,
-                      qrCodeTextSolicitante: _qrCodeTextSolicitante!,
-                      onCopiarCodigoSolicitante: () {
-                        Clipboard.setData(
-                          ClipboardData(text: _qrCodeTextSolicitante!),
-                        );
-                        ScaffoldMessengerHelper.showSuccess(
-                          context: context,
-                          message: 'Código Copiado!',
-                        );
-                        developer
-                            .log("Código Pix copiado: $_qrCodeTextSolicitante");
-                      },
-                      onConfirmarPagamentoSolicitante: () async {
-                        developer.log(
-                            "Iniciando verificação de pagamento para o solicitante...");
-                        ScaffoldMessengerHelper.showWarning(
-                          context: context,
-                          message: 'Verificando pagamento...',
-                        );
-
-                        try {
-                          final proposalSnapshot = await FirebaseFirestore
-                              .instance
-                              .collection('coletas')
-                              .doc(_coletaAtual.id)
-                              .collection('propostas')
-                              .where('status', isEqualTo: 'Aceita')
-                              .get();
-
-                          if (proposalSnapshot.docs.isNotEmpty) {
-                            final proposalData =
-                                proposalSnapshot.docs.first.data();
-                            final proposalId = proposalSnapshot.docs.first.id;
-                            final paymentIdSolicitante =
-                                proposalData['paymentIdSolicitante'];
-
-                            developer.log(
-                                "Usando paymentIdSolicitante: $paymentIdSolicitante");
-
-                            final paymentService =
-                                PaymentService(paymentIdSolicitante);
-                            final paymentStatus =
-                                await paymentService.validatePayment();
-
-                            developer.log(
-                                "Resposta da validação de pagamento: $paymentStatus");
-
-                            if (paymentStatus == 'approved') {
-                              await FirebaseFirestore.instance
-                                  .collection('coletas')
-                                  .doc(_coletaAtual.id)
-                                  .collection('propostas')
-                                  .doc(proposalId)
-                                  .update({'statusSolicitante': 'Aprovado'});
-
-                              setState(() {
-                                _paymentStatus = 'approved';
-                              });
-
-                              ScaffoldMessengerHelper.showSuccess(
-                                context: context,
-                                message: 'Pagamento ao solicitante confirmado!',
-                              );
-                              developer.log(
-                                  "Pagamento confirmado e statusSolicitante atualizado para 'Aprovado'.");
-                            } else {
-                              ScaffoldMessengerHelper.showWarning(
-                                context: context,
-                                message: 'Pagamento ainda não foi aprovado.',
-                              );
-                              developer.log("Pagamento ainda não aprovado.");
-                            }
-                          } else {
-                            ScaffoldMessengerHelper.showError(
-                              context: context,
-                              message: 'Nenhuma proposta aceita encontrada.',
-                            );
-                            developer
-                                .log("Nenhuma proposta aceita encontrada.");
-                          }
-                        } catch (e, stackTrace) {
-                          ScaffoldMessengerHelper.showError(
-                            context: context,
-                            message: 'Erro ao verificar pagamento.',
+                    if (_qrCodeSolicitanteBase64 != null &&
+                        _qrCodeTextSolicitante != null)
+                      PagamentoSolicitanteQRCodeCard(
+                        qrCodeSolicitanteBase64: _qrCodeSolicitanteBase64!,
+                        qrCodeTextSolicitante: _qrCodeTextSolicitante!,
+                        onCopiarCodigoSolicitante: () {
+                          Clipboard.setData(
+                            ClipboardData(text: _qrCodeTextSolicitante!),
                           );
-                          developer.log("Erro ao verificar pagamento.",
-                              error: e, stackTrace: stackTrace);
-                        }
-                      },
-                    ),
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Código Pix copiado!')),
+                          );
+                          developer.log(
+                              "Código Pix copiado: $_qrCodeTextSolicitante");
+                        },
+                        onConfirmarPagamentoSolicitante: () async {
+                          try {
+                            final proposalSnapshot = await FirebaseFirestore
+                                .instance
+                                .collection('coletas')
+                                .doc(_coletaAtual.id)
+                                .collection('propostas')
+                                .where('status', isEqualTo: 'Aceita')
+                                .get();
+
+                            if (proposalSnapshot.docs.isNotEmpty) {
+                              final proposalId = proposalSnapshot.docs.first.id;
+                              final paymentIdSolicitante = proposalSnapshot
+                                  .docs.first
+                                  .data()['paymentIdSolicitante'];
+
+                              final paymentService =
+                                  PaymentService(paymentIdSolicitante);
+                              final paymentStatus =
+                                  await paymentService.validatePayment();
+
+                              if (paymentStatus == 'approved') {
+                                await FirebaseFirestore.instance
+                                    .collection('coletas')
+                                    .doc(_coletaAtual.id)
+                                    .collection('propostas')
+                                    .doc(proposalId)
+                                    .update({'statusSolicitante': 'Aprovado'});
+
+                                setState(() {
+                                  _paymentStatus = 'approved';
+                                });
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Pagamento ao solicitante confirmado!')),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Pagamento ainda não foi aprovado.')),
+                                );
+                              }
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        'Nenhuma proposta aceita encontrada.')),
+                              );
+                            }
+                          } catch (e) {
+                            developer.log("Erro ao verificar pagamento: $e");
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content:
+                                      Text('Erro ao verificar pagamento: $e')),
+                            );
+                          }
+                        },
+                      ),
                   ],
                 ),
+              ],
 
               const SizedBox(height: 8),
 
