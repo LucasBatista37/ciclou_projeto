@@ -210,7 +210,21 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       return;
     }
 
+    setState(() {
+      _isProcessing = true;
+    });
+
     try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) {
         throw Exception('Usuário não autenticado.');
@@ -231,17 +245,22 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         'comprovantePagamento': downloadUrl,
       });
 
+      await _finalizarColeta();
+
       ScaffoldMessengerHelper.showSuccess(
         context: context,
-        message: 'Comprovante enviado com sucesso!',
+        message: 'Comprovante enviado e coleta finalizada com sucesso!',
       );
-
-      await _finalizarColeta();
     } catch (e) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: 'Erro ao enviar comprovante.',
+        message: 'Erro ao enviar o comprovante ou finalizar coleta.',
       );
+    } finally {
+      Navigator.pop(context);
+      setState(() {
+        _isProcessing = false;
+      });
     }
   }
 
@@ -713,11 +732,40 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                             proposalId: proposalId,
                             amount: _valorTotalPago,
                             user: widget.user,
-                            onSuccess: (qrCodeBase64, qrCodeText) {
-                              setState(() {
-                                _qrCodeSolicitanteBase64 = qrCodeBase64;
-                                _qrCodeTextSolicitante = qrCodeText;
-                              });
+                            onSuccess: (qrCodeBase64, qrCodeText) async {
+                              try {
+                                // Atualizar o QR Code do solicitante no estado atual
+                                setState(() {
+                                  _qrCodeSolicitanteBase64 = qrCodeBase64;
+                                  _qrCodeTextSolicitante = qrCodeText;
+                                });
+
+                                // Recarregar os dados da coleta após gerar o QR Code
+                                final updatedColetaDoc = await FirebaseFirestore
+                                    .instance
+                                    .collection('coletas')
+                                    .doc(_coletaAtual.id)
+                                    .get();
+
+                                setState(() {
+                                  _coletaAtual = updatedColetaDoc;
+                                });
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('QR Code gerado com sucesso!'),
+                                  ),
+                                );
+                              } catch (e) {
+                                developer.log(
+                                    "Erro ao atualizar a coleta após gerar QR Code: $e");
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'Erro ao recarregar a tela: $e')),
+                                );
+                              }
                             },
                           ),
                           const SizedBox(height: 12),
@@ -890,18 +938,29 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                       _isLoading = true;
                                     });
 
-                                    ScaffoldMessengerHelper.showWarning(
-                                      context: context,
-                                      message: 'Atualizando...',
-                                    );
+                                    try {
+                                      // Recarregar os dados necessários
+                                      await _verificarPagamento();
 
-                                    await Future.delayed(
-                                        const Duration(seconds: 2));
+                                      // Obter o documento atualizado
+                                      final updatedColetaDoc =
+                                          await FirebaseFirestore.instance
+                                              .collection('coletas')
+                                              .doc(_coletaAtual.id)
+                                              .get();
 
-                                    setState(() {
-                                      _isLoading = false;
-                                      _verificarPagamento();
-                                    });
+                                      // Atualizar o estado com os dados novos
+                                      setState(() {
+                                        _coletaAtual = updatedColetaDoc;
+                                        _isLoading = false;
+                                      });
+                                    } catch (e) {
+                                      developer.log(
+                                          "Erro ao atualizar a coleta: $e");
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+                                    }
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor:

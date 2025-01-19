@@ -625,18 +625,26 @@ class _CollectProcessState extends State<CollectProcess> {
                                       _isLoading = true;
                                     });
 
-                                    ScaffoldMessengerHelper.showWarning(
-                                      context: context,
-                                      message: 'Atualizando...',
-                                    );
+                                    try {
+                                      await _verificarPagamento();
 
-                                    await Future.delayed(
-                                        const Duration(seconds: 2));
+                                      final updatedColetaDoc =
+                                          await FirebaseFirestore.instance
+                                              .collection('coletas')
+                                              .doc(_coletaAtual.id)
+                                              .get();
 
-                                    setState(() {
-                                      _isLoading = false;
-                                      _verificarPagamento();
-                                    });
+                                      setState(() {
+                                        _coletaAtual = updatedColetaDoc;
+                                        _isLoading = false;
+                                      });
+                                    } catch (e) {
+                                      developer.log(
+                                          "Erro ao atualizar a coleta: $e");
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+                                    }
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor:

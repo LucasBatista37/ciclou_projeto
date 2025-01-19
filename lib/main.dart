@@ -78,30 +78,37 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
       final currentUser = FirebaseAuth.instance.currentUser;
 
       if (currentUser != null) {
+        // Usuário está logado, redireciona diretamente para a tela de notificação
         await _redirectToScreen(currentUser.uid, coletaId);
       } else {
+        // Usuário não está logado, salva o coletaId e redireciona para a tela de login
         developer.log('Usuário não está logado. Salvando coletaId.');
 
-        setState(() {
-          _pendingColetaId = coletaId;
-        });
+        if (mounted) {
+          setState(() {
+            _pendingColetaId = coletaId;
+          });
+        }
 
         navigatorKey.currentState?.pushReplacement(
           MaterialPageRoute(
             builder: (context) => LoginScreen(
               onLoginSuccess: _handlePostLoginNavigation,
+              coletaId: coletaId,
             ),
           ),
         );
       }
     } else {
       developer.log('Deep link inválido ou sem coletaId.');
-      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-        const SnackBar(
-          content: Text('Link inválido ou sem informações de coleta.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
+      if (navigatorKey.currentContext != null) {
+        ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+          const SnackBar(
+            content: Text('Link inválido ou sem informações de coleta.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -120,9 +127,6 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
         userSnapshot.data()!,
         userId,
       );
-
-      developer.log(
-          'Usuário logado (${userModel.email}). Redirecionando para ColetorNotificacaoScreen.');
 
       navigatorKey.currentState?.pushReplacement(
         MaterialPageRoute(

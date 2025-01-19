@@ -1,5 +1,6 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Collector/collector_shared_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,11 +10,12 @@ import 'register_requestor_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
+  final String? coletaId; // Adiciona o parâmetro coletaId
 
-  const LoginScreen({super.key, this.onLoginSuccess});
+  const LoginScreen({super.key, this.onLoginSuccess, this.coletaId});
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -25,13 +27,20 @@ class _LoginScreenState extends State<LoginScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> _login() async {
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, preencha todos os campos.')),
+      );
+      return;
+    }
+
     setState(() {
-      _isLoading = true;
+      _isLoading = true; // Exibe o indicador de carregamento
     });
 
     try {
-      print("Tentando login com email: ${_emailController.text}");
-
+      // Autentica o usuário
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -40,39 +49,55 @@ class _LoginScreenState extends State<LoginScreen> {
       final userId = userCredential.user?.uid;
 
       if (userId != null) {
-        print("Login bem-sucedido, UID do usuário: $userId");
-
-        final userDoc = await FirebaseFirestore.instance
-            .collection('requestor')
-            .doc(userId)
-            .get();
-
-        if (userDoc.exists) {
-          final user = UserModel.fromFirestore(userDoc.data()!, userId);
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RequestorDashboard(user: user),
-            ),
-          );
-
-          widget.onLoginSuccess?.call();
-          return;
-        }
-
+        // Verifica se o usuário está na coleção de coletores
         final collectorDoc = await FirebaseFirestore.instance
             .collection('collector')
             .doc(userId)
             .get();
 
         if (collectorDoc.exists) {
+          // Usuário é coletor
           final user = UserModel.fromFirestore(collectorDoc.data()!, userId);
 
+          if (widget.coletaId != null) {
+            // Redireciona para a tela de notificação se coletaId estiver presente
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ColetorNotificacaoScreen(
+                  coletaId: widget.coletaId!,
+                  user: user,
+                ),
+              ),
+            );
+          } else {
+            // Redireciona para o dashboard do coletor
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CollectorDashboard(user: user),
+              ),
+            );
+          }
+          widget.onLoginSuccess?.call();
+          return;
+        }
+
+        // Verifica se o usuário está na coleção de solicitantes
+        final requestorDoc = await FirebaseFirestore.instance
+            .collection('requestor')
+            .doc(userId)
+            .get();
+
+        if (requestorDoc.exists) {
+          // Usuário é solicitante
+          final user = UserModel.fromFirestore(requestorDoc.data()!, userId);
+
+          // Redireciona para o dashboard do solicitante
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => CollectorDashboard(user: user),
+              builder: (context) => RequestorDashboard(user: user),
             ),
           );
 
@@ -85,7 +110,6 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('UID do usuário não encontrado.');
       }
     } on FirebaseAuthException catch (e) {
-      print("Erro de autenticação: ${e.code}");
       String errorMessage;
       switch (e.code) {
         case 'user-not-found':
@@ -97,33 +121,21 @@ class _LoginScreenState extends State<LoginScreen> {
         case 'invalid-email':
           errorMessage = 'Formato de e-mail inválido. Por favor, corrija.';
           break;
-        case 'user-disabled':
-          errorMessage =
-              'Esta conta foi desativada. Entre em contato com o suporte.';
-          break;
-        case 'invalid-credential':
-          errorMessage =
-              'As credenciais fornecidas estão incorretas ou expiradas. Verifique e tente novamente.';
-          break;
         default:
-          errorMessage = 'Ocorreu um erro inesperado. Tente novamente.';
+          errorMessage = 'Erro inesperado. Tente novamente.';
           break;
       }
 
-      // Exibe o erro na interface
-      ScaffoldMessengerHelper.showError(
-        context: context,
-        message: errorMessage,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
       );
     } catch (e) {
-      print("Erro durante o login: $e");
-      ScaffoldMessengerHelper.showError(
-        context: context,
-        message: 'Erro inesperado ao tentar login. Tente novamente mais tarde.',
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro inesperado. Tente novamente.')),
       );
     } finally {
       setState(() {
-        _isLoading = false;
+        _isLoading = false; // Oculta o indicador de carregamento
       });
     }
   }
