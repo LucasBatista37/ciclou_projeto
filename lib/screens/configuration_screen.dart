@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/upload_documents.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
@@ -9,7 +10,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PerfilConfiguracoesScreen extends StatelessWidget {
-  const PerfilConfiguracoesScreen({super.key});
+  final UserModel user;
+
+  const PerfilConfiguracoesScreen({super.key, required this.user});
 
   Future<String?> _getUserType() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -140,7 +143,7 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
                 },
               ),
               const Divider(),
-              if (userType == 'Coletor') // Exibe apenas para coletores
+              if (userType == 'Coletor')
                 ListTile(
                   leading: const Icon(Icons.upload_file, color: Colors.green),
                   title: const Text('Upload de Documentos',
@@ -149,7 +152,9 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => UploadDocumentsScreen()),
+                          builder: (context) => UploadDocumentsScreen(
+                                user: user,
+                              )),
                     );
                   },
                 ),

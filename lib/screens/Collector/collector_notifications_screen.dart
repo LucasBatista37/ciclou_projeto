@@ -167,6 +167,15 @@ class CollectorNotificationsScreen extends StatelessWidget {
           if (coletaDoc.exists) {
             final coletaData = coletaDoc.data() as Map<String, dynamic>;
             final isNetCollection = coletaData['IsNetCollection'] ?? false;
+            final status = coletaData['status'] ?? '';
+
+            if (status == 'Finalizada') {
+              ScaffoldMessengerHelper.showWarning(
+                context: context,
+                message: 'Essa coleta já foi finalizada.',
+              );
+              return;
+            }
 
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (isNetCollection) {

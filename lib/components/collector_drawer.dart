@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/configuration_screen.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +12,8 @@ class CollectorDrawer extends StatelessWidget {
   final VoidCallback onEditProfile;
   final VoidCallback onSettings;
   final VoidCallback onLogout;
+  final UserModel user;
+
 
   const CollectorDrawer({
     super.key,
@@ -20,6 +23,7 @@ class CollectorDrawer extends StatelessWidget {
     required this.onEditProfile,
     required this.onSettings,
     required this.onLogout,
+    required this.user
   });
 
   @override
@@ -36,7 +40,7 @@ class CollectorDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const PerfilConfiguracoesScreen(),
+                  builder: (context) => PerfilConfiguracoesScreen(user: user,),
                 ),
               );
             },

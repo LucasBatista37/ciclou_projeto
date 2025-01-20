@@ -1,14 +1,19 @@
 import 'dart:io';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
-import 'package:ciclou_projeto/screens/login_screen.dart';
+import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
+import 'package:ciclou_projeto/screens/Collector/view_documents_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:url_launcher/url_launcher.dart'; // Para abrir URLs
 
 class UploadDocumentsScreen extends StatefulWidget {
-  const UploadDocumentsScreen({super.key});
+  final UserModel user;
+
+  const UploadDocumentsScreen({super.key, required this.user});
 
   @override
   State<UploadDocumentsScreen> createState() => _UploadDocumentsScreenState();
@@ -22,7 +27,69 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
     'AVCB (Bombeiro)': null,
   };
 
+  final Map<String, bool> _isUploaded = {
+    'IBAMA': false,
+    'Licença de Operação': false,
+    'Alvará de Funcionamento': false,
+    'AVCB (Bombeiro)': false,
+  };
+
+  final Map<String, String?> _documentUrls = {
+    'IBAMA': null,
+    'Licença de Operação': null,
+    'Alvará de Funcionamento': null,
+    'AVCB (Bombeiro)': null,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUploadedDocuments();
+  }
+
+  Future<void> _fetchUploadedDocuments() async {
+    try {
+      final userId = widget.user.userId;
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection('collector')
+          .doc(userId)
+          .get();
+
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data()!;
+        setState(() {
+          _isUploaded['IBAMA'] = data['ibama'] != null;
+          _documentUrls['IBAMA'] = data['ibama'];
+
+          _isUploaded['Licença de Operação'] = data['licenseOperation'] != null;
+          _documentUrls['Licença de Operação'] = data['licenseOperation'];
+
+          _isUploaded['Alvará de Funcionamento'] =
+              data['operatingPermit'] != null;
+          _documentUrls['Alvará de Funcionamento'] = data['operatingPermit'];
+
+          _isUploaded['AVCB (Bombeiro)'] = data['avcb'] != null;
+          _documentUrls['AVCB (Bombeiro)'] = data['avcb'];
+        });
+      }
+    } catch (e) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Erro ao carregar documentos enviados.',
+      );
+    }
+  }
+
   Future<void> _pickFile(String documentType) async {
+    // Verifica se o documento já foi enviado
+    if (_isUploaded[documentType] ?? false) {
+      ScaffoldMessengerHelper.showWarning(
+        context: context,
+        message: 'Você já enviou o documento "$documentType".',
+      );
+      return;
+    }
+
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
@@ -47,10 +114,7 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
 
   Future<void> _uploadToFirebase(String documentType, File file) async {
     try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) {
-        throw Exception('Usuário não autenticado.');
-      }
+      final userId = widget.user.userId;
 
       final fileName =
           'collector_documents/$userId/${documentType.replaceAll(" ", "_")}_${DateTime.now().millisecondsSinceEpoch}.pdf';
@@ -83,6 +147,11 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
           .doc(userId)
           .update({firestoreField: downloadUrl});
 
+      setState(() {
+        _isUploaded[documentType] = true;
+        _documentUrls[documentType] = downloadUrl;
+      });
+
       ScaffoldMessengerHelper.showSuccess(
         context: context,
         message: 'Documento enviado com sucesso!',
@@ -95,32 +164,17 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
     }
   }
 
-  Future<void> _submitDocuments() async {
-    try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) {
-        throw Exception('Usuário não autenticado.');
-      }
-
-      final allFiles =
-          _uploadedFiles.map((key, value) => MapEntry(key, value?.path));
-      debugPrint('Arquivos enviados: $allFiles');
-
-      ScaffoldMessengerHelper.showSuccess(
-        context: context,
-        message: 'Todos os documento foram enviado com sucesso!',
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    } catch (e) {
-      ScaffoldMessengerHelper.showError(
-        context: context,
-        message: 'Erro ao enviar documentos.',
-      );
-    }
+  Future<void> _viewDocument(
+      BuildContext context, String documentUrl, String documentType) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentViewerScreen(
+          documentUrl: documentUrl,
+          documentType: documentType,
+        ),
+      ),
+    );
   }
 
   @override
@@ -156,57 +210,84 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: _uploadedFiles.keys.map((documentType) {
-                  final isUploaded = _uploadedFiles[documentType] != null;
+                  final isUploaded = _isUploaded[documentType] ?? false;
+                  final documentUrl = _documentUrls[documentType];
                   return Card(
-                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    elevation: 3,
                     margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: isUploaded ? Colors.green : Colors.red,
-                        child: Icon(
-                          isUploaded ? Icons.check : Icons.close,
-                          color: Colors.white,
-                        ),
-                      ),
-                      title: Text(documentType),
-                      subtitle: isUploaded
-                          ? const Text(
-                              'Enviado',
-                              style: TextStyle(color: Colors.green),
-                            )
-                          : const Text(
-                              'Pendente',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                      trailing: ElevatedButton(
-                        onPressed: () => _pickFile(documentType),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                        ),
-                        child: const Text(
-                          'Upload',
-                          style: TextStyle(color: Colors.white),
-                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor:
+                                    isUploaded ? Colors.green : Colors.red,
+                                child: Icon(
+                                  isUploaded ? Icons.check : Icons.close,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                documentType,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () => _pickFile(documentType),
+                                  icon: const Icon(
+                                    Icons.upload_file,
+                                    color: Colors.white,
+                                  ),
+                                  label: const Text(
+                                    'Upload',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              if (isUploaded && documentUrl != null)
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () => _viewDocument(
+                                        context, documentUrl, documentType),
+                                    icon: const Icon(
+                                      Icons.visibility,
+                                      color: Colors.white,
+                                    ),
+                                    label: const Text(
+                                      'Visualizar',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   );
                 }).toList(),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _uploadedFiles.values.every((file) => file != null)
-                    ? _submitDocuments
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                ),
-                child: const Center(
-                  child: Text(
-                    'Finalizar Envio',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ),
               ),
             ],
           ),

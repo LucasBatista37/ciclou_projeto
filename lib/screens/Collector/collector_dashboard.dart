@@ -225,6 +225,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
             userName: widget.user.responsible,
             userEmail: widget.user.email,
             profileImageUrl: profileImageUrl,
+            user: widget.user,
             onEditProfile: () {},
             onSettings: () {},
             onLogout: () async {

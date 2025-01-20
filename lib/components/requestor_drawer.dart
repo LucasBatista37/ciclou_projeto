@@ -41,7 +41,9 @@ class RequestorDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const PerfilConfiguracoesScreen(),
+                  builder: (context) => PerfilConfiguracoesScreen(
+                    user: user,
+                  ),
                 ),
               );
             },

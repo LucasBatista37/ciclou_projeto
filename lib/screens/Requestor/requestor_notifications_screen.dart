@@ -166,36 +166,107 @@ class RequestorNotificationsScreen extends StatelessWidget {
     final solicitationTitle = data['solicitationTitle'];
     final userData = data['user'] as Map<String, dynamic>?;
 
-    if (title == 'Nova Proposta Recebida!' &&
-        coletaId != null &&
-        userData != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProposalsScreen(
-            solicitationTitle: solicitationTitle ?? 'Coleta',
-            documentId: coletaId,
-            user: UserModel.fromFirestore(userData, userData['userId']),
-          ),
-        ),
-      );
+    if (title == 'Nova Proposta Recebida!' && coletaId != null) {
+      FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(coletaId)
+          .get()
+          .then((coletaSnapshot) {
+        if (coletaSnapshot.exists) {
+          final coletaData = coletaSnapshot.data() as Map<String, dynamic>;
+          final status = coletaData['status'];
+
+          if (status == 'Em andamento' ||
+              status == 'Confirmada' ||
+              status == 'Finalizada') {
+            ScaffoldMessengerHelper.showWarning(
+              context: context,
+              message: 'Essa coleta já está $status.',
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProposalsScreen(
+                  solicitationTitle: solicitationTitle ?? 'Coleta',
+                  documentId: coletaId,
+                  user: UserModel.fromFirestore(
+                      userData ?? {}, userData?['userId'] ?? ''),
+                ),
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessengerHelper.showError(
+            context: context,
+            message: 'Coleta não encontrada.',
+          );
+        }
+      });
     } else if (title == 'Coletor a Caminho' && coletaId != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CodeVerificationScreen(
-            documentId: coletaId,
-          ),
-        ),
-      );
+      FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(coletaId)
+          .get()
+          .then((coletaSnapshot) {
+        if (coletaSnapshot.exists) {
+          final coletaData = coletaSnapshot.data() as Map<String, dynamic>;
+          final status = coletaData['status'];
+
+          if (status == 'Finalizada') {
+            ScaffoldMessengerHelper.showWarning(
+              context: context,
+              message: 'Essa coleta já foi finalizada.',
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CodeVerificationScreen(
+                  documentId: coletaId,
+                ),
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessengerHelper.showError(
+            context: context,
+            message: 'Coleta não encontrada.',
+          );
+        }
+      });
     } else if (title == 'Coleta Finalizada' && coletaId != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              ComprovanteVerificationScreen(documentId: coletaId),
-        ),
-      );
+      FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(coletaId)
+          .get()
+          .then((coletaSnapshot) {
+        if (coletaSnapshot.exists) {
+          final coletaData = coletaSnapshot.data() as Map<String, dynamic>;
+          final comprovante = coletaData['comprovante'] ?? false;
+
+          if (comprovante) {
+            ScaffoldMessengerHelper.showWarning(
+              context: context,
+              message: 'A coleta já foi concluída e validada.',
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ComprovanteVerificationScreen(
+                  documentId: coletaId,
+                ),
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessengerHelper.showError(
+            context: context,
+            message: 'Coleta não encontrada.',
+          );
+        }
+      });
     } else {
       ScaffoldMessengerHelper.showError(
         context: context,

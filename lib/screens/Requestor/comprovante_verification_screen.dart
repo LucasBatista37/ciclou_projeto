@@ -146,7 +146,10 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                         await FirebaseFirestore.instance
                             .collection('coletas')
                             .doc(documentId)
-                            .update({'comprovanteStatus': 'Inválido'});
+                            .update({
+                          'comprovanteStatus': 'Inválido',
+                          'comprovante': true
+                        });
 
                         ScaffoldMessengerHelper.showWarning(
                           context: context,
@@ -180,7 +183,10 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                         await FirebaseFirestore.instance
                             .collection('coletas')
                             .doc(documentId)
-                            .update({'comprovanteStatus': 'Válido'});
+                            .update({
+                          'comprovanteStatus': 'Válido',
+                          'comprovante': true
+                        });
 
                         ScaffoldMessengerHelper.showSuccess(
                           context: context,
