@@ -1,11 +1,15 @@
+import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/collect_details_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class RequestorHistoryScreen extends StatelessWidget {
   final String userId;
+  final UserModel user;
 
-  const RequestorHistoryScreen({super.key, required this.userId});
+  const RequestorHistoryScreen(
+      {super.key, required this.userId, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +24,12 @@ class RequestorHistoryScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RequestorDashboard(user: user),
+              ),
+            );
           },
         ),
       ),

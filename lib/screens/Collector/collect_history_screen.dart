@@ -1,10 +1,14 @@
+import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class CollectorHistoryScreen extends StatelessWidget {
   final String collectorId;
+  final UserModel user;
 
-  const CollectorHistoryScreen({super.key, required this.collectorId});
+  const CollectorHistoryScreen(
+      {super.key, required this.collectorId, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +23,12 @@ class CollectorHistoryScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CollectorDashboard(user: user),
+              ),
+            );
           },
         ),
       ),

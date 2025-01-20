@@ -288,7 +288,12 @@ class _CreateCollectionState extends State<CreateCollection> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RequestorDashboard(user: widget.user),
+              ),
+            );
           },
         ),
         actions: [

@@ -9,7 +9,7 @@ import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:ciclou_projeto/screens/register_collector_screen.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
-import 'package:ciclou_projeto/screens/support_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/support_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/components/requestor_drawer.dart';
@@ -269,9 +269,10 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       case 2:
         return CollectorHistoryScreen(
           collectorId: widget.user.userId,
+          user: widget.user,
         );
       case 3:
-        return SupportScreen();
+        return SupportScreenCollector(user: widget.user,);
       default:
         return _buildHomeScreen();
     }
@@ -726,6 +727,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
             MaterialPageRoute(
               builder: (context) => CollectorHistoryScreen(
                 collectorId: widget.user.userId,
+                user: widget.user,
               ),
             ),
           );

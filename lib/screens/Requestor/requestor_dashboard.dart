@@ -250,7 +250,10 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       case 1:
         return CreateCollection(user: widget.user);
       case 2:
-        return RequestorHistoryScreen(userId: widget.user.userId);
+        return RequestorHistoryScreen(
+          userId: widget.user.userId,
+          user: widget.user,
+        );
       default:
         return _buildHomeScreen();
     }
@@ -398,8 +401,10 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  RequestorHistoryScreen(userId: widget.user.userId),
+              builder: (context) => RequestorHistoryScreen(
+                userId: widget.user.userId,
+                user: widget.user,
+              ),
             ),
           );
         }

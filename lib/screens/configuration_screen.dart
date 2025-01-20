@@ -1,9 +1,10 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/upload_documents.dart';
+import 'package:ciclou_projeto/screens/Requestor/suporte_screen_requestor.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
-import 'package:ciclou_projeto/screens/support_screen.dart';
+import 'package:ciclou_projeto/screens/Collector/support_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -138,7 +139,10 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => SupportScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => SupportScreenRequestor(
+                              user: user,
+                            )),
                   );
                 },
               ),

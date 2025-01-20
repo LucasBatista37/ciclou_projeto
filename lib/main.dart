@@ -78,10 +78,8 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
       final currentUser = FirebaseAuth.instance.currentUser;
 
       if (currentUser != null) {
-        // Usuário está logado, redireciona diretamente para a tela de notificação
         await _redirectToScreen(currentUser.uid, coletaId);
       } else {
-        // Usuário não está logado, salva o coletaId e redireciona para a tela de login
         developer.log('Usuário não está logado. Salvando coletaId.');
 
         if (mounted) {
