@@ -56,7 +56,6 @@ class CodeVerificationScreen extends StatelessWidget {
         }
 
         final data = snapshot.data!.data() as Map<String, dynamic>;
-        final isNetCollection = data['IsNetCollection'] ?? false;
         final status = data['status'] ?? 'Em andamento';
 
         if (status == 'Aprovado') {
@@ -231,6 +230,7 @@ class CodeVerificationScreen extends StatelessWidget {
 
                           if (!doc.exists) {
                             ScaffoldMessengerHelper.showError(
+                              // ignore: use_build_context_synchronously
                               context: context,
                               message: 'Coleta não encontrada!',
                             );
@@ -248,13 +248,16 @@ class CodeVerificationScreen extends StatelessWidget {
                             });
 
                             ScaffoldMessengerHelper.showSuccess(
+                              // ignore: use_build_context_synchronously
                               context: context,
                               message: 'Coleta aprovada com sucesso!',
                             );
 
+                            // ignore: use_build_context_synchronously
                             Navigator.pop(context);
                           } else {
                             ScaffoldMessengerHelper.showError(
+                              // ignore: use_build_context_synchronously
                               context: context,
                               message:
                                   'Código incorreto. Por favor, tente novamente',
@@ -262,6 +265,7 @@ class CodeVerificationScreen extends StatelessWidget {
                           }
                         } catch (e) {
                           ScaffoldMessengerHelper.showError(
+                            // ignore: use_build_context_synchronously
                             context: context,
                             message: 'Erro ao validar o código.',
                           );

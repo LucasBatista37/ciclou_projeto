@@ -1,5 +1,8 @@
+// ignore_for_file: file_names
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
+// ignore: unnecessary_import
 import 'package:flutter/services.dart';
 
 class PagamentoQRCodeCard extends StatelessWidget {
@@ -9,12 +12,12 @@ class PagamentoQRCodeCard extends StatelessWidget {
   final VoidCallback onRevalidarPagamento;
 
   const PagamentoQRCodeCard({
-    Key? key,
+    super.key,
     required this.qrCodeBase64,
     this.qrCodeText,
     required this.onCopiarCodigo,
     required this.onRevalidarPagamento,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

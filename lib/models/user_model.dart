@@ -6,6 +6,7 @@ class UserModel {
   final String? establishmentType;
   final String pixKey;
   late final String address;
+  // ignore: non_constant_identifier_names
   final bool IsNet;
   final double precoFixoOleo;
 
@@ -17,6 +18,7 @@ class UserModel {
     this.establishmentType,
     this.pixKey = 'Pix não informado',
     this.address = 'Endereço não informado',
+    // ignore: non_constant_identifier_names
     this.IsNet = false,
     this.precoFixoOleo = 0.0,
   });

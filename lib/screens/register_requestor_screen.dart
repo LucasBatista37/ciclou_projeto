@@ -11,6 +11,7 @@ class RegisterRequestorScreen extends StatefulWidget {
   const RegisterRequestorScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _RegisterRequestorScreenState createState() =>
       _RegisterRequestorScreenState();
 }
@@ -112,11 +113,13 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
         });
 
         ScaffoldMessengerHelper.showSuccess(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Solicitante registrado com sucesso!',
         );
 
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
@@ -142,11 +145,13 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
       }
 
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: errorMessage,
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message:
             'Erro inesperado ao registrar solicitante. Por favor, tente novamente.',

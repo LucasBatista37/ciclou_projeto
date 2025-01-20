@@ -1,3 +1,5 @@
+// ignore_for_file: file_names
+
 import 'package:ciclou_projeto/components/generate_manualqr_payment.dart';
 import 'package:ciclou_projeto/components/payment_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

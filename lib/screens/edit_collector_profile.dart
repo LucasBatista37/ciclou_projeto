@@ -12,6 +12,7 @@ class EditCollectorProfile extends StatefulWidget {
   const EditCollectorProfile({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _EditCollectorProfileState createState() => _EditCollectorProfileState();
 }
 
@@ -63,6 +64,7 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
         }
       } catch (e) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro ao carregar dados.',
         );
@@ -90,15 +92,18 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
           'phone': _phoneController.text.trim(),
           'licenseNumber': _licenseNumberController.text.trim(),
           'licenseExpiry': _licenseExpiryController.text.trim(),
-          'photoUrl': _profileImage != null ? _profileImage!.path : null,
+          'photoUrl': _profileImage?.path,
         });
         ScaffoldMessengerHelper.showSuccess(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Dados salvos com sucesso!',
         );
+        // ignore: use_build_context_synchronously
         Navigator.pop(context);
       } catch (e) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro ao salvar dados.',
         );
@@ -133,11 +138,13 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
             .update({'photoUrl': photoUrl});
 
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Foto de perfil atualizada com sucesso!',
         );
       } catch (e) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro ao atualizar foto.',
         );
@@ -163,28 +170,11 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
       await _updatePhotoUrl(pickedFile.path);
     } else {
       ScaffoldMessengerHelper.showWarning(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Nenhuma imagem selecionada.',
       );
     }
-  }
-
-  Future<String> _uploadImage(File imageFile) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      try {
-        final fileName =
-            'collector_photos/${uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final storageRef = FirebaseStorage.instance.ref().child(fileName);
-
-        final uploadTask = await storageRef.putFile(imageFile);
-
-        return await uploadTask.ref.getDownloadURL();
-      } catch (e) {
-        throw Exception('Erro ao fazer upload da imagem: $e');
-      }
-    }
-    throw Exception('Usuário não autenticado.');
   }
 
   @override
@@ -221,10 +211,10 @@ class _EditCollectorProfileState extends State<EditCollectorProfile> {
                           backgroundColor: Colors.grey.shade300,
                           backgroundImage: _profileImage != null
                               ? FileImage(File(_profileImage!
-                                  .path)) // Imagem local selecionada
+                                  .path))
                               : (_profileUrl != null
                                   ? NetworkImage(
-                                      _profileUrl!) // URL da imagem no Firebase Storage
+                                      _profileUrl!) 
                                   : null),
                           child: (_profileImage == null && _profileUrl == null)
                               ? Text(

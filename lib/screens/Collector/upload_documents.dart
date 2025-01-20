@@ -1,14 +1,11 @@
 import 'dart:io';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
-import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:ciclou_projeto/screens/Collector/view_documents_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:url_launcher/url_launcher.dart'; // Para abrir URLs
 
 class UploadDocumentsScreen extends StatefulWidget {
   final UserModel user;
@@ -74,6 +71,7 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
       }
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao carregar documentos enviados.',
       );
@@ -103,6 +101,7 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
 
       await _uploadToFirebase(documentType, file);
     } else {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Nenhum arquivo selecionado.'),
@@ -153,11 +152,13 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
       });
 
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Documento enviado com sucesso!',
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao enviar documento.',
       );

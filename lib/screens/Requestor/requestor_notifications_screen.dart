@@ -180,11 +180,13 @@ class RequestorNotificationsScreen extends StatelessWidget {
               status == 'Confirmada' ||
               status == 'Finalizada') {
             ScaffoldMessengerHelper.showWarning(
+              // ignore: use_build_context_synchronously
               context: context,
               message: 'Essa coleta já está $status.',
             );
           } else {
             Navigator.push(
+              // ignore: use_build_context_synchronously
               context,
               MaterialPageRoute(
                 builder: (context) => ProposalsScreen(
@@ -198,6 +200,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
           }
         } else {
           ScaffoldMessengerHelper.showError(
+            // ignore: use_build_context_synchronously
             context: context,
             message: 'Coleta não encontrada.',
           );
@@ -215,11 +218,13 @@ class RequestorNotificationsScreen extends StatelessWidget {
 
           if (status == 'Finalizada') {
             ScaffoldMessengerHelper.showWarning(
+              // ignore: use_build_context_synchronously
               context: context,
               message: 'Essa coleta já foi finalizada.',
             );
           } else {
             Navigator.push(
+              // ignore: use_build_context_synchronously
               context,
               MaterialPageRoute(
                 builder: (context) => CodeVerificationScreen(
@@ -230,6 +235,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
           }
         } else {
           ScaffoldMessengerHelper.showError(
+            // ignore: use_build_context_synchronously
             context: context,
             message: 'Coleta não encontrada.',
           );
@@ -247,11 +253,13 @@ class RequestorNotificationsScreen extends StatelessWidget {
 
           if (comprovante) {
             ScaffoldMessengerHelper.showWarning(
+              // ignore: use_build_context_synchronously
               context: context,
               message: 'A coleta já foi concluída e validada.',
             );
           } else {
             Navigator.push(
+              // ignore: use_build_context_synchronously
               context,
               MaterialPageRoute(
                 builder: (context) => ComprovanteVerificationScreen(
@@ -262,6 +270,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
           }
         } else {
           ScaffoldMessengerHelper.showError(
+            // ignore: use_build_context_synchronously
             context: context,
             message: 'Coleta não encontrada.',
           );

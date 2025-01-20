@@ -11,6 +11,7 @@ class SupportScreenRequestor extends StatefulWidget {
   const SupportScreenRequestor({super.key, required this.user});
 
   @override
+  // ignore: library_private_types_in_public_api
   _SupportScreenRequestorState createState() => _SupportScreenRequestorState();
 }
 
@@ -37,17 +38,20 @@ class _SupportScreenRequestorState extends State<SupportScreenRequestor> {
     try {
       await FlutterEmailSender.send(email);
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Mensagem enviada com sucesso!',
       );
       _commentController.clear();
-    } on PlatformException catch (e) {
+    } on PlatformException {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao enviar mensagem.',
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao enviar mensagem.',
       );

@@ -35,6 +35,7 @@ class _ComprovanteOverlayState extends State<ComprovanteOverlay> {
       widget.onComprovanteSelecionado(_comprovanteSelecionado);
 
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Comprovante selecionado com sucesso!',
       );

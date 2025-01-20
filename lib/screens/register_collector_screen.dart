@@ -1,5 +1,4 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
-import 'package:ciclou_projeto/screens/Collector/upload_documents.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -89,11 +88,13 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         });
 
         ScaffoldMessengerHelper.showSuccess(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Coletor registrado com sucesso!',
         );
 
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(
             builder: (context) => const LoginScreen(),
@@ -120,11 +121,13 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
       }
 
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: errorMessage,
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message:
             'Erro inesperado ao registrar o coletor. Por favor, tente novamente.',

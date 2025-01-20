@@ -31,7 +31,6 @@ class _CreateCollectionState extends State<CreateCollection> {
   final TextEditingController _horarioFinalController = TextEditingController();
 
   bool _isLoading = false;
-  late Future<List<String>> _bancosFuture;
   List<String>? _bancos;
 
   final List<String> _diasFuncionamento = [];
@@ -58,7 +57,6 @@ class _CreateCollectionState extends State<CreateCollection> {
     if (widget.user.IsNet) {
       _chavePixController.text = 'saiahacker@gmail.com';
     }
-    _bancosFuture = _carregarBancos();
     _enderecoController.text = widget.user.address;
     _preencherRegiao();
   }
@@ -84,6 +82,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           .toList();
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao carregar bancos.',
       );
@@ -141,15 +140,13 @@ class _CreateCollectionState extends State<CreateCollection> {
 
         final userId = widget.user.userId;
 
-        if (userId != null) {
-          await FirebaseFirestore.instance
-              .collection('requestor')
-              .doc(userId)
-              .update({
-            'address': _enderecoController.text.trim(),
-          });
-        }
-
+        await FirebaseFirestore.instance
+            .collection('requestor')
+            .doc(userId)
+            .update({
+          'address': _enderecoController.text.trim(),
+        });
+      
         final coletaData = {
           'tipoEstabelecimento': widget.user.establishmentType,
           'quantidadeOleo': _quantidadeOleo,
@@ -179,11 +176,13 @@ class _CreateCollectionState extends State<CreateCollection> {
         await FirebaseFirestore.instance.collection('coletas').add(coletaData);
 
         ScaffoldMessengerHelper.showSuccess(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Solicitação enviada com sucesso!',
         );
 
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(
             builder: (context) => RequestorDashboard(user: widget.user),
@@ -191,6 +190,7 @@ class _CreateCollectionState extends State<CreateCollection> {
         );
       } catch (e) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro ao enviar solicitação.',
         );
@@ -243,6 +243,7 @@ class _CreateCollectionState extends State<CreateCollection> {
       }
 
       Position position = await Geolocator.getCurrentPosition(
+        // ignore: deprecated_member_use
         desiredAccuracy: LocationAccuracy.high,
       );
 
@@ -269,6 +270,7 @@ class _CreateCollectionState extends State<CreateCollection> {
       }
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao obter localização.',
       );

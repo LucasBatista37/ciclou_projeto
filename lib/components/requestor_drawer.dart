@@ -3,7 +3,6 @@ import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/certificates_screen.dart';
 import 'package:ciclou_projeto/screens/configuration_screen.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class RequestorDrawer extends StatelessWidget {

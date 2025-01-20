@@ -58,7 +58,7 @@ class CertificadoService {
                   left: 390,
                   top: 360,
                   child: pw.Text(
-                    '${DateTime.now().toString().split(' ')[0]}',
+                    DateTime.now().toString().split(' ')[0],
                     style: pw.TextStyle(font: ttf, fontSize: 18),
                   ),
                 ),

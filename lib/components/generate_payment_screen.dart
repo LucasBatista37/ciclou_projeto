@@ -46,6 +46,7 @@ class PaymentScreen extends StatelessWidget {
         proposalId: proposalId,
       );
 
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pagamento gerado com sucesso!')),
       );
@@ -60,11 +61,13 @@ class PaymentScreen extends StatelessWidget {
       final proposalData = proposalDoc.data();
       if (proposalData != null && proposalData['qrCodeBase64'] != null) {
         final qrCodeBase64 = proposalData['qrCodeBase64'];
+        // ignore: use_build_context_synchronously
         _showQrCode(context, qrCodeBase64);
       } else {
         throw Exception('QR Code não encontrado no banco de dados.');
       }
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao gerar o pagamento: $e')),
       );
@@ -112,7 +115,6 @@ Future<Map<String, dynamic>?> generateFixedPixPayment({
   const String description = 'Pagamento Plataforma';
 
   try {
-    print('Enviando requisição para o endpoint $endpoint...');
     final response = await http.post(
       Uri.parse(endpoint),
       headers: {'Content-Type': 'application/json'},
@@ -123,33 +125,27 @@ Future<Map<String, dynamic>?> generateFixedPixPayment({
       }),
     );
 
-    print('Resposta da API: ${response.statusCode} - ${response.body}');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print('Dados recebidos da API: $data');
 
       final qrCode = data['qrCode'];
       final qrCodeBase64 = data['qrCodeBase64'];
       final paymentId = data['paymentId'];
 
       if (qrCode != null && qrCodeBase64 != null && paymentId != null) {
-        print('QR Code e Payment ID gerados com sucesso.');
         return {
           'qrCode': qrCode,
           'qrCodeBase64': qrCodeBase64,
           'paymentId': paymentId.toString(),
         };
       } else {
-        print('Erro: QR Code ou Payment ID não encontrados na resposta.');
         return null;
       }
     } else {
-      print('Erro na resposta da API: ${response.body}');
       return null;
     }
   } catch (e) {
-    print('Erro ao gerar pagamento PIX: $e');
     return null;
   }
 }

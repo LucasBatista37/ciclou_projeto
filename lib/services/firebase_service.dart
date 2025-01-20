@@ -26,7 +26,6 @@ class FirebaseService {
 
       return userCredential.user;
     } catch (e) {
-      print("Erro ao registrar: $e");
       return null;
     }
   }
@@ -39,7 +38,6 @@ class FirebaseService {
       );
       return userCredential.user;
     } catch (e) {
-      print("Erro ao fazer login: $e");
       return null;
     }
   }

@@ -4,15 +4,10 @@ import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/collects_screen.dart';
-import 'package:ciclou_projeto/screens/Collector/manual_qr_payment_screen.dart';
-import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
-import 'package:ciclou_projeto/screens/register_collector_screen.dart';
-import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/support_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
-import 'package:ciclou_projeto/components/requestor_drawer.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_history_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_stats_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/request_details.dart';
@@ -25,6 +20,7 @@ class CollectorDashboard extends StatefulWidget {
   const CollectorDashboard({super.key, required this.user});
 
   @override
+  // ignore: library_private_types_in_public_api
   _CollectorDashboardState createState() => _CollectorDashboardState();
 }
 
@@ -75,7 +71,6 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 }
 
                 if (snapshot.hasError) {
-                  print('Erro no snapshot: ${snapshot.error}');
                   return const CircleAvatar(
                     radius: 24,
                     backgroundColor: Colors.grey,
@@ -84,7 +79,6 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 }
 
                 if (!snapshot.hasData || !snapshot.data!.exists) {
-                  print('Documento não encontrado ou vazio.');
                   return const CircleAvatar(
                     radius: 24,
                     backgroundColor: Colors.grey,
@@ -233,6 +227,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 await FirebaseAuth.instance.signOut();
 
                 Navigator.pushAndRemoveUntil(
+                  // ignore: use_build_context_synchronously
                   context,
                   MaterialPageRoute(
                     builder: (context) => const LoginScreen(),
@@ -241,6 +236,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 );
               } catch (error) {
                 ScaffoldMessengerHelper.showError(
+                  // ignore: use_build_context_synchronously
                   context: context,
                   message: 'Erro ao fazer logout.',
                 );
@@ -391,7 +387,6 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       setState(() {
         _currentTip = "Erro ao carregar a dica.";
       });
-      print("Erro ao buscar dica: $e");
     }
   }
 

@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class TimeRangePicker extends StatefulWidget {
   final Function(String) onTimeRangeSelected;
 
-  const TimeRangePicker({Key? key, required this.onTimeRangeSelected})
-      : super(key: key);
+  const TimeRangePicker({super.key, required this.onTimeRangeSelected});
 
   @override
   State<TimeRangePicker> createState() => _TimeRangePickerState();
@@ -35,6 +34,7 @@ class _TimeRangePickerState extends State<TimeRangePicker> {
 
       if (_startTime != null && _endTime != null) {
         final formattedRange =
+            // ignore: use_build_context_synchronously
             '${_startTime!.format(context)} - ${_endTime!.format(context)}';
         widget.onTimeRangeSelected(formattedRange);
       }
@@ -51,26 +51,26 @@ class _TimeRangePickerState extends State<TimeRangePicker> {
             Expanded(
               child: ElevatedButton(
                 onPressed: () => _selectTime(context, true),
-                child: Text(_startTime == null
-                    ? 'Hora Inicial'
-                    : _startTime!.format(context)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   textStyle: const TextStyle(color: Colors.white),
                 ),
+                child: Text(_startTime == null
+                    ? 'Hora Inicial'
+                    : _startTime!.format(context)),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton(
                 onPressed: () => _selectTime(context, false),
-                child: Text(_endTime == null
-                    ? 'Hora Final'
-                    : _endTime!.format(context)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   textStyle: const TextStyle(color: Colors.white),
                 ),
+                child: Text(_endTime == null
+                    ? 'Hora Final'
+                    : _endTime!.format(context)),
               ),
             ),
           ],

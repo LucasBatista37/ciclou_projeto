@@ -152,11 +152,13 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                         });
 
                         ScaffoldMessengerHelper.showWarning(
+                          // ignore: use_build_context_synchronously
                           context: context,
                           message: 'Comprovante marcado como inválido.',
                         );
 
                         Navigator.pushReplacement(
+                          // ignore: use_build_context_synchronously
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
@@ -189,11 +191,13 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                         });
 
                         ScaffoldMessengerHelper.showSuccess(
+                          // ignore: use_build_context_synchronously
                           context: context,
                           message: 'Comprovante marcado como válido!',
                         );
 
                         Navigator.pushReplacement(
+                          // ignore: use_build_context_synchronously
                           context,
                           MaterialPageRoute(
                             builder: (context) =>

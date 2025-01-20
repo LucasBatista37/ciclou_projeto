@@ -171,6 +171,7 @@ class CollectorNotificationsScreen extends StatelessWidget {
 
             if (status == 'Finalizada') {
               ScaffoldMessengerHelper.showWarning(
+                // ignore: use_build_context_synchronously
                 context: context,
                 message: 'Essa coleta já foi finalizada.',
               );
@@ -201,12 +202,14 @@ class CollectorNotificationsScreen extends StatelessWidget {
             });
           } else {
             ScaffoldMessengerHelper.showWarning(
+              // ignore: use_build_context_synchronously
               context: context,
               message: 'Coleta não encontrada.',
             );
           }
         } catch (e) {
           ScaffoldMessengerHelper.showError(
+            // ignore: use_build_context_synchronously
             context: context,
             message: 'Erro ao buscar coleta.',
           );

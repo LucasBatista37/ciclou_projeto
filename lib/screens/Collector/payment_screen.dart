@@ -9,8 +9,8 @@ class PaymentScreen extends StatefulWidget {
 
   final UserModel user; 
 
-
   @override
+  // ignore: library_private_types_in_public_api
   _PaymentScreenState createState() => _PaymentScreenState();
 }
 
@@ -54,6 +54,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         final paymentId = data['paymentId'].toString();
 
         if (paymentId.isNotEmpty) {
+          // ignore: use_build_context_synchronously
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => PaymentProcessingScreen(
@@ -70,6 +71,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         throw Exception('Erro ao gerar PIX: ${response.body}');
       }
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro: $e')),
       );

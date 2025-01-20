@@ -17,6 +17,7 @@ class CollectsScreen extends StatefulWidget {
   });
 
   @override
+  // ignore: library_private_types_in_public_api
   _CollectsScreenState createState() => _CollectsScreenState();
 }
 
@@ -48,6 +49,7 @@ class _CollectsScreenState extends State<CollectsScreen> {
         _carregando = false;
       });
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao carregar coletas.',
       );

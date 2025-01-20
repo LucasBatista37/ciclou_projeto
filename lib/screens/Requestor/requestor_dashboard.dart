@@ -220,6 +220,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                 await FirebaseAuth.instance.signOut();
 
                 Navigator.pushReplacement(
+                  // ignore: use_build_context_synchronously
                   context,
                   MaterialPageRoute(
                     builder: (context) => const LoginScreen(),
@@ -227,6 +228,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                 );
               } catch (error) {
                 ScaffoldMessengerHelper.showError(
+                  // ignore: use_build_context_synchronously
                   context: context,
                   message: 'Erro ao tentar fazer o logout.',
                 );
@@ -280,7 +282,6 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       setState(() {
         _currentTip = "Erro ao carregar a dica.";
       });
-      print("Erro ao buscar dica: $e");
     }
   }
 

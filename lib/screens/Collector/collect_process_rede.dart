@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:ciclou_projeto/components/collect_process/Coleta_info.dart';
 import 'package:ciclou_projeto/components/collect_process/Collect_Service.dart';
-import 'package:ciclou_projeto/components/collect_process/Pagamento_info.dart';
 import 'package:ciclou_projeto/components/collect_process/Pagamento_plataforma.dart';
 import 'package:ciclou_projeto/components/collect_process/Pagamento_solicitante.dart';
 import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
@@ -32,19 +30,18 @@ class CollectProcessRede extends StatefulWidget {
   });
 
   @override
+  // ignore: library_private_types_in_public_api
   _CollectProcessRedeState createState() => _CollectProcessRedeState();
 }
 
 class _CollectProcessRedeState extends State<CollectProcessRede> {
   late DocumentSnapshot _coletaAtual;
   bool _carregando = true;
-  String? _caminhoCertificado;
   String? _qrCodeBase64;
   String? _qrCodeText;
   String? _confirmationCode;
   bool _isLoading = false;
   bool _isProcessing = false;
-  bool _isGeneratingQRCode = false;
 
   double _quantidadeReal = 0.0;
   bool _coletaFinalizada = false;
@@ -64,12 +61,9 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
     _verificarPagamento();
     _carregarValorTotalPago();
     _loadSolicitanteQRCode(_coletaAtual.id, 'proposalId');
-    developer.log("Coleta inicializada com ID: ${_coletaAtual.id}");
   }
 
   Future<void> _verificarPagamento() async {
-    developer.log(
-        "Iniciando verificação de pagamento para a coleta ID: ${_coletaAtual.id}");
     try {
       final result =
           await CollectService.verificarPagamentoComCodigo(_coletaAtual.id);
@@ -78,14 +72,9 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         _paymentStatus = result['paymentStatus'];
         _confirmationCode = result['confirmationCode'];
       });
-
-      developer.log(
-          "Verificação de pagamento concluída com sucesso. Status: $_paymentStatus, Código de confirmação: $_confirmationCode",
-          name: "_verificarPagamento");
     } catch (e) {
-      developer.log("Erro ao verificar pagamento",
-          error: e, name: "_verificarPagamento");
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao verificar pagamento.',
       );
@@ -94,7 +83,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
   Future<void> _loadSolicitanteQRCode(
       String documentId, String proposalId) async {
-    developer.log("Carregando QR Code do solicitante...");
     try {
       final propostaData = await FirebaseFirestore.instance
           .collection('coletas')
@@ -105,15 +93,11 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       if (propostaData.exists) {
         final data = propostaData.data();
-        developer.log("Dados da proposta: $data");
 
         setState(() {
           _qrCodeSolicitanteBase64 = data?['qrCodeTextSolicitante'];
           _qrCodeTextSolicitante = data?['qrCodeSolicitante'];
         });
-
-        developer.log(
-            "QR Code do solicitante atualizado: Base64=${_qrCodeSolicitanteBase64}, Text=${_qrCodeTextSolicitante}");
       } else {
         developer
             .log("Proposta não encontrada ou sem QR Code para o solicitante.");
@@ -124,21 +108,14 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
   }
 
   Future<void> _carregarValorTotalPago() async {
-    developer.log(
-        "Carregando valor total pago para a coleta ID: ${_coletaAtual.id}");
     try {
       final valor = await CollectService.getValorTotalPago(_coletaAtual.id);
       setState(() {
         _valorTotalPago = valor;
       });
-
-      developer.log(
-          "Valor total pago carregado com sucesso. Valor: $_valorTotalPago",
-          name: "_carregarValorTotalPago");
     } catch (e) {
-      developer.log("Erro ao carregar valor total pago",
-          error: e, name: "_carregarValorTotalPago");
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao carregar valor total pago.',
       );
@@ -190,11 +167,13 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       );
 
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Certificado gerado com sucesso!',
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao gerar certificado.',
       );
@@ -248,15 +227,18 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       await _finalizarColeta();
 
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Comprovante enviado e coleta finalizada com sucesso!',
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao enviar o comprovante ou finalizar coleta.',
       );
     } finally {
+      // ignore: use_build_context_synchronously
       Navigator.pop(context);
       setState(() {
         _isProcessing = false;
@@ -270,7 +252,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       if (currentUserId == null) return false;
 
-      // Obtém os dados da proposta aceita
       final propostasSnapshot = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -280,13 +261,11 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       if (propostasSnapshot.docs.isEmpty) return false;
 
-      // Verifica se o collectorId da proposta aceita corresponde ao usuário atual
       final proposalData = propostasSnapshot.docs.first.data();
       final String? collectorId = proposalData['collectorId'];
 
       return collectorId == currentUserId;
     } catch (e) {
-      developer.log("Erro ao verificar permissão para compartilhar: $e");
       return false;
     }
   }
@@ -309,10 +288,9 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
         transaction.update(collectorDocRef, {'amountOil': newAmount});
       });
-    } catch (e, stack) {
-      developer.log("Erro ao atualizar quantidade de óleo pelo coletor.",
-          error: e, stackTrace: stack);
+    } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao atualizar quantidade de óleo pelo coletor.',
       );
@@ -364,6 +342,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       });
 
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Coleta confirmada com sucesso!',
       );
@@ -375,6 +354,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       Future.delayed(Duration.zero, () {
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(
               builder: (context) => const ColetaFinalizadaScreen()),
@@ -382,6 +362,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       });
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao finalizar coleta.',
       );
@@ -401,6 +382,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
           },
           onEnviarComprovante: () async {
             await _enviarComprovantePagamento();
+            // ignore: use_build_context_synchronously
             Navigator.pop(context);
           },
         );
@@ -417,6 +399,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       if (!coletaDoc.exists) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro: coleta não encontrada.',
         );
@@ -427,6 +410,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       if (requestorId == null) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro: solicitante não encontrado.',
         );
@@ -443,11 +427,13 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       });
 
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Solicitante notificado sobre a finalização da coleta!',
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao notificar o solicitante sobre a finalização.',
       );
@@ -463,6 +449,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       if (!coletaDoc.exists) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro: coleta não encontrada.',
         );
@@ -473,6 +460,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       if (requestorId == null) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro: solicitante não encontrado.',
         );
@@ -496,6 +484,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       });
 
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Solicitante notificado que você está a caminho!',
       );
@@ -505,33 +494,11 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       });
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao notificar o solicitante.',
       );
     }
-  }
-
-  Widget _buildEstouIndoButton(BuildContext context) {
-    final data = _coletaAtual.data() as Map<String, dynamic>;
-    final coletorACaminho = data['coletorACaminho'] ?? false;
-
-    if (coletorACaminho) {
-      return const SizedBox.shrink();
-    }
-
-    return ElevatedButton(
-      onPressed: () async {
-        await _notificarSolicitante(context);
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-      ),
-      child: const Text(
-        'Estou indo',
-        style: TextStyle(color: Colors.white),
-      ),
-    );
   }
 
   @override
@@ -542,6 +509,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       );
     }
 
+    // ignore: unnecessary_null_comparison
     if (_coletaAtual == null) {
       return const Scaffold(
         body: Center(
@@ -734,13 +702,11 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                             user: widget.user,
                             onSuccess: (qrCodeBase64, qrCodeText) async {
                               try {
-                                // Atualizar o QR Code do solicitante no estado atual
                                 setState(() {
                                   _qrCodeSolicitanteBase64 = qrCodeBase64;
                                   _qrCodeTextSolicitante = qrCodeText;
                                 });
 
-                                // Recarregar os dados da coleta após gerar o QR Code
                                 final updatedColetaDoc = await FirebaseFirestore
                                     .instance
                                     .collection('coletas')
@@ -751,6 +717,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                   _coletaAtual = updatedColetaDoc;
                                 });
 
+                                // ignore: use_build_context_synchronously
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content:
@@ -758,12 +725,11 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                   ),
                                 );
                               } catch (e) {
-                                developer.log(
-                                    "Erro ao atualizar a coleta após gerar QR Code: $e");
+                                // ignore: use_build_context_synchronously
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                       content: Text(
-                                          'Erro ao recarregar a tela: $e')),
+                                          'Erro ao recarregar a tela')),
                                 );
                               }
                             },
@@ -803,8 +769,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                             const SnackBar(
                                 content: Text('Código Pix copiado!')),
                           );
-                          developer.log(
-                              "Código Pix copiado: $_qrCodeTextSolicitante");
                         },
                         onConfirmarPagamentoSolicitante: () async {
                           try {
@@ -839,12 +803,14 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                   _paymentStatus = 'approved';
                                 });
 
+                                // ignore: use_build_context_synchronously
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                       content: Text(
                                           'Pagamento ao solicitante confirmado!')),
                                 );
                               } else {
+                                // ignore: use_build_context_synchronously
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                       content: Text(
@@ -852,6 +818,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                 );
                               }
                             } else {
+                              // ignore: use_build_context_synchronously
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                     content: Text(
@@ -859,11 +826,11 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                               );
                             }
                           } catch (e) {
-                            developer.log("Erro ao verificar pagamento: $e");
+                            // ignore: use_build_context_synchronously
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                   content:
-                                      Text('Erro ao verificar pagamento: $e')),
+                                      Text('Erro ao verificar pagamento')),
                             );
                           }
                         },
@@ -888,6 +855,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                   onRevalidarPagamento: () async {
                     await _verificarPagamento();
                     ScaffoldMessengerHelper.showWarning(
+                      // ignore: use_build_context_synchronously
                       context: context,
                       message: 'Revalidando Pagamento...',
                     );
@@ -939,24 +907,19 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                     });
 
                                     try {
-                                      // Recarregar os dados necessários
                                       await _verificarPagamento();
 
-                                      // Obter o documento atualizado
                                       final updatedColetaDoc =
                                           await FirebaseFirestore.instance
                                               .collection('coletas')
                                               .doc(_coletaAtual.id)
                                               .get();
 
-                                      // Atualizar o estado com os dados novos
                                       setState(() {
                                         _coletaAtual = updatedColetaDoc;
                                         _isLoading = false;
                                       });
                                     } catch (e) {
-                                      developer.log(
-                                          "Erro ao atualizar a coleta: $e");
                                       setState(() {
                                         _isLoading = false;
                                       });

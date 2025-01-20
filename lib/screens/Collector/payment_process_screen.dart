@@ -44,6 +44,7 @@ class _PaymentProcessingScreenState extends State<PaymentProcessingScreen> {
         final paymentStatus = data['paymentStatus'];
 
         if (paymentStatus == "approved") {
+          // ignore: use_build_context_synchronously
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => CollectorDashboard(

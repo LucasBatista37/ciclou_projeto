@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
 }
 
 class DynamicLinkHandler extends StatefulWidget {
-  const DynamicLinkHandler({Key? key}) : super(key: key);
+  const DynamicLinkHandler({super.key});
 
   @override
   State<DynamicLinkHandler> createState() => _DynamicLinkHandlerState();
@@ -50,38 +50,32 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
   Future<void> _handleDynamicLinks() async {
     developer.log('Iniciando o manuseio de links dinâmicos.');
 
+    // ignore: deprecated_member_use
     FirebaseDynamicLinks.instance.onLink.listen((PendingDynamicLinkData data) {
-      final Uri? deepLink = data.link;
-      if (deepLink != null) {
-        _processDeepLink(deepLink);
-      }
-    }).onError((error) {
+      final Uri deepLink = data.link;
+      _processDeepLink(deepLink);
+        }).onError((error) {
       developer.log('Erro ao processar link dinâmico: $error');
     });
 
     final PendingDynamicLinkData? initialLink =
+        // ignore: deprecated_member_use
         await FirebaseDynamicLinks.instance.getInitialLink();
 
     if (initialLink?.link != null) {
-      _processDeepLink(initialLink!.link!);
+      _processDeepLink(initialLink!.link);
     }
   }
 
   void _processDeepLink(Uri deepLink) async {
-    developer.log('Processando deep link: $deepLink');
-
     final String? coletaId = deepLink.queryParameters['coletaId'];
 
     if (coletaId != null) {
-      developer.log('Parâmetro coletaId encontrado: $coletaId.');
-
       final currentUser = FirebaseAuth.instance.currentUser;
 
       if (currentUser != null) {
         await _redirectToScreen(currentUser.uid, coletaId);
       } else {
-        developer.log('Usuário não está logado. Salvando coletaId.');
-
         if (mounted) {
           setState(() {
             _pendingColetaId = coletaId;
@@ -98,7 +92,6 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
         );
       }
     } else {
-      developer.log('Deep link inválido ou sem coletaId.');
       if (navigatorKey.currentContext != null) {
         ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
           const SnackBar(
@@ -135,7 +128,6 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
         ),
       );
     } catch (e) {
-      developer.log('Erro ao buscar dados do usuário: $e');
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
         const SnackBar(
           content: Text('Erro ao carregar informações do usuário.'),
@@ -148,8 +140,6 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser != null && _pendingColetaId != null) {
-      developer.log(
-          'Usuário logado. Redirecionando para coletaId: $_pendingColetaId');
       await _redirectToScreen(currentUser.uid, _pendingColetaId!);
       _pendingColetaId = null;
     }

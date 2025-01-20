@@ -12,6 +12,7 @@ class EditRequestorProfile extends StatefulWidget {
   const EditRequestorProfile({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _EditRequestorProfileState createState() => _EditRequestorProfileState();
 }
 
@@ -71,6 +72,7 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
         }
       } catch (e) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro ao carregar dados',
         );
@@ -98,11 +100,13 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
         });
 
         ScaffoldMessengerHelper.showSuccess(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Foto de perfil atualizada com sucesso!',
         );
       } catch (e) {
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro ao atualizar foto.',
         );
@@ -147,12 +151,15 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
       });
 
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Dados salvos com sucesso!',
       );
+      // ignore: use_build_context_synchronously
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao salvar dados.',
       );
@@ -186,6 +193,7 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
       await _updatePhotoUrl(pickedImage.path);
     } else {
       ScaffoldMessengerHelper.showWarning(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Nenhuma imagem selecionada.',
       );
@@ -226,10 +234,10 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
                           backgroundColor: Colors.grey.shade300,
                           backgroundImage: _profileImage != null
                               ? FileImage(File(_profileImage!
-                                  .path)) // Imagem local selecionada
+                                  .path)) 
                               : (_profileUrl != null
                                   ? NetworkImage(
-                                      _profileUrl!) // URL da imagem no Firebase Storage
+                                      _profileUrl!)
                                   : null),
                           child: (_profileImage == null && _profileUrl == null)
                               ? Text(

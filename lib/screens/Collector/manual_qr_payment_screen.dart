@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:typed_data';
 
 class ManualQrPaymentScreen extends StatefulWidget {
   const ManualQrPaymentScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _ManualQrPaymentScreenState createState() => _ManualQrPaymentScreenState();
 }
 
@@ -58,6 +58,7 @@ class _ManualQrPaymentScreenState extends State<ManualQrPaymentScreen> {
         throw Exception('Erro ao gerar QR Code PIX: ${response.body}');
       }
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro: $e')),
       );
@@ -142,7 +143,7 @@ class _ManualQrPaymentScreenState extends State<ManualQrPaymentScreen> {
                 const SizedBox(height: 16.0),
                 Image.memory(
                   base64Decode(
-                      _qrCodeBase64!.split(',')[1]), // Remove o prefixo
+                      _qrCodeBase64!.split(',')[1]), 
                   height: 200,
                   width: 200,
                 ),

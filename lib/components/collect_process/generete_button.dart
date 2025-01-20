@@ -13,13 +13,13 @@ class GenerateQRCodeButton extends StatefulWidget {
   final void Function(String qrCodeBase64, String qrCodeText) onSuccess;
 
   const GenerateQRCodeButton({
-    Key? key,
+    super.key,
     required this.documentId,
     required this.amount,
     required this.proposalId,
     required this.user,
     required this.onSuccess,
-  }) : super(key: key);
+  });
 
   @override
   State<GenerateQRCodeButton> createState() => _GenerateQRCodeButtonState();
@@ -62,6 +62,7 @@ class _GenerateQRCodeButtonState extends State<GenerateQRCodeButton> {
 
         widget.onSuccess(qrCodeData['qrCodeBase64'], qrCodeData['qrCode']);
 
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('QR Code gerado com sucesso!')),
         );
@@ -69,6 +70,7 @@ class _GenerateQRCodeButtonState extends State<GenerateQRCodeButton> {
         throw Exception('Falha ao gerar QR Code.');
       }
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao gerar QR Code: $e')),
       );

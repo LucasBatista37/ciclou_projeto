@@ -1,5 +1,4 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
@@ -10,8 +9,7 @@ import 'package:ciclou_projeto/screens/login_screen.dart';
 class CompartilharColetaScreen extends StatefulWidget {
   final String coletaId;
 
-  const CompartilharColetaScreen({Key? key, required this.coletaId})
-      : super(key: key);
+  const CompartilharColetaScreen({super.key, required this.coletaId});
 
   @override
   State<CompartilharColetaScreen> createState() =>
@@ -32,8 +30,6 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      developer
-          .log('Usuário não autenticado. Redirecionando para LoginScreen.');
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -44,8 +40,6 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
   }
 
   Future<void> _generateLink() async {
-    developer.log(
-        'Iniciando geração do link dinâmico para coletaId: ${widget.coletaId}');
     setState(() {
       _loading = true;
     });
@@ -66,6 +60,7 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
       );
 
       final ShortDynamicLink shortDynamicLink =
+          // ignore: deprecated_member_use
           await FirebaseDynamicLinks.instance.buildShortLink(parameters);
 
       final Uri dynamicUrl = shortDynamicLink.shortUrl;
@@ -77,6 +72,7 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
       });
 
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Link gerado com sucesso!',
       );
@@ -87,6 +83,7 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
         _loading = false;
       });
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao gerar link.',
       );
@@ -106,7 +103,6 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    developer.log('Construindo tela de Compartilhar Coleta');
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,

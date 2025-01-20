@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class VerificacaoConcluidaScreen extends StatelessWidget {
-  const VerificacaoConcluidaScreen({Key? key}) : super(key: key);
+  const VerificacaoConcluidaScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

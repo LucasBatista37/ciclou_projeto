@@ -36,8 +36,8 @@ class DocumentViewerScreen extends StatelessWidget {
               autoSpacing: true,
               pageSnap: true,
               fitPolicy: FitPolicy.BOTH,
-              onRender: (_pages) {
-                debugPrint('PDF Rendered: $_pages pages');
+              onRender: (pages) {
+                debugPrint('PDF Rendered: $pages pages');
               },
               onError: (error) {
                 debugPrint('PDF Error: $error');

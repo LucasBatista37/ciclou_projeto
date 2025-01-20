@@ -4,7 +4,6 @@ import 'package:ciclou_projeto/screens/Collector/upload_documents.dart';
 import 'package:ciclou_projeto/screens/Requestor/suporte_screen_requestor.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
-import 'package:ciclou_projeto/screens/Collector/support_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -48,6 +47,7 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
         final userType = requestorDoc.data()?['userType'];
         if (userType == 'Solicitante') {
           Navigator.push(
+            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
               builder: (context) => const EditRequestorProfile(),
@@ -65,6 +65,7 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
         final userType = collectorDoc.data()?['userType'];
         if (userType == 'Coletor') {
           Navigator.push(
+            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
               builder: (context) => const EditCollectorProfile(),
@@ -75,6 +76,7 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
       }
 
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro: usuário não encontrado.',
       );

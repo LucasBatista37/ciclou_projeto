@@ -1,4 +1,3 @@
-import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_shared_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
@@ -10,7 +9,7 @@ import 'register_requestor_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
-  final String? coletaId; // Adiciona o parâmetro coletaId
+  final String? coletaId;
 
   const LoginScreen({super.key, this.onLoginSuccess, this.coletaId});
 
@@ -36,11 +35,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() {
-      _isLoading = true; // Exibe o indicador de carregamento
+      _isLoading = true;
     });
 
     try {
-      // Autentica o usuário
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -49,19 +47,17 @@ class _LoginScreenState extends State<LoginScreen> {
       final userId = userCredential.user?.uid;
 
       if (userId != null) {
-        // Verifica se o usuário está na coleção de coletores
         final collectorDoc = await FirebaseFirestore.instance
             .collection('collector')
             .doc(userId)
             .get();
 
         if (collectorDoc.exists) {
-          // Usuário é coletor
           final user = UserModel.fromFirestore(collectorDoc.data()!, userId);
 
           if (widget.coletaId != null) {
-            // Redireciona para a tela de notificação se coletaId estiver presente
             Navigator.pushReplacement(
+              // ignore: use_build_context_synchronously
               context,
               MaterialPageRoute(
                 builder: (context) => ColetorNotificacaoScreen(
@@ -71,8 +67,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
           } else {
-            // Redireciona para o dashboard do coletor
             Navigator.pushReplacement(
+              // ignore: use_build_context_synchronously
               context,
               MaterialPageRoute(
                 builder: (context) => CollectorDashboard(user: user),
@@ -83,18 +79,16 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
-        // Verifica se o usuário está na coleção de solicitantes
         final requestorDoc = await FirebaseFirestore.instance
             .collection('requestor')
             .doc(userId)
             .get();
 
         if (requestorDoc.exists) {
-          // Usuário é solicitante
           final user = UserModel.fromFirestore(requestorDoc.data()!, userId);
 
-          // Redireciona para o dashboard do solicitante
           Navigator.pushReplacement(
+            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
               builder: (context) => RequestorDashboard(user: user),
@@ -126,16 +120,18 @@ class _LoginScreenState extends State<LoginScreen> {
           break;
       }
 
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
       );
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erro inesperado. Tente novamente.')),
       );
     } finally {
       setState(() {
-        _isLoading = false; // Oculta o indicador de carregamento
+        _isLoading = false; 
       });
     }
   }

@@ -15,10 +15,10 @@ class ColetorNotificacaoScreen extends StatefulWidget {
   final UserModel user;
 
   const ColetorNotificacaoScreen({
-    Key? key,
+    super.key,
     required this.coletaId,
     required this.user,
-  }) : super(key: key);
+  });
 
   @override
   State<ColetorNotificacaoScreen> createState() =>
@@ -82,6 +82,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
           _loading = false;
         });
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Coleta não encontrada.',
         );
@@ -93,6 +94,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
         _loading = false;
       });
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao carregar coleta.',
       );
@@ -150,6 +152,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
         });
 
         ScaffoldMessengerHelper.showSuccess(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Dados atualizados com sucesso!',
         );
@@ -177,6 +180,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
         }
 
         Navigator.push(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(
             builder: (context) => CollectProcessRede(
@@ -188,6 +192,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
       } else {
         developer.log('Nenhuma proposta com status "Aceita" foi encontrada.');
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Nenhuma proposta com os status "Aceita" encotrada.',
         );
@@ -200,6 +205,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
         name: 'Salvar Coleta',
       );
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao salvar dados.',
       );

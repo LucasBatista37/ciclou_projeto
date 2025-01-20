@@ -12,6 +12,7 @@ class SendProposal extends StatefulWidget {
   const SendProposal({super.key, required this.documentId, required this.user});
 
   @override
+  // ignore: library_private_types_in_public_api
   _SendProposalState createState() => _SendProposalState();
 }
 
@@ -69,6 +70,7 @@ class _SendProposalState extends State<SendProposal> {
       }
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao buscar quantidade de óleo.',
       );
@@ -136,19 +138,14 @@ class _SendProposalState extends State<SendProposal> {
       final valorTotalPago = _quantidadeOleo * (double.tryParse(preco) ?? 0.0);
 
       try {
-        print('Iniciando envio de proposta...');
-        print('Preço por litro: $preco');
-        print('Valor total pago calculado: $valorTotalPago');
-
-        // Buscar dados da coleta
         final coletaDoc = await FirebaseFirestore.instance
             .collection('coletas')
             .doc(widget.documentId)
             .get();
 
         if (!coletaDoc.exists) {
-          print('Erro: coleta não encontrada');
           ScaffoldMessengerHelper.showError(
+            // ignore: use_build_context_synchronously
             context: context,
             message: 'Erro: coleta não encontrada.',
           );
@@ -157,10 +154,6 @@ class _SendProposalState extends State<SendProposal> {
 
         final requestorId = coletaDoc.data()?['userId'];
         final solicitationTitle = coletaDoc.data()?['titulo'] ?? 'Coleta';
-        print('Requestor ID: $requestorId');
-        print('Título da solicitação: $solicitationTitle');
-
-        print('Photo URL do usuário: ${widget.user.photoUrl}');
 
         await FirebaseFirestore.instance
             .collection('coletas')
@@ -190,21 +183,21 @@ class _SendProposalState extends State<SendProposal> {
           'isRead': false,
         });
 
-        print('Notificação enviada para o requestor ID: $requestorId.');
-
         ScaffoldMessengerHelper.showSuccess(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Proposta enviada com sucesso!',
         );
 
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(
               builder: (context) => CollectorDashboard(user: widget.user)),
         );
       } catch (e) {
-        print('Erro ao enviar proposta: $e');
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro ao enviar proposta.',
         );
@@ -345,7 +338,7 @@ class _SendProposalState extends State<SendProposal> {
                       ),
                     ),
                     Text(
-                      '$_tempoRestante',
+                      _tempoRestante,
                       style: const TextStyle(
                         fontSize: 16,
                         color: Colors.black87,
