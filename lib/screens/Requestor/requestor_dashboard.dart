@@ -263,6 +263,22 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
 
   Future<void> _fetchCurrentTip() async {
     try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('requestor')
+          .doc(widget.user.userId)
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        if (userData['IsNet'] == true) {
+          setState(() {
+            _currentTip =
+                "Obrigado por fazer parte do nosso movimento sustentável!";
+          });
+          return;
+        }
+      }
+
       final querySnapshot = await FirebaseFirestore.instance
           .collection('tips')
           .where('isCollector', isEqualTo: false)
@@ -291,17 +307,21 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.lightGreen,
-              borderRadius: BorderRadius.circular(8.0),
+          if (_currentTip.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: _currentTip == "Obrigado por usar o nosso app!"
+                    ? Colors.lightGreen
+                    : Colors.lightGreen,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Text(
+                _currentTip,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
             ),
-            child: Text(
-              _currentTip,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
           const SizedBox(height: 16.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -425,21 +445,30 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
   }
 
   Widget _buildSolicitationsList() {
+    final isNetUser = widget.user.IsNet;
+
+    Query query = FirebaseFirestore.instance
+        .collection('coletas')
+        .where('userId', isEqualTo: widget.user.userId);
+
+    if (isNetUser) {
+      query = query
+          .where('status', whereIn: ['Pendente', 'Em andamento', 'Aprovado']);
+    } else {
+      query = query.where('comprovante', isEqualTo: false);
+    }
+
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('coletas')
-          .where('userId', isEqualTo: widget.user.userId)
-          .where('status',
-              whereIn: ['Pendente', 'Em andamento', 'Aprovado', 'Finalizada'])
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream: query.orderBy('createdAt', descending: true).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          return const Center(child: Text('Erro ao carregar solicitações.'));
+          return const Center(
+            child: Text('Erro ao carregar solicitações.'),
+          );
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {

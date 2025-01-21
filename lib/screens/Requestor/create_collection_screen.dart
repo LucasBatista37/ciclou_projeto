@@ -146,7 +146,7 @@ class _CreateCollectionState extends State<CreateCollection> {
             .update({
           'address': _enderecoController.text.trim(),
         });
-      
+
         final coletaData = {
           'tipoEstabelecimento': widget.user.establishmentType,
           'quantidadeOleo': _quantidadeOleo,
@@ -167,6 +167,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           'IsNetCollection': widget.user.IsNet,
           'isShared': false,
           'coletorACaminho': false,
+          'comprovante': false
         };
 
         if (widget.user.precoFixoOleo > 0.0) {

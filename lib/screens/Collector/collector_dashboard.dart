@@ -268,7 +268,9 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           user: widget.user,
         );
       case 3:
-        return SupportScreenCollector(user: widget.user,);
+        return SupportScreenCollector(
+          user: widget.user,
+        );
       default:
         return _buildHomeScreen();
     }
@@ -280,17 +282,22 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.lightGreen,
-              borderRadius: BorderRadius.circular(8.0),
+          if (_currentTip.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color:
+                    _currentTip == "Obrigado por se juntar à rede sustentável!"
+                        ? Colors.lightGreen
+                        : Colors.lightGreen,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Text(
+                _currentTip,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
             ),
-            child: Text(
-              _currentTip,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
           const SizedBox(height: 16.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -368,6 +375,22 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
 
   Future<void> _fetchCurrentTip() async {
     try {
+      final collectorDoc = await FirebaseFirestore.instance
+          .collection('collector')
+          .doc(widget.user.userId)
+          .get();
+
+      if (collectorDoc.exists) {
+        final collectorData = collectorDoc.data() as Map<String, dynamic>;
+
+        if (collectorData['IsNet'] == true) {
+          setState(() {
+            _currentTip = "Obrigado por se juntar à rede sustentável!";
+          });
+          return;
+        }
+      }
+
       final querySnapshot = await FirebaseFirestore.instance
           .collection('tips')
           .where('isCollector', isEqualTo: true)
