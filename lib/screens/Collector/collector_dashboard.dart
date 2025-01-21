@@ -469,14 +469,36 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
 
         final filteredDocuments = documents.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          final isNetCollection = data['IsNetCollection'];
+          final isNetCollection = data['IsNetCollection'] ?? false;
+          final associatedCollector = data['associatedCollector'];
 
           if (isNetUser) {
-            return true;
+            return associatedCollector == widget.user.userId ||
+                !isNetCollection;
           }
 
-          return isNetCollection == false || isNetCollection == null;
+          return !isNetCollection;
         }).toList();
+
+        if (filteredDocuments.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.hourglass_empty,
+                  size: 80,
+                  color: Colors.grey,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Nenhuma solicitação disponível no momento.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        }
 
         filteredDocuments.sort((a, b) {
           final aData = a.data() as Map<String, dynamic>;

@@ -167,11 +167,24 @@ class _CreateCollectionState extends State<CreateCollection> {
           'IsNetCollection': widget.user.IsNet,
           'isShared': false,
           'coletorACaminho': false,
-          'comprovante': false
+          'comprovante': false,
         };
 
         if (widget.user.precoFixoOleo > 0.0) {
           coletaData['precoFixoOleo'] = widget.user.precoFixoOleo;
+        }
+
+        if (widget.user.IsNet) {
+          final requestorDoc = await FirebaseFirestore.instance
+              .collection('requestor')
+              .doc(userId)
+              .get();
+
+          if (requestorDoc.exists &&
+              requestorDoc.data()!.containsKey('associatedCollector')) {
+            coletaData['associatedCollector'] =
+                requestorDoc['associatedCollector'];
+          }
         }
 
         await FirebaseFirestore.instance.collection('coletas').add(coletaData);
