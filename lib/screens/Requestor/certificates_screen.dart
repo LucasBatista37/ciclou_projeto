@@ -29,6 +29,8 @@ class CertificatesScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('certificados')
             .where('userId', isEqualTo: user.userId)
+            .orderBy('createdAt',
+                descending: true) // Ordena pelos mais recentes
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -109,7 +111,7 @@ class PDFViewScreen extends StatelessWidget {
         ),
       ),
       body: SfPdfViewer.network(
-        downloadUrl, 
+        downloadUrl,
       ),
     );
   }

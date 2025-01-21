@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_shared_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
@@ -121,13 +122,17 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
+      ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
+        context: context,
+        message: errorMessage,
       );
     } catch (e) {
       // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro inesperado. Tente novamente.')),
+      ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
+        context: context,
+        message: 'Erro inesperado. Tente novamente',
       );
     } finally {
       setState(() {

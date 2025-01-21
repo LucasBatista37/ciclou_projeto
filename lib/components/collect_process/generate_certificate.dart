@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:developer' as developer;
 
 class CertificadoService {
   static Future<void> gerarCertificado({
@@ -94,10 +93,7 @@ class CertificadoService {
 
       await localFile.delete();
 
-      developer.log("Certificado gerado e salvo com sucesso: $downloadUrl");
-    } catch (e, stack) {
-      developer.log("Erro ao gerar certificado: $e",
-          error: e, stackTrace: stack);
+    } catch (e) {
       throw Exception("Erro ao gerar certificado: $e");
     }
   }

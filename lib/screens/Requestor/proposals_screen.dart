@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:ciclou_projeto/components/generate_payment_screen.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -32,38 +33,86 @@ class ProposalsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('coletas')
-            .doc(documentId)
-            .collection('propostas')
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        children: [
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('coletas')
+                  .doc(documentId)
+                  .collection('propostas')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          if (snapshot.hasError) {
-            return const Center(child: Text('Erro ao carregar propostas.'));
-          }
+                if (snapshot.hasError) {
+                  return const Center(
+                      child: Text('Erro ao carregar propostas.'));
+                }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return _buildEmptyState();
-          }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return _buildEmptyState();
+                }
 
-          final proposals = snapshot.data!.docs;
+                final proposals = snapshot.data!.docs;
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ListView.builder(
-              itemCount: proposals.length,
-              itemBuilder: (context, index) {
-                final data = proposals[index].data() as Map<String, dynamic>;
-                return _buildProposalCard(context, data, proposals[index].id);
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ListView.builder(
+                    itemCount: proposals.length,
+                    itemBuilder: (context, index) {
+                      final data =
+                          proposals[index].data() as Map<String, dynamic>;
+                      return _buildProposalCard(
+                          context, data, proposals[index].id);
+                    },
+                  ),
+                );
               },
             ),
-          );
-        },
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('coletas')
+                  .doc(documentId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const SizedBox
+                      .shrink(); // Não exibe nada enquanto carrega
+                }
+
+                final coletaData =
+                    snapshot.data!.data() as Map<String, dynamic>?;
+
+                if (coletaData?['status'] == 'Em andamento') {
+                  return const SizedBox
+                      .shrink(); // Oculta o botão se a coleta está em andamento
+                }
+
+                return ElevatedButton(
+                  onPressed: () => _confirmCancelColeta(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    minimumSize: const Size(200, 50),
+                  ),
+                  child: const Text(
+                    'Cancelar Coleta',
+                    style: TextStyle(color: Colors.white, fontSize: 16.0),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -239,6 +288,99 @@ class ProposalsScreen extends StatelessWidget {
       return FileImage(File(photoUrl));
     }
     return null;
+  }
+
+  void _confirmCancelColeta(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar Cancelamento'),
+          content: const Text(
+            'Tem certeza de que deseja cancelar esta coleta? Esta ação não pode ser desfeita.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Não',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _cancelColeta(context);
+              },
+              child: const Text(
+                'Sim, Cancelar',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _cancelColeta(BuildContext context) async {
+    final overlayContext = Navigator.of(context).overlay?.context;
+
+    if (overlayContext == null) {
+      return;
+    }
+
+    try {
+      showDialog(
+        context: overlayContext,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(documentId)
+          .delete();
+
+      // ignore: use_build_context_synchronously
+      if (Navigator.canPop(overlayContext)) {
+        // ignore: use_build_context_synchronously
+        Navigator.of(overlayContext).pop();
+      }
+
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Coleta cancelada com sucesso!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Redireciona para o dashboard
+      // ignore: use_build_context_synchronously
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => RequestorDashboard(user: user),
+        ),
+        (route) => false,
+      );
+    } catch (error) {
+      // ignore: use_build_context_synchronously
+      if (Navigator.canPop(overlayContext)) {
+        // ignore: use_build_context_synchronously
+        Navigator.of(overlayContext).pop();
+      }
+
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erro ao cancelar coleta. Tente novamente.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _acceptProposal(BuildContext context, String proposalId,

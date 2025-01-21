@@ -8,6 +8,7 @@ import 'package:ciclou_projeto/components/collect_process/generate_certificate.d
 import 'package:ciclou_projeto/components/collect_process/status_card.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
+import 'package:ciclou_projeto/screens/Collector/share_collection.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -193,6 +194,30 @@ class _CollectProcessState extends State<CollectProcess> {
       setState(() {
         _isProcessing = false;
       });
+    }
+  }
+
+  Future<bool> _verificarPermissaoCompartilhar() async {
+    try {
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+      if (currentUserId == null) return false;
+
+      final propostasSnapshot = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .collection('propostas')
+          .where('status', isEqualTo: 'Aceita')
+          .get();
+
+      if (propostasSnapshot.docs.isEmpty) return false;
+
+      final proposalData = propostasSnapshot.docs.first.data();
+      final String? collectorId = proposalData['collectorId'];
+
+      return collectorId == currentUserId;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -474,6 +499,10 @@ class _CollectProcessState extends State<CollectProcess> {
                 quantidadeOleo: (data['quantidadeOleo'] ?? 'N/A').toString(),
                 endereco: data['address'],
                 mostrarEndereco: _paymentStatus == 'approved',
+                funcionamentoDias:
+                    List<String>.from(data['funcionamentoDias'] ?? []),
+                funcionamentoHorario: data['funcionamentoHorario'] ?? 'N/A',
+                requestorName: data['requestorName'] ?? 'N/A',
               ),
 
               const SizedBox(height: 24),
@@ -713,6 +742,49 @@ class _CollectProcessState extends State<CollectProcess> {
                 ),
                 const SizedBox(height: 16),
               ],
+
+              // Botão Compartilhar Coleta
+              FutureBuilder<bool>(
+                future: _verificarPermissaoCompartilhar(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasData && snapshot.data == true) {
+                    return Center(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CompartilharColetaScreen(
+                                coletaId: _coletaAtual.id,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.share, color: Colors.white),
+                        label: const Text(
+                          'Compartilhar Coleta',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return const SizedBox.shrink();
+                },
+              ),
+              const SizedBox(height: 16),
 
               // Pagamento Aprovado e Registro da Coleta
               if (_paymentStatus == 'approved' &&

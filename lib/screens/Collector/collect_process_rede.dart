@@ -123,7 +123,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
   }
 
   Future<void> _buscarQrCode() async {
-    developer.log("Buscando QR Code para a coleta ID: ${_coletaAtual.id}");
     try {
       final proposalSnapshot = await FirebaseFirestore.instance
           .collection('coletas')
@@ -140,10 +139,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
           _qrCodeBase64 = proposalData['qrCodeBase64'];
           _qrCodeText = proposalData['qrCode'];
         });
-
-        developer.log("QR Code encontrado: $_qrCodeBase64",
-            name: "_buscarQrCode");
-
         await _loadSolicitanteQRCode(_coletaAtual.id, proposalId);
       } else {
         developer.log(
@@ -169,7 +164,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       ScaffoldMessengerHelper.showSuccess(
         // ignore: use_build_context_synchronously
         context: context,
-        message: 'Certificado gerado com sucesso!',
+        message: 'Certificado gerado ao solicitante com sucesso!',
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
@@ -593,6 +588,10 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                 quantidadeOleo: (data['quantidadeOleo'] ?? 'N/A').toString(),
                 endereco: data['address'],
                 mostrarEndereco: _paymentStatus == 'approved',
+                funcionamentoDias:
+                    List<String>.from(data['funcionamentoDias'] ?? []),
+                funcionamentoHorario: data['funcionamentoHorario'] ?? 'N/A',
+                requestorName: data['requestorName'] ?? 'N/A',
               ),
 
               const SizedBox(height: 24),
@@ -687,8 +686,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                         ),
                       );
                     }
-                    developer.log(
-                        "Valor de realQuantityCollected: ${data['realQuantityCollected']}");
 
                     if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                       final proposalId = snapshot.data!.docs.first.id;
@@ -728,8 +725,8 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                 // ignore: use_build_context_synchronously
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                      content: Text(
-                                          'Erro ao recarregar a tela')),
+                                      content:
+                                          Text('Erro ao recarregar a tela')),
                                 );
                               }
                             },
@@ -765,9 +762,10 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                           Clipboard.setData(
                             ClipboardData(text: _qrCodeTextSolicitante!),
                           );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Código Pix copiado!')),
+                          ScaffoldMessengerHelper.showSuccess(
+                            // ignore: use_build_context_synchronously
+                            context: context,
+                            message: 'Chave Pix copiada!',
                           );
                         },
                         onConfirmarPagamentoSolicitante: () async {
@@ -804,17 +802,18 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                 });
 
                                 // ignore: use_build_context_synchronously
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          'Pagamento ao solicitante confirmado!')),
+                                ScaffoldMessengerHelper.showSuccess(
+                                  // ignore: use_build_context_synchronously
+                                  context: context,
+                                  message:
+                                      'Pagamento ao solicitante confirmado!',
                                 );
                               } else {
                                 // ignore: use_build_context_synchronously
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          'Pagamento ainda não foi aprovado.')),
+                                ScaffoldMessengerHelper.showSuccess(
+                                  // ignore: use_build_context_synchronously
+                                  context: context,
+                                  message: 'Pagamento ainda não foi aprovado.',
                                 );
                               }
                             } else {
@@ -827,10 +826,10 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                             }
                           } catch (e) {
                             // ignore: use_build_context_synchronously
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content:
-                                      Text('Erro ao verificar pagamento')),
+                            ScaffoldMessengerHelper.showSuccess(
+                              // ignore: use_build_context_synchronously
+                              context: context,
+                              message: 'Erro ao verificar pagamento.',
                             );
                           }
                         },

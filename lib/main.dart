@@ -48,8 +48,6 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
   }
 
   Future<void> _handleDynamicLinks() async {
-    developer.log('Iniciando o manuseio de links dinâmicos.');
-
     // ignore: deprecated_member_use
     FirebaseDynamicLinks.instance.onLink.listen((PendingDynamicLinkData data) {
       final Uri deepLink = data.link;

@@ -1,4 +1,5 @@
 // ignore_for_file: file_names
+
 import 'package:flutter/material.dart';
 
 class ColetaInfoCard extends StatelessWidget {
@@ -6,6 +7,9 @@ class ColetaInfoCard extends StatelessWidget {
   final String quantidadeOleo;
   final String? endereco;
   final bool mostrarEndereco;
+  final List<String> funcionamentoDias;
+  final String funcionamentoHorario;
+  final String requestorName;
 
   const ColetaInfoCard({
     super.key,
@@ -13,7 +17,41 @@ class ColetaInfoCard extends StatelessWidget {
     required this.quantidadeOleo,
     this.endereco,
     this.mostrarEndereco = false,
+    required this.funcionamentoDias,
+    required this.funcionamentoHorario,
+    required this.requestorName,
   });
+
+  String formatFuncionamentoDias(List<String> dias) {
+    const diasSemana = [
+      "Domingo",
+      "Segunda-feira",
+      "Terça-feira",
+      "Quarta-feira",
+      "Quinta-feira",
+      "Sexta-feira",
+      "Sábado"
+    ];
+
+    if (dias.length == 7) return "Todos os dias";
+    if (dias.length == 5 &&
+        dias.every((dia) => diasSemana.sublist(1, 6).contains(dia))) {
+      return "Dias Úteis";
+    }
+    if (dias.length == 2 &&
+        dias.contains("Sábado") &&
+        dias.contains("Domingo")) {
+      return "Fim de Semana";
+    }
+
+    final indices = dias.map((dia) => diasSemana.indexOf(dia)).toList()..sort();
+    if (indices.isNotEmpty &&
+        indices.last - indices.first + 1 == indices.length) {
+      return "${diasSemana[indices.first].substring(0, 3)} à ${diasSemana[indices.last].substring(0, 3)}";
+    }
+
+    return dias.map((dia) => dia.substring(0, 3)).join(", ");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +101,22 @@ class ColetaInfoCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ],
+              const SizedBox(height: 8),
+              Text(
+                'Responsável: $requestorName',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.black87,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Funcionamento: ${formatFuncionamentoDias(funcionamentoDias)} - $funcionamentoHorario',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.black87,
+                    ),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
