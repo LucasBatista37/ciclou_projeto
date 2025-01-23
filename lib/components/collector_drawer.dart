@@ -13,7 +13,6 @@ class CollectorDrawer extends StatelessWidget {
   final VoidCallback onLogout;
   final UserModel user;
 
-
   const CollectorDrawer({
     super.key,
     required this.userName,

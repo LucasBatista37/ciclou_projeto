@@ -301,33 +301,40 @@ class CodeVerificationScreen extends StatelessWidget {
                         .doc(documentId)
                         .collection('propostas')
                         .where('status', isEqualTo: 'Aceita')
-                        .where('isShared', isEqualTo: true)
                         .get(),
-                    builder: (context, propostasSnapshot) {
-                      if (propostasSnapshot.connectionState ==
-                          ConnectionState.waiting) {
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       }
 
-                      if (!propostasSnapshot.hasData ||
-                          propostasSnapshot.data!.docs.isEmpty) {
-                        return const SizedBox.shrink();
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'Nenhuma proposta aceita encontrada.',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        );
                       }
 
-                      final propostaData = propostasSnapshot.data!.docs.first
-                          .data() as Map<String, dynamic>;
+                      final propostaData = snapshot.data!.docs.first.data()
+                          as Map<String, dynamic>;
+
                       final nome = propostaData['nome'] ?? 'Não informado';
                       final cpf = propostaData['cpf'] ?? 'Não informado';
                       final veiculo =
                           propostaData['veiculo'] ?? 'Não informado';
                       final placa = propostaData['placa'] ?? 'Não informado';
+                      final tipoVeiculo =
+                          propostaData['tipoVeiculo'] ?? 'Não informado';
+                      final photoUrl = propostaData['photoUrl'];
 
-                      return Center(
+                      return Padding(
+                        padding: const EdgeInsets.all(16.0),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Coletor Atribuído',
+                              'Dados do Coletor Atribuído',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -335,50 +342,51 @@ class CodeVerificationScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              margin: const EdgeInsets.symmetric(vertical: 8.0),
-                              elevation: 4,
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Nome: $nome',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    Text(
-                                      'CPF: $cpf',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Veículo: $veiculo',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Placa: $placa',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  ],
+                            if (photoUrl != null)
+                              Center(
+                                child: CircleAvatar(
+                                  backgroundImage: NetworkImage(photoUrl),
+                                  radius: 50,
                                 ),
                               ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Nome: $nome',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
                             ),
+                            Text(
+                              'CPF: $cpf',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            Text(
+                              'Veículo: $veiculo',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            Text(
+                              'Placa: $placa',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            Text(
+                              'Tipo de Veículo: $tipoVeiculo',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                           ],
                         ),
                       );
