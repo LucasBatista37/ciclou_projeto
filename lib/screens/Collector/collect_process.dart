@@ -53,7 +53,6 @@ class _CollectProcessState extends State<CollectProcess> {
   String? _veiculoError;
   final _cpfMaskFormatter = MaskTextInputFormatter(mask: '###.###.###-##');
 
-// Adicione os tipos de veículo
   final List<String> _vehicleTypes = ['Carro', 'Moto', 'Caminhão'];
   String? _selectedVehicleType;
 
@@ -435,9 +434,6 @@ class _CollectProcessState extends State<CollectProcess> {
         _isProcessing = true;
       });
 
-      // Log para verificar coleta atual
-      print("Coleta atual ID: ${_coletaAtual.id}");
-
       final propostasSnapshot = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -446,8 +442,8 @@ class _CollectProcessState extends State<CollectProcess> {
           .get();
 
       if (propostasSnapshot.docs.isEmpty) {
-        print("Nenhuma proposta com status 'Aceita' encontrada.");
         ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
           context: context,
           message: 'Nenhuma proposta aceita encontrada.',
         );
@@ -456,9 +452,6 @@ class _CollectProcessState extends State<CollectProcess> {
 
       final propostaDocId = propostasSnapshot.docs.first.id;
 
-      print("Proposta encontrada com ID: $propostaDocId");
-
-      // Atualizando os dados diretamente na coleção "propostas"
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -472,9 +465,6 @@ class _CollectProcessState extends State<CollectProcess> {
         'tipoVeiculo': _selectedVehicleType ?? 'N/A',
       });
 
-      print("Dados do coletor atualizados diretamente na proposta.");
-
-      // Atualizar o status no documento principal de "coletas"
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -482,14 +472,12 @@ class _CollectProcessState extends State<CollectProcess> {
         'statusColetorAtualizado': true,
       });
 
-      print("Status coletor atualizado no documento principal.");
-
       ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Informações salvas com sucesso!',
       );
 
-      // Atualiza o estado local da coleta
       final updatedColetaDoc = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -498,8 +486,8 @@ class _CollectProcessState extends State<CollectProcess> {
         _coletaAtual = updatedColetaDoc;
       });
     } catch (e) {
-      print("Erro ao salvar informações do coletor: $e");
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao salvar informações do coletor.',
       );
@@ -775,7 +763,6 @@ class _CollectProcessState extends State<CollectProcess> {
               if (_confirmationCode != null &&
                   (data['status'] ?? '') != 'Aprovado' &&
                   (data['statusColetorAtualizado'] ?? false) == true) ...[
-                // Exibição do código de confirmação
                 Center(
                   child: Card(
                     shape: RoundedRectangleBorder(

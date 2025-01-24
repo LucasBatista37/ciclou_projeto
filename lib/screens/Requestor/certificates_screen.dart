@@ -30,7 +30,7 @@ class CertificatesScreen extends StatelessWidget {
             .collection('certificados')
             .where('userId', isEqualTo: user.userId)
             .orderBy('createdAt',
-                descending: true) // Ordena pelos mais recentes
+                descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -57,7 +57,7 @@ class CertificatesScreen extends StatelessWidget {
             itemCount: certificados.length,
             itemBuilder: (context, index) {
               final certificado = certificados[index];
-              final downloadUrl = certificado['downloadUrl']; // Use downloadUrl
+              final downloadUrl = certificado['downloadUrl'];
               final coletaId = certificado['coletaId'];
               final createdAt = certificado['createdAt'] != null
                   ? (certificado['createdAt'] as Timestamp).toDate()

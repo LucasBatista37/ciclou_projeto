@@ -326,68 +326,78 @@ class CodeVerificationScreen extends StatelessWidget {
                       final placa = propostaData['placa'] ?? 'Não informado';
                       final tipoVeiculo =
                           propostaData['tipoVeiculo'] ?? 'Não informado';
-                      final photoUrl = propostaData['photoUrl'];
 
-                      return Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Dados do Coletor Atribuído',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            if (photoUrl != null)
-                              Center(
-                                child: CircleAvatar(
-                                  backgroundImage: NetworkImage(photoUrl),
-                                  radius: 50,
+                      return Center(
+                        child: Card(
+                          margin: const EdgeInsets.all(16.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          elevation: 4,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Dados do Coletor Atribuído',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Nome: $nome',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Nome: $nome',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'CPF: $cpf',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Veículo: $veiculo',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Placa: $placa',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Tipo de Veículo: $tipoVeiculo',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                            Text(
-                              'CPF: $cpf',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            Text(
-                              'Veículo: $veiculo',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            Text(
-                              'Placa: $placa',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            Text(
-                              'Tipo de Veículo: $tipoVeiculo',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
+                          ),
                         ),
                       );
                     },

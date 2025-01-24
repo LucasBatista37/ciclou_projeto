@@ -7,6 +7,7 @@ import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.da
 import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
 import 'package:ciclou_projeto/components/collect_process/generete_button.dart';
 import 'package:ciclou_projeto/components/collect_process/status_card.dart';
+import 'package:ciclou_projeto/components/collect_shared/collect_data_form.dart';
 import 'package:ciclou_projeto/components/payment_service.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
@@ -18,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 class CollectProcessRede extends StatefulWidget {
   final DocumentSnapshot<Object?> coletaAtual;
@@ -48,6 +50,20 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
   String? _paymentStatus;
   File? _comprovantePagamento;
   double _valorTotalPago = 0.0;
+
+  final _nomeController = TextEditingController();
+  final _cpfController = TextEditingController();
+  final _placaController = TextEditingController();
+  final _veiculoController = TextEditingController();
+
+  String? _nomeError;
+  String? _cpfError;
+  String? _placaError;
+  String? _veiculoError;
+  final _cpfMaskFormatter = MaskTextInputFormatter(mask: '###.###.###-##');
+
+  final List<String> _vehicleTypes = ['Carro', 'Moto', 'Caminhão'];
+  String? _selectedVehicleType;
 
   String? _qrCodeSolicitanteBase64;
   String? _qrCodeTextSolicitante;
@@ -496,6 +512,99 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
     }
   }
 
+  Future<void> _confirmarDadosEAtualizarProposta() async {
+    setState(() {
+      _nomeError =
+          _nomeController.text.isEmpty ? 'Nome não pode ser vazio' : null;
+      _cpfError = _cpfController.text.isEmpty ? 'CPF não pode ser vazio' : null;
+      _placaError = _placaController.text.isEmpty
+          ? 'Placa do veículo não pode ser vazia'
+          : null;
+      _veiculoError = _veiculoController.text.isEmpty
+          ? 'Modelo do veículo não pode ser vazio'
+          : null;
+    });
+
+    if (_nomeError != null ||
+        _cpfError != null ||
+        _placaError != null ||
+        _veiculoError != null) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Preencha todos os campos obrigatórios.',
+      );
+      return;
+    }
+
+    try {
+      setState(() {
+        _isProcessing = true;
+      });
+
+      final propostasSnapshot = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .collection('propostas')
+          .where('status', isEqualTo: 'Aceita')
+          .get();
+
+      if (propostasSnapshot.docs.isEmpty) {
+        ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
+          context: context,
+          message: 'Nenhuma proposta aceita encontrada.',
+        );
+        return;
+      }
+
+      final propostaDocId = propostasSnapshot.docs.first.id;
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .collection('propostas')
+          .doc(propostaDocId)
+          .update({
+        'nome': _nomeController.text.trim(),
+        'cpf': _cpfController.text.trim(),
+        'placa': _placaController.text.trim(),
+        'veiculo': _veiculoController.text.trim(),
+        'tipoVeiculo': _selectedVehicleType ?? 'N/A',
+      });
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .update({
+        'statusColetorAtualizado': true,
+      });
+
+      ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
+        context: context,
+        message: 'Informações salvas com sucesso!',
+      );
+
+      final updatedColetaDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .get();
+      setState(() {
+        _coletaAtual = updatedColetaDoc;
+      });
+    } catch (e) {
+      ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
+        context: context,
+        message: 'Erro ao salvar informações do coletor.',
+      );
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_carregando) {
@@ -539,12 +648,10 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FutureBuilder<QuerySnapshot>(
+              FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
                     .collection('coletas')
                     .doc(_coletaAtual.id)
-                    .collection('propostas')
-                    .where('isShared', isEqualTo: true)
                     .get(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -554,29 +661,33 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                     return const SizedBox();
                   }
 
-                  if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      color: Colors.amber.shade100,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: const [
-                            Icon(Icons.warning, color: Colors.amber),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Esta coleta é compartilhada.',
-                                style: TextStyle(
-                                  color: Colors.amber,
-                                  fontWeight: FontWeight.bold,
+                  if (snapshot.hasData && snapshot.data != null) {
+                    final data = snapshot.data!.data() as Map<String, dynamic>?;
+
+                    if (data != null && data['isShared'] == true) {
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        color: Colors.amber.shade100,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.warning, color: Colors.amber),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Esta coleta é compartilhada.',
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    }
                   }
 
                   return const SizedBox();
@@ -865,7 +976,8 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
               // Exibe o código de confirmação
               if (_confirmationCode != null &&
-                  (data['status'] ?? '') != 'Aprovado') ...[
+                  (data['status'] ?? '') != 'Aprovado' &&
+                  (data['statusColetorAtualizado'] ?? false) == true) ...[
                 Center(
                   child: Card(
                     shape: RoundedRectangleBorder(
@@ -919,6 +1031,8 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                         _isLoading = false;
                                       });
                                     } catch (e) {
+                                      developer.log(
+                                          "Erro ao atualizar a coleta: $e");
                                       setState(() {
                                         _isLoading = false;
                                       });
@@ -953,7 +1067,8 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
               ],
               if (_confirmationCode != null &&
                   !(data['coletorACaminho'] ?? false) &&
-                  (data['status'] ?? '') != 'Aprovado') ...[
+                  (data['status'] ?? '') != 'Aprovado' &&
+                  (data['statusColetorAtualizado'] ?? false) == true) ...[
                 Center(
                   child: ElevatedButton(
                     onPressed: _isProcessing
@@ -992,6 +1107,61 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                           )
                         : const Text(
                             'Estou indo',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (_confirmationCode != null &&
+                  !(data['coletorACaminho'] ?? false) &&
+                  (data['status'] ?? '') != 'Aprovado' &&
+                  (data['statusColetorAtualizado'] ?? false) == false) ...[
+                const SizedBox(height: 16),
+                Center(
+                  child: CollectDataForm(
+                    nomeController: _nomeController,
+                    cpfController: _cpfController,
+                    placaController: _placaController,
+                    veiculoController: _veiculoController,
+                    selectedVehicleType: _selectedVehicleType,
+                    vehicleTypes: _vehicleTypes,
+                    onVehicleTypeChanged: (String? value) {
+                      setState(() {
+                        _selectedVehicleType = value;
+                      });
+                    },
+                    nomeError: _nomeError,
+                    cpfError: _cpfError,
+                    placaError: _placaError,
+                    veiculoError: _veiculoError,
+                    cpfMaskFormatter: _cpfMaskFormatter,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _isProcessing
+                        ? null
+                        : () async {
+                            await _confirmarDadosEAtualizarProposta();
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 12.0),
+                    ),
+                    child: _isProcessing
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Confirmar Dados',
                             style: TextStyle(color: Colors.white),
                           ),
                   ),

@@ -9,6 +9,7 @@ class UserModel {
   // ignore: non_constant_identifier_names
   final bool IsNet;
   final double precoFixoOleo;
+  final String cnpj; 
 
   UserModel({
     required this.userId,
@@ -21,6 +22,7 @@ class UserModel {
     // ignore: non_constant_identifier_names
     this.IsNet = false,
     this.precoFixoOleo = 0.0,
+    this.cnpj = 'CNPJ não informado', 
   });
 
   factory UserModel.fromFirestore(Map<String, dynamic> data, String id) {
@@ -38,6 +40,7 @@ class UserModel {
           : (data['precoFixoOleo'] is num)
               ? (data['precoFixoOleo'] as num).toDouble()
               : 0.0,
+      cnpj: data['cnpj'] ?? 'CNPJ não informado', 
     );
   }
 
@@ -52,6 +55,7 @@ class UserModel {
       'address': address,
       'IsNet': IsNet,
       'precoFixoOleo': precoFixoOleo.toString(),
+      'cnpj': cnpj, 
     };
   }
 }
