@@ -4,7 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
 import 'login_screen.dart';
 
 class RegisterCollectorScreen extends StatefulWidget {
@@ -34,6 +36,9 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
       TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
 
+  final FocusNode _addressFocusNode = FocusNode();
+
+  bool _isAddressValid = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
@@ -47,7 +52,13 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
   }
 
   Future<void> _registerCollector() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || !_isAddressValid) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: "Por favor, selecione um endereço válido das sugestões.",
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -176,7 +187,24 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const RegisterRequestorScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'Registrar como Solicitante',
+                      style: TextStyle(fontSize: 16, color: Colors.blue),
+                    ),
+                  ),
                   const SizedBox(height: 32),
+
                   _buildTextField(
                     'Razão Social',
                     _businessNameController,
@@ -185,6 +213,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                         : null,
                   ),
                   const SizedBox(height: 16),
+
                   _buildTextField(
                     'CNPJ',
                     _cnpjController,
@@ -198,13 +227,10 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                     inputFormatters: [cnpjMaskFormatter],
                   ),
                   const SizedBox(height: 16),
-                  _buildTextField(
-                    'Endereço completo',
-                    _addressController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira o endereço.' : null,
-                  ),
+
+                  _buildAutocompleteAddressField(),
                   const SizedBox(height: 16),
+
                   _buildTextField(
                     'Responsável',
                     _responsibleController,
@@ -213,6 +239,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                         : null,
                   ),
                   const SizedBox(height: 16),
+
                   _buildTextField(
                     'Data de Nascimento',
                     _birthDateController,
@@ -222,6 +249,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                     inputFormatters: [dateMaskFormatter],
                   ),
                   const SizedBox(height: 16),
+
                   _buildTextField(
                     'Telefone',
                     _phoneController,
@@ -230,6 +258,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                     inputFormatters: [phoneMaskFormatter],
                   ),
                   const SizedBox(height: 16),
+
                   _buildTextField(
                     'Número da Licença de Operação',
                     _licenseNumberController,
@@ -238,6 +267,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                         : null,
                   ),
                   const SizedBox(height: 16),
+
                   _buildTextField(
                     'Data de Vencimento da Licença',
                     _licenseExpiryController,
@@ -247,6 +277,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                     inputFormatters: [dateMaskFormatter],
                   ),
                   const SizedBox(height: 16),
+
                   _buildTextField(
                     'Email',
                     _emailController,
@@ -259,11 +290,15 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
+
                   _buildPasswordTextField('Senha', _passwordController, true),
                   const SizedBox(height: 16),
+
                   _buildPasswordTextField(
                       'Confirmar Senha', _confirmPasswordController, false),
                   const SizedBox(height: 32),
+
+                  // Botão de envio
                   _isLoading
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
@@ -284,6 +319,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                           ),
                         ),
                   const SizedBox(height: 16),
+
                   TextButton(
                     onPressed: () {
                       Navigator.push(
@@ -297,27 +333,54 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                       style: TextStyle(fontSize: 16, color: Colors.green),
                     ),
                   ),
-                  const Text("Ou"),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                const RegisterRequestorScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'Registrar como Solicitante',
-                      style: TextStyle(fontSize: 16, color: Colors.blue),
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAutocompleteAddressField() {
+    final googleApiKey = dotenv.env['GOOGLE_API_KEY'];
+
+    // Verifica se a chave está disponível
+    if (googleApiKey == null || googleApiKey.isEmpty) {
+      throw Exception('Google API key is not set or empty in the .env file');
+    }
+
+    _addressController.addListener(() {
+      setState(() {
+        _isAddressValid = false;
+      });
+    });
+
+    return GooglePlaceAutoCompleteTextField(
+      textEditingController: _addressController,
+      focusNode: _addressFocusNode,
+      googleAPIKey: googleApiKey, // Usa a chave validada
+      inputDecoration: InputDecoration(
+        hintText: "Endereço completo",
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+      countries: ["br"],
+      isLatLngRequired: false,
+      getPlaceDetailWithLatLng: (prediction) {},
+      itemClick: (prediction) {
+        _addressController.text = prediction.description!;
+        _addressController.selection = TextSelection.fromPosition(
+          TextPosition(offset: prediction.description!.length),
+        );
+
+        setState(() {
+          _isAddressValid = true;
+        });
+
+        FocusScope.of(context).requestFocus(FocusNode());
+      },
     );
   }
 

@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:developer' as developer;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp();
   runApp(const MyApp());
 }
@@ -52,7 +54,7 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
     FirebaseDynamicLinks.instance.onLink.listen((PendingDynamicLinkData data) {
       final Uri deepLink = data.link;
       _processDeepLink(deepLink);
-        }).onError((error) {
+    }).onError((error) {
       developer.log('Erro ao processar link dinâmico: $error');
     });
 

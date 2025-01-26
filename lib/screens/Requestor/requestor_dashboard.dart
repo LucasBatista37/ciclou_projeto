@@ -371,7 +371,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                 }
               }
 
-              final double avoidedCO2 = totalOil * 5.24;
+              final double avoidedCO2 = totalOil * 3.39;
 
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
