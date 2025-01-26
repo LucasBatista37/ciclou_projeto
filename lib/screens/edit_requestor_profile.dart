@@ -185,7 +185,21 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+
     if (pickedImage != null) {
+      final file = File(pickedImage.path);
+      final fileSizeInMB = file.lengthSync() / (1024 * 1024);
+
+      if (fileSizeInMB > 2) {
+        ScaffoldMessengerHelper.showWarning(
+          // ignore: use_build_context_synchronously
+          context: context,
+          message:
+              'O arquivo selecionado é muito grande. O tamanho máximo permitido é 2MB.',
+        );
+        return;
+      }
+
       setState(() {
         _profileImage = pickedImage;
       });
@@ -233,11 +247,9 @@ class _EditRequestorProfileState extends State<EditRequestorProfile> {
                           radius: 50,
                           backgroundColor: Colors.grey.shade300,
                           backgroundImage: _profileImage != null
-                              ? FileImage(File(_profileImage!
-                                  .path)) 
+                              ? FileImage(File(_profileImage!.path))
                               : (_profileUrl != null
-                                  ? NetworkImage(
-                                      _profileUrl!)
+                                  ? NetworkImage(_profileUrl!)
                                   : null),
                           child: (_profileImage == null && _profileUrl == null)
                               ? Text(

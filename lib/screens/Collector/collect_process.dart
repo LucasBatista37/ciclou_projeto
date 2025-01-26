@@ -155,6 +155,19 @@ class _CollectProcessState extends State<CollectProcess> {
       return;
     }
 
+    final fileSizeInMB = _comprovantePagamento!.lengthSync() /
+        (1024 * 1024); 
+    const maxFileSizeMB = 5; 
+
+    if (fileSizeInMB > maxFileSizeMB) {
+      ScaffoldMessengerHelper.showWarning(
+        context: context,
+        message:
+            'O arquivo selecionado é muito grande. O tamanho máximo permitido é ${maxFileSizeMB}MB.',
+      );
+      return;
+    }
+
     setState(() {
       _isProcessing = true;
     });

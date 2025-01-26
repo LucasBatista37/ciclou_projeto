@@ -200,6 +200,19 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       return;
     }
 
+    final fileSizeInMB = _comprovantePagamento!.lengthSync() /
+        (1024 * 1024);
+    const maxFileSizeMB = 5; 
+
+    if (fileSizeInMB > maxFileSizeMB) {
+      ScaffoldMessengerHelper.showWarning(
+        context: context,
+        message:
+            'O arquivo selecionado é muito grande. O tamanho máximo permitido é ${maxFileSizeMB}MB.',
+      );
+      return;
+    }
+
     setState(() {
       _isProcessing = true;
     });
@@ -250,7 +263,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       );
     } finally {
       // ignore: use_build_context_synchronously
-      Navigator.pop(context);
+      Navigator.pop(context); 
       setState(() {
         _isProcessing = false;
       });

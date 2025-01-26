@@ -14,11 +14,6 @@ class CertificadoService {
     required double quantidadeReal,
   }) async {
     try {
-      print('Iniciando geração de certificado para coletaId: $coletaId');
-      print('Dados da coleta recebidos: $coletaData');
-      print('Quantidade real: $quantidadeReal');
-
-      // Validar dados necessários
       if (!coletaData.containsKey('cnpj') || coletaData['cnpj'] == null) {
         throw Exception('CNPJ não está presente nos dados da coleta.');
       }
@@ -26,16 +21,11 @@ class CertificadoService {
         throw Exception('Quantidade real inválida: $quantidadeReal');
       }
 
-      // Carregar recursos
-      print('Carregando template do certificado...');
       final templatePdf = await rootBundle.load('assets/certificado.png');
 
-      print('Carregando fonte...');
       final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
       final ttf = pw.Font.ttf(fontData.buffer.asByteData());
 
-      // Criar o PDF
-      print('Criando o PDF...');
       final outputPdf = pw.Document();
       final pdfImage = pw.MemoryImage(templatePdf.buffer.asUint8List());
 
@@ -85,16 +75,10 @@ class CertificadoService {
         ),
       );
 
-      // Salvar o PDF localmente
-      print('Salvando o PDF localmente...');
       final directory = await getApplicationDocumentsDirectory();
       final localFile = File('${directory.path}/certificado_$coletaId.pdf');
       await localFile.writeAsBytes(await outputPdf.save());
 
-      print('PDF salvo com sucesso: ${localFile.path}');
-
-      // Upload do PDF para o Firebase Storage
-      print('Fazendo upload do PDF para o Firebase Storage...');
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('certificados')
@@ -103,10 +87,6 @@ class CertificadoService {
       final uploadTask = await storageRef.putFile(localFile);
       final downloadUrl = await uploadTask.ref.getDownloadURL();
 
-      print('Upload concluído. URL de download: $downloadUrl');
-
-      // Salvar informações no Firestore
-      print('Salvando informações do certificado no Firestore...');
       await FirebaseFirestore.instance
           .collection('certificados')
           .doc(coletaId)
@@ -119,13 +99,8 @@ class CertificadoService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      print('Certificado salvo no Firestore com sucesso.');
-
-      // Excluir arquivo local
       await localFile.delete();
-      print('Arquivo local excluído.');
     } catch (e) {
-      print('Erro ao gerar certificado: $e');
       throw Exception("Erro ao gerar certificado: $e");
     }
   }
