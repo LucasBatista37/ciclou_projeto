@@ -5,8 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 
 class CreateCollection extends StatefulWidget {
   final UserModel user;
@@ -49,16 +47,20 @@ class _CreateCollectionState extends State<CreateCollection> {
   @override
   void initState() {
     super.initState();
+
+    _regionController.text = widget.user.regiao;
+
+    _enderecoController.text = widget.user.address;
+
+    if (widget.user.IsNet) {
+      _chavePixController.text = 'saiahacker@gmail.com';
+    }
+
     _carregarBancos().then((bancos) {
       setState(() {
         _bancos = bancos;
       });
     });
-    if (widget.user.IsNet) {
-      _chavePixController.text = 'saiahacker@gmail.com';
-    }
-    _enderecoController.text = widget.user.address;
-    _preencherRegiao();
   }
 
   @override
@@ -245,53 +247,6 @@ class _CreateCollectionState extends State<CreateCollection> {
     );
   }
 
-  Future<void> _preencherRegiao() async {
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        permission = await Geolocator.requestPermission();
-        if (permission != LocationPermission.whileInUse &&
-            permission != LocationPermission.always) {
-          throw Exception('Permissão de localização negada');
-        }
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        // ignore: deprecated_member_use
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-
-      if (placemarks.isNotEmpty) {
-        Placemark placemark = placemarks.first;
-        String cidade = placemark.locality?.isNotEmpty == true
-            ? placemark.locality!
-            : placemark.subAdministrativeArea ?? 'Cidade desconhecida';
-        String estado = placemark.administrativeArea ?? 'Estado desconhecido';
-        String bairro = placemark.subLocality ?? 'Bairro desconhecido';
-
-        String regiao = '$bairro, $cidade, $estado';
-
-        setState(() {
-          _regionController.text = regiao;
-        });
-      } else {
-        throw Exception('Nenhum placemark encontrado.');
-      }
-    } catch (e) {
-      ScaffoldMessengerHelper.showError(
-        // ignore: use_build_context_synchronously
-        context: context,
-        message: 'Erro ao obter localização.',
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -360,15 +315,37 @@ class _CreateCollectionState extends State<CreateCollection> {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8.0),
-                    TextFormField(
-                      controller: _enderecoController,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Digite o endereço',
-                      ),
-                      onChanged: (value) {
-                        widget.user.address = value;
-                      },
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextFormField(
+                            controller: _enderecoController,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Digite o endereço',
+                            ),
+                            onChanged: (value) {
+                              widget.user.address = value;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          flex: 1,
+                          child: TextFormField(
+                            initialValue: widget.user.numero.toString(),
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Número',
+                            ),
+                            keyboardType: TextInputType.number,
+                            onChanged: (value) {
+                              widget.user.numero = int.tryParse(value) ?? 0;
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16.0),
                     const Text(

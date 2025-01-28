@@ -321,11 +321,15 @@ class CodeVerificationScreen extends StatelessWidget {
 
                       final nome = propostaData['nome'] ?? 'Não informado';
                       final cpf = propostaData['cpf'] ?? 'Não informado';
+                      final rg = propostaData['rg'] ?? 'Não informado';
                       final veiculo =
                           propostaData['veiculo'] ?? 'Não informado';
                       final placa = propostaData['placa'] ?? 'Não informado';
-                      final tipoVeiculo =
-                          propostaData['tipoVeiculo'] ?? 'Não informado';
+
+                      if ([nome, cpf, rg, veiculo, placa]
+                          .contains('Não informado')) {
+                        return const SizedBox.shrink();
+                      }
 
                       return Center(
                         child: Card(
@@ -370,6 +374,15 @@ class CodeVerificationScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
+                                  'RG: $rg',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black54,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
                                   'Veículo: $veiculo',
                                   style: const TextStyle(
                                     fontSize: 16,
@@ -380,15 +393,6 @@ class CodeVerificationScreen extends StatelessWidget {
                                 const SizedBox(height: 8),
                                 Text(
                                   'Placa: $placa',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black54,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Tipo de Veículo: $tipoVeiculo',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     color: Colors.black54,

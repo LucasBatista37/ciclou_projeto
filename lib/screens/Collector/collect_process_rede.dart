@@ -62,11 +62,12 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
   String? _veiculoError;
   final _cpfMaskFormatter = MaskTextInputFormatter(mask: '###.###.###-##');
 
-  final List<String> _vehicleTypes = ['Carro', 'Moto', 'Caminhão'];
-  String? _selectedVehicleType;
-
   String? _qrCodeSolicitanteBase64;
   String? _qrCodeTextSolicitante;
+
+  final _rgController = TextEditingController();
+  final _rgMaskFormatter = MaskTextInputFormatter(mask: '##.###.###-#');
+  String? _rgError;
 
   @override
   void initState() {
@@ -200,9 +201,8 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       return;
     }
 
-    final fileSizeInMB = _comprovantePagamento!.lengthSync() /
-        (1024 * 1024);
-    const maxFileSizeMB = 5; 
+    final fileSizeInMB = _comprovantePagamento!.lengthSync() / (1024 * 1024);
+    const maxFileSizeMB = 5;
 
     if (fileSizeInMB > maxFileSizeMB) {
       ScaffoldMessengerHelper.showWarning(
@@ -263,7 +263,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
       );
     } finally {
       // ignore: use_build_context_synchronously
-      Navigator.pop(context); 
+      Navigator.pop(context);
       setState(() {
         _isProcessing = false;
       });
@@ -580,9 +580,9 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
           .update({
         'nome': _nomeController.text.trim(),
         'cpf': _cpfController.text.trim(),
+        'rg': _rgController.text.trim(),
         'placa': _placaController.text.trim(),
         'veiculo': _veiculoController.text.trim(),
-        'tipoVeiculo': _selectedVehicleType ?? 'N/A',
       });
 
       await FirebaseFirestore.instance
@@ -1137,18 +1137,14 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                     cpfController: _cpfController,
                     placaController: _placaController,
                     veiculoController: _veiculoController,
-                    selectedVehicleType: _selectedVehicleType,
-                    vehicleTypes: _vehicleTypes,
-                    onVehicleTypeChanged: (String? value) {
-                      setState(() {
-                        _selectedVehicleType = value;
-                      });
-                    },
                     nomeError: _nomeError,
                     cpfError: _cpfError,
                     placaError: _placaError,
                     veiculoError: _veiculoError,
                     cpfMaskFormatter: _cpfMaskFormatter,
+                    rgController: _rgController,
+                    rgMaskFormatter: _rgMaskFormatter,
+                    rgError: _rgError,
                   ),
                 ),
                 const SizedBox(height: 16),

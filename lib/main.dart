@@ -13,8 +13,17 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await dotenv.load(fileName: ".env");
+
   await Firebase.initializeApp();
+
+  const isProduction = bool.fromEnvironment('dart.vm.product');
+
+  if (isProduction) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
+
   runApp(const MyApp());
 }
 

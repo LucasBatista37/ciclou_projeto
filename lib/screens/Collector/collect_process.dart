@@ -53,8 +53,9 @@ class _CollectProcessState extends State<CollectProcess> {
   String? _veiculoError;
   final _cpfMaskFormatter = MaskTextInputFormatter(mask: '###.###.###-##');
 
-  final List<String> _vehicleTypes = ['Carro', 'Moto', 'Caminhão'];
-  String? _selectedVehicleType;
+  final _rgController = TextEditingController();
+  final _rgMaskFormatter = MaskTextInputFormatter(mask: '##.###.###-#');
+  String? _rgError;
 
   @override
   void initState() {
@@ -155,9 +156,8 @@ class _CollectProcessState extends State<CollectProcess> {
       return;
     }
 
-    final fileSizeInMB = _comprovantePagamento!.lengthSync() /
-        (1024 * 1024); 
-    const maxFileSizeMB = 5; 
+    final fileSizeInMB = _comprovantePagamento!.lengthSync() / (1024 * 1024);
+    const maxFileSizeMB = 5;
 
     if (fileSizeInMB > maxFileSizeMB) {
       ScaffoldMessengerHelper.showWarning(
@@ -473,9 +473,9 @@ class _CollectProcessState extends State<CollectProcess> {
           .update({
         'nome': _nomeController.text.trim(),
         'cpf': _cpfController.text.trim(),
+        'rg': _rgController.text.trim(),
         'placa': _placaController.text.trim(),
         'veiculo': _veiculoController.text.trim(),
-        'tipoVeiculo': _selectedVehicleType ?? 'N/A',
       });
 
       await FirebaseFirestore.instance
@@ -922,18 +922,14 @@ class _CollectProcessState extends State<CollectProcess> {
                     cpfController: _cpfController,
                     placaController: _placaController,
                     veiculoController: _veiculoController,
-                    selectedVehicleType: _selectedVehicleType,
-                    vehicleTypes: _vehicleTypes,
-                    onVehicleTypeChanged: (String? value) {
-                      setState(() {
-                        _selectedVehicleType = value;
-                      });
-                    },
                     nomeError: _nomeError,
                     cpfError: _cpfError,
                     placaError: _placaError,
                     veiculoError: _veiculoError,
                     cpfMaskFormatter: _cpfMaskFormatter,
+                    rgController: _rgController,
+                    rgMaskFormatter: _rgMaskFormatter,
+                    rgError: _rgError,
                   ),
                 ),
                 const SizedBox(height: 16),

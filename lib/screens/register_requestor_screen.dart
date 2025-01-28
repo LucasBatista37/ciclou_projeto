@@ -3,10 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:google_places_flutter/google_places_flutter.dart';
 import 'register_collector_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'login_screen.dart';
 
 class RegisterRequestorScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   final TextEditingController _businessNameController = TextEditingController();
   final TextEditingController _documentController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _neighborhoodController = TextEditingController();
   final TextEditingController _responsibleController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -31,6 +33,11 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
+  final TextEditingController _regionController = TextEditingController();
+
+  final TextEditingController _numberController = TextEditingController();
+
+  bool _isRegionEditable = false;
 
   String? _selectedEstablishmentType;
   String _selectedDocumentType = 'CNPJ';
@@ -38,8 +45,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
-  final FocusNode _addressFocusNode = FocusNode();
-  bool _isAddressValid = false;
+  String sessionToken = UniqueKey().toString();
 
   final _cpfMask = MaskTextInputFormatter(mask: '###.###.###-##');
   final _cnpjMask = MaskTextInputFormatter(mask: '##.###.###/####-##');
@@ -80,10 +86,10 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
   }
 
   Future<void> _registerRequestor() async {
-    if (!_formKey.currentState!.validate() || !_isAddressValid) {
+    if (!_formKey.currentState!.validate()) {
       ScaffoldMessengerHelper.showError(
         context: context,
-        message: "Por favor, selecione um endereço válido das sugestões.",
+        message: "Por favor, preencha todos os campos obrigatórios.",
       );
       return;
     }
@@ -109,7 +115,6 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'businessName': _businessNameController.text.trim(),
           'documentType': _selectedDocumentType,
           'document': _documentController.text.trim(),
-          'address': _addressController.text.trim(),
           'responsible': _responsibleController.text.trim(),
           'phone': _phoneController.text.trim(),
           'email': _emailController.text.trim(),
@@ -120,6 +125,9 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'establishmentType': _selectedEstablishmentType,
           'IsNet': false,
           'realQuantityCollected': false,
+          'logradouro': _addressController.text.trim(),
+          'numero': _numberController.text.trim(),
+          'regiao': _regionController.text.trim(),
         });
 
         ScaffoldMessengerHelper.showSuccess(
@@ -264,7 +272,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                   const SizedBox(height: 16),
                   _buildDropdownField(),
                   const SizedBox(height: 16),
-                  _buildAutocompleteAddressField(),
+                  _buildAddressField(),
                   const SizedBox(height: 16),
                   _buildTextField(
                     'Responsável',
@@ -360,45 +368,177 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
     );
   }
 
-  Widget _buildAutocompleteAddressField() {
-    final googleApiKey = dotenv.env['GOOGLE_API_KEY'];
-
-    // Verifica se a chave está disponível
-    if (googleApiKey == null || googleApiKey.isEmpty) {
-      throw Exception('Google API key is not set or empty in the .env file');
-    }
-
-    _addressController.addListener(() {
-      setState(() {
-        _isAddressValid = false;
-      });
-    });
-
-    return GooglePlaceAutoCompleteTextField(
-      textEditingController: _addressController,
-      focusNode: _addressFocusNode,
-      googleAPIKey: googleApiKey, // Usa a chave validada
-      inputDecoration: InputDecoration(
-        hintText: "Endereço completo",
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
+  Widget _buildAddressField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          decoration: InputDecoration(
+            hintText: "Exemplo: 12345-678",
+            labelText: "CEP",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          inputFormatters: [
+            MaskTextInputFormatter(mask: '#####-###'),
+          ],
+          onChanged: (value) {
+            if (value.length == 9) {
+              _fetchAddressFromCep(value);
+            }
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Por favor, insira o CEP.';
+            }
+            if (!RegExp(r'^\d{5}-\d{3}$').hasMatch(value)) {
+              return 'CEP inválido. Use o formato 12345-678.';
+            }
+            return null;
+          },
         ),
-      ),
-      countries: ["br"],
-      isLatLngRequired: false,
-      getPlaceDetailWithLatLng: (prediction) {},
-      itemClick: (prediction) {
-        _addressController.text = prediction.description!;
-        _addressController.selection = TextSelection.fromPosition(
-          TextPosition(offset: prediction.description!.length),
-        );
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _addressController,
+          decoration: InputDecoration(
+            hintText: "Exemplo: Rua das Flores",
+            labelText: "Logradouro (Rua)",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Por favor, insira o logradouro.';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Flexible(
+              flex: 3,
+              child: TextFormField(
+                controller: _neighborhoodController,
+                readOnly: !_isRegionEditable,
+                decoration: InputDecoration(
+                  hintText: "Exemplo: Centro",
+                  labelText: "Bairro",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                onChanged: (value) {
+                  if (_isRegionEditable) {
+                    setState(() {
+                      final cidade = _city;
+                      final estado = _state;
+                      _regionController.text = "$value, $cidade - $estado";
+                    });
+                  }
+                },
+                validator: (value) {
+                  if (!_isRegionEditable) {
+                    return null;
+                  }
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o bairro.';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            Flexible(
+              flex: 2,
+              child: TextFormField(
+                controller: _numberController,
+                decoration: InputDecoration(
+                  hintText: "Exemplo: 123",
+                  labelText: "Número",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o número.';
+                  }
+                  if (!RegExp(r'^\d+$').hasMatch(value)) {
+                    return 'Número inválido. Use apenas dígitos.';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _regionController,
+          readOnly: true,
+          decoration: InputDecoration(
+            hintText: "Exemplo: Centro, São Paulo - SP",
+            labelText: "Região",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Por favor, insira a região.';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  String _city = "";
+  String _state = "";
+
+  Future<void> _fetchAddressFromCep(String cep) async {
+    final url = 'https://viacep.com.br/ws/$cep/json/';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data.containsKey('erro')) {
+          _showErrorSnackBar('CEP inválido ou não encontrado.');
+          return;
+        }
 
         setState(() {
-          _isAddressValid = true;
-        });
+          final logradouro = data["logradouro"] ?? '';
+          final bairro = data["bairro"];
+          _city = data["localidade"] ?? '';
+          _state = data["uf"] ?? '';
 
-        FocusScope.of(context).requestFocus(FocusNode());
-      },
+          _addressController.text = logradouro;
+          _neighborhoodController.text = bairro ?? '';
+          _regionController.text =
+              "${bairro ?? 'Bairro não especificado'}, $_city - $_state";
+
+          _isRegionEditable = bairro == null || bairro.isEmpty;
+        });
+      } else {
+        _showErrorSnackBar('Erro ao buscar informações do CEP.');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Erro ao conectar-se ao serviço de CEP.');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
     );
   }
 

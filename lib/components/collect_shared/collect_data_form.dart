@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'custom_text_field.dart';
-import 'custom_dropdown_field.dart';
 
 class CollectDataForm extends StatelessWidget {
   final TextEditingController nomeController;
   final TextEditingController cpfController;
   final TextEditingController placaController;
   final TextEditingController veiculoController;
-  final String? selectedVehicleType;
-  final List<String> vehicleTypes;
-  final ValueChanged<String?> onVehicleTypeChanged;
+  final TextEditingController rgController;
 
   final String? nomeError;
   final String? cpfError;
   final String? placaError;
   final String? veiculoError;
+  final String? rgError;
 
   final MaskTextInputFormatter cpfMaskFormatter;
+  final MaskTextInputFormatter rgMaskFormatter;
 
   const CollectDataForm({
     super.key,
@@ -25,20 +24,20 @@ class CollectDataForm extends StatelessWidget {
     required this.cpfController,
     required this.placaController,
     required this.veiculoController,
-    required this.selectedVehicleType,
-    required this.vehicleTypes,
-    required this.onVehicleTypeChanged,
+    required this.rgController,
+    required this.cpfMaskFormatter,
+    required this.rgMaskFormatter,
     this.nomeError,
     this.cpfError,
     this.placaError,
     this.veiculoError,
-    required this.cpfMaskFormatter,
+    this.rgError,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center, 
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const Text(
           'Insira as informações abaixo:',
@@ -48,7 +47,7 @@ class CollectDataForm extends StatelessWidget {
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 24), 
+        const SizedBox(height: 24),
         CustomTextField(
           controller: nomeController,
           label: 'Nome',
@@ -66,6 +65,15 @@ class CollectDataForm extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         CustomTextField(
+          controller: rgController,
+          label: 'RG',
+          icon: Icons.badge,
+          keyboardType: TextInputType.number,
+          errorText: rgError,
+          inputFormatters: [rgMaskFormatter],
+        ),
+        const SizedBox(height: 16),
+        CustomTextField(
           controller: placaController,
           label: 'Placa do Veículo',
           icon: Icons.directions_car,
@@ -77,14 +85,6 @@ class CollectDataForm extends StatelessWidget {
           label: 'Modelo do Veículo',
           icon: Icons.directions_car_outlined,
           errorText: veiculoError,
-        ),
-        const SizedBox(height: 16),
-        CustomDropdownField(
-          label: 'Tipo de Veículo',
-          icon: Icons.local_shipping,
-          value: selectedVehicleType,
-          items: vehicleTypes,
-          onChanged: onVehicleTypeChanged,
         ),
       ],
     );

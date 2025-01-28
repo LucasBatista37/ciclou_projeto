@@ -6,10 +6,12 @@ class UserModel {
   final String? establishmentType;
   final String pixKey;
   late final String address;
+  late final int numero; // Removido o uso de `late`
   // ignore: non_constant_identifier_names
   final bool IsNet;
   final double precoFixoOleo;
-  final String cnpj; 
+  final String cnpj;
+  final String regiao;
 
   UserModel({
     required this.userId,
@@ -19,10 +21,12 @@ class UserModel {
     this.establishmentType,
     this.pixKey = 'Pix não informado',
     this.address = 'Endereço não informado',
+    this.numero = 0, 
     // ignore: non_constant_identifier_names
     this.IsNet = false,
     this.precoFixoOleo = 0.0,
-    this.cnpj = 'CNPJ não informado', 
+    this.cnpj = 'CNPJ não informado',
+    this.regiao = 'Região não informada',
   });
 
   factory UserModel.fromFirestore(Map<String, dynamic> data, String id) {
@@ -34,13 +38,15 @@ class UserModel {
       establishmentType: data['establishmentType'],
       pixKey: data['pixKey'] ?? 'Pix não informado',
       address: data['address'] ?? 'Endereço não informado',
+      numero: data['numero'] ?? 0, 
       IsNet: data['IsNet'] ?? false,
       precoFixoOleo: (data['precoFixoOleo'] is String)
           ? double.tryParse(data['precoFixoOleo']) ?? 0.0
           : (data['precoFixoOleo'] is num)
               ? (data['precoFixoOleo'] as num).toDouble()
               : 0.0,
-      cnpj: data['cnpj'] ?? 'CNPJ não informado', 
+      cnpj: data['cnpj'] ?? 'CNPJ não informado',
+      regiao: data['regiao'] ?? 'Região não informada',
     );
   }
 
@@ -53,9 +59,11 @@ class UserModel {
       'establishmentType': establishmentType,
       'pixKey': pixKey,
       'address': address,
+      'numero': numero,
       'IsNet': IsNet,
       'precoFixoOleo': precoFixoOleo.toString(),
-      'cnpj': cnpj, 
+      'cnpj': cnpj,
+      'regiao': regiao,
     };
   }
 }
