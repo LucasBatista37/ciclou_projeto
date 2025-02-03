@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "669408211920",
-    "project_id": "ciclou-app-8f20f",
-    "storage_bucket": "ciclou-app-8f20f.firebasestorage.app"
+    "project_number": "109705244708",
+    "project_id": "ciclou-app-a0cb8",
+    "storage_bucket": "ciclou-app-a0cb8.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:669408211920:android:b5e782616e702cb8d4ffd5",
+        "mobilesdk_app_id": "1:109705244708:android:13687ff7d9254b6eeae8b1",
         "android_client_info": {
           "package_name": "com.example.ciclou_projeto"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAxWojRAlfHU1cNks9H7UBHAJUCavAF-98"
+          "current_key": "AIzaSyBHo-2Xc100ZJx-B2-CavOdKG9qoQ4xL3s"
         }
       ],
       "services": {

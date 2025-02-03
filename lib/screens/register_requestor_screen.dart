@@ -200,6 +200,20 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                     ),
                   ],
                 ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              const RegisterCollectorScreen()),
+                    );
+                  },
+                  child: const Text(
+                    'Registrar como Coletor',
+                    style: TextStyle(fontSize: 16, color: Colors.blue),
+                  ),
+                ),
                 const SizedBox(height: 32),
                 _buildTextField(
                   'Razão Social',
@@ -309,21 +323,6 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                   child: const Text(
                     'Já tem uma conta? Entrar',
                     style: TextStyle(fontSize: 16, color: Colors.green),
-                  ),
-                ),
-                const Text("Ou"),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              const RegisterCollectorScreen()),
-                    );
-                  },
-                  child: const Text(
-                    'Registrar como Coletor',
-                    style: TextStyle(fontSize: 16, color: Colors.blue),
                   ),
                 ),
               ],
