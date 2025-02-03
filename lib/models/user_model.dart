@@ -6,7 +6,7 @@ class UserModel {
   final String? establishmentType;
   final String pixKey;
   late final String address;
-  late final int numero; // Removido o uso de `late`
+  late final int numero;
   // ignore: non_constant_identifier_names
   final bool IsNet;
   final double precoFixoOleo;

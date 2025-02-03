@@ -75,7 +75,6 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
       final userId = userCredential.user?.uid;
 
       if (userId != null) {
-        // Registro no Firestore
         await FirebaseFirestore.instance
             .collection('collector')
             .doc(userId)
@@ -98,16 +97,16 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'operatingPermit': null,
           'avcb': null,
           'IsNet': false,
+          'numero': int.tryParse(_numberController.text.trim()) ?? 0,
+          'regiao': _regionController.text.trim(),
         });
 
-        // Mensagem de sucesso
         ScaffoldMessengerHelper.showSuccess(
           // ignore: use_build_context_synchronously
           context: context,
           message: 'Coletor registrado com sucesso!',
         );
 
-        // Navegação para a tela de login
         Navigator.pushReplacement(
           // ignore: use_build_context_synchronously
           context,
@@ -117,6 +116,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         );
       }
     } on FirebaseAuthException catch (e) {
+      // Tratamento de erros do Firebase Authentication
       String errorMessage;
       switch (e.code) {
         case 'email-already-in-use':
