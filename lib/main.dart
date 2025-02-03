@@ -52,7 +52,7 @@ class _DynamicLinkHandlerState extends State<DynamicLinkHandler> {
     FirebaseDynamicLinks.instance.onLink.listen((PendingDynamicLinkData data) {
       final Uri deepLink = data.link;
       _processDeepLink(deepLink);
-        }).onError((error) {
+    }).onError((error) {
       developer.log('Erro ao processar link dinâmico: $error');
     });
 

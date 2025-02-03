@@ -268,7 +268,9 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           user: widget.user,
         );
       case 3:
-        return SupportScreenCollector(user: widget.user,);
+        return SupportScreenCollector(
+          user: widget.user,
+        );
       default:
         return _buildHomeScreen();
     }
@@ -280,17 +282,22 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.lightGreen,
-              borderRadius: BorderRadius.circular(8.0),
+          if (_currentTip.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color:
+                    _currentTip == "Obrigado por se juntar à rede sustentável!"
+                        ? Colors.lightGreen
+                        : Colors.lightGreen,
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Text(
+                _currentTip,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
             ),
-            child: Text(
-              _currentTip,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
           const SizedBox(height: 16.0),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -368,6 +375,22 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
 
   Future<void> _fetchCurrentTip() async {
     try {
+      final collectorDoc = await FirebaseFirestore.instance
+          .collection('collector')
+          .doc(widget.user.userId)
+          .get();
+
+      if (collectorDoc.exists) {
+        final collectorData = collectorDoc.data() as Map<String, dynamic>;
+
+        if (collectorData['IsNet'] == true) {
+          setState(() {
+            _currentTip = "Obrigado por se juntar à rede sustentável!";
+          });
+          return;
+        }
+      }
+
       final querySnapshot = await FirebaseFirestore.instance
           .collection('tips')
           .where('isCollector', isEqualTo: true)
@@ -446,14 +469,36 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
 
         final filteredDocuments = documents.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          final isNetCollection = data['IsNetCollection'];
+          final isNetCollection = data['IsNetCollection'] ?? false;
+          final associatedCollector = data['associatedCollector'];
 
           if (isNetUser) {
-            return true;
+            return associatedCollector == widget.user.userId ||
+                !isNetCollection;
           }
 
-          return isNetCollection == false || isNetCollection == null;
+          return !isNetCollection;
         }).toList();
+
+        if (filteredDocuments.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.hourglass_empty,
+                  size: 80,
+                  color: Colors.grey,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Nenhuma solicitação disponível no momento.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        }
 
         filteredDocuments.sort((a, b) {
           final aData = a.data() as Map<String, dynamic>;

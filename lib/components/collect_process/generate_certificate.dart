@@ -14,7 +14,15 @@ class CertificadoService {
     required double quantidadeReal,
   }) async {
     try {
+      if (!coletaData.containsKey('cnpj') || coletaData['cnpj'] == null) {
+        throw Exception('CNPJ não está presente nos dados da coleta.');
+      }
+      if (quantidadeReal <= 0) {
+        throw Exception('Quantidade real inválida: $quantidadeReal');
+      }
+
       final templatePdf = await rootBundle.load('assets/certificado.png');
+
       final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
       final ttf = pw.Font.ttf(fontData.buffer.asByteData());
 
@@ -87,12 +95,11 @@ class CertificadoService {
         'userId': coletaData['userId'],
         'collectorId': FirebaseAuth.instance.currentUser?.uid,
         'requestorName': coletaData['requestorName'],
-        'downloadUrl': downloadUrl, 
+        'downloadUrl': downloadUrl,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
       await localFile.delete();
-
     } catch (e) {
       throw Exception("Erro ao gerar certificado: $e");
     }

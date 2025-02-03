@@ -6,6 +6,7 @@ import 'package:ciclou_projeto/components/collect_process/Pagamento_plataforma.d
 import 'package:ciclou_projeto/components/collect_process/comprovante_overlay.dart';
 import 'package:ciclou_projeto/components/collect_process/generate_certificate.dart';
 import 'package:ciclou_projeto/components/collect_process/status_card.dart';
+import 'package:ciclou_projeto/components/collect_shared/collect_data_form.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
 import 'package:ciclou_projeto/screens/Collector/share_collection.dart';
@@ -15,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 class CollectProcess extends StatefulWidget {
   final DocumentSnapshot<Object?> coletaAtual;
@@ -40,6 +42,20 @@ class _CollectProcessState extends State<CollectProcess> {
   String? _paymentStatus;
   File? _comprovantePagamento;
   double _valorTotalPago = 0.0;
+  final _nomeController = TextEditingController();
+  final _cpfController = TextEditingController();
+  final _placaController = TextEditingController();
+  final _veiculoController = TextEditingController();
+
+  String? _nomeError;
+  String? _cpfError;
+  String? _placaError;
+  String? _veiculoError;
+  final _cpfMaskFormatter = MaskTextInputFormatter(mask: '###.###.###-##');
+
+  final _rgController = TextEditingController();
+  final _rgMaskFormatter = MaskTextInputFormatter(mask: '##.###.###-#');
+  String? _rgError;
 
   @override
   void initState() {
@@ -136,6 +152,18 @@ class _CollectProcessState extends State<CollectProcess> {
       ScaffoldMessengerHelper.showWarning(
         context: context,
         message: 'Nenhum comprovante selecionado.',
+      );
+      return;
+    }
+
+    final fileSizeInMB = _comprovantePagamento!.lengthSync() / (1024 * 1024);
+    const maxFileSizeMB = 5;
+
+    if (fileSizeInMB > maxFileSizeMB) {
+      ScaffoldMessengerHelper.showWarning(
+        context: context,
+        message:
+            'O arquivo selecionado é muito grande. O tamanho máximo permitido é ${maxFileSizeMB}MB.',
       );
       return;
     }
@@ -390,6 +418,99 @@ class _CollectProcessState extends State<CollectProcess> {
     }
   }
 
+  Future<void> _confirmarDadosEAtualizarProposta() async {
+    setState(() {
+      _nomeError =
+          _nomeController.text.isEmpty ? 'Nome não pode ser vazio' : null;
+      _cpfError = _cpfController.text.isEmpty ? 'CPF não pode ser vazio' : null;
+      _placaError = _placaController.text.isEmpty
+          ? 'Placa do veículo não pode ser vazia'
+          : null;
+      _veiculoError = _veiculoController.text.isEmpty
+          ? 'Modelo do veículo não pode ser vazio'
+          : null;
+    });
+
+    if (_nomeError != null ||
+        _cpfError != null ||
+        _placaError != null ||
+        _veiculoError != null) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: 'Preencha todos os campos obrigatórios.',
+      );
+      return;
+    }
+
+    try {
+      setState(() {
+        _isProcessing = true;
+      });
+
+      final propostasSnapshot = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .collection('propostas')
+          .where('status', isEqualTo: 'Aceita')
+          .get();
+
+      if (propostasSnapshot.docs.isEmpty) {
+        ScaffoldMessengerHelper.showError(
+          // ignore: use_build_context_synchronously
+          context: context,
+          message: 'Nenhuma proposta aceita encontrada.',
+        );
+        return;
+      }
+
+      final propostaDocId = propostasSnapshot.docs.first.id;
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .collection('propostas')
+          .doc(propostaDocId)
+          .update({
+        'nome': _nomeController.text.trim(),
+        'cpf': _cpfController.text.trim(),
+        'rg': _rgController.text.trim(),
+        'placa': _placaController.text.trim(),
+        'veiculo': _veiculoController.text.trim(),
+      });
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .update({
+        'statusColetorAtualizado': true,
+      });
+
+      ScaffoldMessengerHelper.showSuccess(
+        // ignore: use_build_context_synchronously
+        context: context,
+        message: 'Informações salvas com sucesso!',
+      );
+
+      final updatedColetaDoc = await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(_coletaAtual.id)
+          .get();
+      setState(() {
+        _coletaAtual = updatedColetaDoc;
+      });
+    } catch (e) {
+      ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
+        context: context,
+        message: 'Erro ao salvar informações do coletor.',
+      );
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
   Future<void> _notificarSolicitante(BuildContext context) async {
     try {
       final coletaDoc = await FirebaseFirestore.instance
@@ -494,6 +615,52 @@ class _CollectProcessState extends State<CollectProcess> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('coletas')
+                    .doc(_coletaAtual.id)
+                    .get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return const SizedBox();
+                  }
+
+                  if (snapshot.hasData && snapshot.data != null) {
+                    final data = snapshot.data!.data() as Map<String, dynamic>?;
+
+                    if (data != null && data['isShared'] == true) {
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        color: Colors.amber.shade100,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.warning, color: Colors.amber),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Esta coleta é compartilhada.',
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                  }
+
+                  return const SizedBox();
+                },
+              ),
+
               ColetaInfoCard(
                 tipoEstabelecimento: data['tipoEstabelecimento'] ?? 'N/A',
                 quantidadeOleo: (data['quantidadeOleo'] ?? 'N/A').toString(),
@@ -607,7 +774,8 @@ class _CollectProcessState extends State<CollectProcess> {
 
               // Exibe o código de confirmação
               if (_confirmationCode != null &&
-                  (data['status'] ?? '') != 'Aprovado') ...[
+                  (data['status'] ?? '') != 'Aprovado' &&
+                  (data['statusColetorAtualizado'] ?? false) == true) ...[
                 Center(
                   child: Card(
                     shape: RoundedRectangleBorder(
@@ -697,7 +865,8 @@ class _CollectProcessState extends State<CollectProcess> {
               ],
               if (_confirmationCode != null &&
                   !(data['coletorACaminho'] ?? false) &&
-                  (data['status'] ?? '') != 'Aprovado') ...[
+                  (data['status'] ?? '') != 'Aprovado' &&
+                  (data['statusColetorAtualizado'] ?? false) == true) ...[
                 Center(
                   child: ElevatedButton(
                     onPressed: _isProcessing
@@ -742,49 +911,57 @@ class _CollectProcessState extends State<CollectProcess> {
                 ),
                 const SizedBox(height: 16),
               ],
-
-              // Botão Compartilhar Coleta
-              FutureBuilder<bool>(
-                future: _verificarPermissaoCompartilhar(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (snapshot.hasData && snapshot.data == true) {
-                    return Center(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CompartilharColetaScreen(
-                                coletaId: _coletaAtual.id,
-                              ),
+              if (_confirmationCode != null &&
+                  !(data['coletorACaminho'] ?? false) &&
+                  (data['status'] ?? '') != 'Aprovado' &&
+                  (data['statusColetorAtualizado'] ?? false) == false) ...[
+                const SizedBox(height: 16),
+                Center(
+                  child: CollectDataForm(
+                    nomeController: _nomeController,
+                    cpfController: _cpfController,
+                    placaController: _placaController,
+                    veiculoController: _veiculoController,
+                    nomeError: _nomeError,
+                    cpfError: _cpfError,
+                    placaError: _placaError,
+                    veiculoError: _veiculoError,
+                    cpfMaskFormatter: _cpfMaskFormatter,
+                    rgController: _rgController,
+                    rgMaskFormatter: _rgMaskFormatter,
+                    rgError: _rgError,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _isProcessing
+                        ? null
+                        : () async {
+                            await _confirmarDadosEAtualizarProposta();
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 12.0),
+                    ),
+                    child: _isProcessing
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.share, color: Colors.white),
-                        label: const Text(
-                          'Compartilhar Coleta',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ),
-                    );
-                  }
-
-                  return const SizedBox.shrink();
-                },
-              ),
-              const SizedBox(height: 16),
+                          )
+                        : const Text(
+                            'Confirmar Dados',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Pagamento Aprovado e Registro da Coleta
               if (_paymentStatus == 'approved' &&
@@ -825,7 +1002,8 @@ class _CollectProcessState extends State<CollectProcess> {
                   textColor: Colors.green,
                 ),
 
-              if (_qrCodeBase64 != null && _paymentStatus != 'approved')
+              // Botão Compartilhar Coleta e Pagamento QrCode card
+              if (_qrCodeBase64 != null && _paymentStatus != 'approved') ...[
                 PagamentoQRCodeCard(
                   qrCodeBase64: _qrCodeBase64!,
                   qrCodeText: _qrCodeText,
@@ -847,6 +1025,49 @@ class _CollectProcessState extends State<CollectProcess> {
                     );
                   },
                 ),
+                const SizedBox(height: 16),
+                FutureBuilder<bool>(
+                  future: _verificarPermissaoCompartilhar(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasData && snapshot.data == true) {
+                      return Center(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CompartilharColetaScreen(
+                                  coletaId: _coletaAtual.id,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.share, color: Colors.white),
+                          label: const Text(
+                            'Compartilhar Coleta',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return const SizedBox.shrink();
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
 
               if (_paymentStatus == 'pending')
                 StatusCard(

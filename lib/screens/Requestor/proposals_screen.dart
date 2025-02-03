@@ -358,7 +358,6 @@ class ProposalsScreen extends StatelessWidget {
         ),
       );
 
-      // Redireciona para o dashboard
       // ignore: use_build_context_synchronously
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(

@@ -53,6 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final userId = user.uid;
 
+      // 🔹 Verifica se o usuário está na coleção 'collector'
       final collectorDoc = await FirebaseFirestore.instance
           .collection('collector')
           .doc(userId)
@@ -63,7 +64,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (widget.coletaId != null) {
           Navigator.pushReplacement(
-            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
               builder: (context) => ColetorNotificacaoScreen(
@@ -74,7 +74,6 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         } else {
           Navigator.pushReplacement(
-            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
               builder: (context) => CollectorDashboard(user: userModel),
@@ -86,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
+      // 🔹 Verifica se o usuário está na coleção 'requestor'
       final requestorDoc = await FirebaseFirestore.instance
           .collection('requestor')
           .doc(userId)
@@ -95,7 +95,6 @@ class _LoginScreenState extends State<LoginScreen> {
         final userModel = UserModel.fromFirestore(requestorDoc.data()!, userId);
 
         Navigator.pushReplacement(
-          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(
             builder: (context) => RequestorDashboard(user: userModel),
@@ -128,13 +127,11 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       ScaffoldMessengerHelper.showError(
-        // ignore: use_build_context_synchronously
         context: context,
         message: errorMessage,
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
-        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro inesperado. Tente novamente.',
       );
@@ -189,11 +186,9 @@ class _LoginScreenState extends State<LoginScreen> {
               try {
                 await _auth.sendPasswordResetEmail(
                     email: emailController.text.trim());
-                // ignore: use_build_context_synchronously
                 Navigator.pop(context);
 
                 ScaffoldMessengerHelper.showSuccess(
-                  // ignore: use_build_context_synchronously
                   context: context,
                   message:
                       "E-mail de redefinição enviado! Verifique sua caixa de entrada.",
@@ -213,7 +208,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 }
 
                 ScaffoldMessengerHelper.showError(
-                  // ignore: use_build_context_synchronously
                   context: context,
                   message: errorMessage,
                 );

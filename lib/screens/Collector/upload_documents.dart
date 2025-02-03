@@ -79,7 +79,6 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
   }
 
   Future<void> _pickFile(String documentType) async {
-    // Verifica se o documento já foi enviado
     if (_isUploaded[documentType] ?? false) {
       ScaffoldMessengerHelper.showWarning(
         context: context,
@@ -95,6 +94,21 @@ class _UploadDocumentsScreenState extends State<UploadDocumentsScreen> {
 
     if (result != null && result.files.single.path != null) {
       final file = File(result.files.single.path!);
+
+      final fileSizeInMB =
+          file.lengthSync() / (1024 * 1024);
+      const maxFileSizeMB = 5; 
+
+      if (fileSizeInMB > maxFileSizeMB) {
+        ScaffoldMessengerHelper.showWarning(
+          // ignore: use_build_context_synchronously
+          context: context,
+          message:
+              'O arquivo selecionado é muito grande. O tamanho máximo permitido é ${maxFileSizeMB}MB.',
+        );
+        return;
+      }
+
       setState(() {
         _uploadedFiles[documentType] = file;
       });

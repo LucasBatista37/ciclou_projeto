@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'login_screen.dart';
 
 class RegisterCollectorScreen extends StatefulWidget {
@@ -18,7 +21,6 @@ class RegisterCollectorScreen extends StatefulWidget {
 
 class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   final TextEditingController _businessNameController = TextEditingController();
   final TextEditingController _cnpjController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -32,8 +34,12 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _neighborhoodController = TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
+  final TextEditingController _regionController = TextEditingController();
+  final TextEditingController _numberController = TextEditingController();
 
+  bool _isRegionEditable = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
@@ -47,7 +53,13 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
   }
 
   Future<void> _registerCollector() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessengerHelper.showError(
+        context: context,
+        message: "Por favor, preencha todos os campos obrigatórios.",
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -63,6 +75,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
       final userId = userCredential.user?.uid;
 
       if (userId != null) {
+        // Registro no Firestore
         await FirebaseFirestore.instance
             .collection('collector')
             .doc(userId)
@@ -87,12 +100,14 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'IsNet': false,
         });
 
+        // Mensagem de sucesso
         ScaffoldMessengerHelper.showSuccess(
           // ignore: use_build_context_synchronously
           context: context,
           message: 'Coletor registrado com sucesso!',
         );
 
+        // Navegação para a tela de login
         Navigator.pushReplacement(
           // ignore: use_build_context_synchronously
           context,
@@ -126,6 +141,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         message: errorMessage,
       );
     } catch (e) {
+      // Tratamento de erros inesperados
       ScaffoldMessengerHelper.showError(
         // ignore: use_build_context_synchronously
         context: context,
@@ -153,7 +169,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                 children: [
                   Image.asset(
                     'assets/ciclou.png',
-                    height: 350,
+                    height: 400,
                   ),
                   Column(
                     children: const [
@@ -176,6 +192,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
                       Navigator.push(
@@ -212,12 +229,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                     inputFormatters: [cnpjMaskFormatter],
                   ),
                   const SizedBox(height: 16),
-                  _buildTextField(
-                    'Endereço completo',
-                    _addressController,
-                    (value) =>
-                        value!.isEmpty ? 'Por favor, insira o endereço.' : null,
-                  ),
+                  _buildAddressField(),
                   const SizedBox(height: 16),
                   _buildTextField(
                     'Responsável',
@@ -316,6 +328,180 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAddressField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          decoration: InputDecoration(
+            hintText: "Exemplo: 12345-678",
+            labelText: "CEP",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          inputFormatters: [
+            MaskTextInputFormatter(mask: '#####-###'),
+          ],
+          onChanged: (value) {
+            if (value.length == 9) {
+              _fetchAddressFromCep(value);
+            }
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Por favor, insira o CEP.';
+            }
+            if (!RegExp(r'^\d{5}-\d{3}$').hasMatch(value)) {
+              return 'CEP inválido. Use o formato 12345-678.';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _addressController,
+          decoration: InputDecoration(
+            hintText: "Exemplo: Rua das Flores",
+            labelText: "Logradouro (Rua)",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Por favor, insira o logradouro.';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Flexible(
+              flex: 3,
+              child: TextFormField(
+                controller: _neighborhoodController,
+                readOnly: !_isRegionEditable,
+                decoration: InputDecoration(
+                  hintText: "Exemplo: Centro",
+                  labelText: "Bairro",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                onChanged: (value) {
+                  if (_isRegionEditable) {
+                    setState(() {
+                      final cidade = _city;
+                      final estado = _state;
+                      _regionController.text = "$value, $cidade - $estado";
+                    });
+                  }
+                },
+                validator: (value) {
+                  if (!_isRegionEditable) {
+                    return null;
+                  }
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o bairro.';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            Flexible(
+              flex: 2,
+              child: TextFormField(
+                controller: _numberController,
+                decoration: InputDecoration(
+                  hintText: "Exemplo: 123",
+                  labelText: "Número",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o número.';
+                  }
+                  if (!RegExp(r'^\d+$').hasMatch(value)) {
+                    return 'Número inválido. Use apenas dígitos.';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _regionController,
+          readOnly: true,
+          decoration: InputDecoration(
+            hintText: "Exemplo: Centro, São Paulo - SP",
+            labelText: "Região",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Por favor, insira a região.';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  String _city = "";
+  String _state = "";
+
+  Future<void> _fetchAddressFromCep(String cep) async {
+    final url = 'https://viacep.com.br/ws/$cep/json/';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data.containsKey('erro')) {
+          _showErrorSnackBar('CEP inválido ou não encontrado.');
+          return;
+        }
+
+        setState(() {
+          final logradouro = data["logradouro"] ?? '';
+          final bairro = data["bairro"];
+          _city = data["localidade"] ?? '';
+          _state = data["uf"] ?? '';
+
+          _addressController.text = logradouro;
+          _neighborhoodController.text = bairro ?? '';
+          _regionController.text =
+              "${bairro ?? 'Bairro não especificado'}, $_city - $_state";
+
+          _isRegionEditable = bairro == null || bairro.isEmpty;
+        });
+      } else {
+        _showErrorSnackBar('Erro ao buscar informações do CEP.');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Erro ao conectar-se ao serviço de CEP.');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
       ),
     );
   }

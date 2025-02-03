@@ -111,8 +111,10 @@ class RequestorHistoryScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            ColetaDetailsScreen(documentId: history[index].id),
+                        builder: (context) => ColetaDetailsScreen(
+                          documentId: history[index].id,
+                          requestorId: user.userId,
+                        ),
                       ),
                     );
                   },

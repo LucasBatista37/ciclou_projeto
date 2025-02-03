@@ -74,8 +74,9 @@ class _RequesterStatsScreenState extends State<RequesterStatsScreen> {
           }
 
           final totalLiters = snapshot.data ?? 0.0;
-          final double savedWater = totalLiters * 1000;
-          final double avoidedCO2 = totalLiters * 5.24;
+
+          final double savedWater = totalLiters * 25000;
+          final double avoidedCO2 = totalLiters * 3.39;
 
           return Padding(
             padding: const EdgeInsets.all(16.0),

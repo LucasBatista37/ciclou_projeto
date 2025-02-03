@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -70,6 +72,7 @@ class _SendProposalState extends State<SendProposal> {
       }
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: duplicate_ignore
         // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro ao buscar quantidade de óleo.',
@@ -145,7 +148,6 @@ class _SendProposalState extends State<SendProposal> {
 
         if (!coletaDoc.exists) {
           ScaffoldMessengerHelper.showError(
-            // ignore: use_build_context_synchronously
             context: context,
             message: 'Erro: coleta não encontrada.',
           );
@@ -169,6 +171,7 @@ class _SendProposalState extends State<SendProposal> {
           'photoUrl': widget.user.photoUrl,
           'valorTotalPago': valorTotalPago.toStringAsFixed(2),
           'isShared': false,
+          'cnpj': widget.user.cnpj,
         });
 
         await FirebaseFirestore.instance.collection('notifications').add({
@@ -184,20 +187,17 @@ class _SendProposalState extends State<SendProposal> {
         });
 
         ScaffoldMessengerHelper.showSuccess(
-          // ignore: use_build_context_synchronously
           context: context,
           message: 'Proposta enviada com sucesso!',
         );
 
         Navigator.pushReplacement(
-          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(
               builder: (context) => CollectorDashboard(user: widget.user)),
         );
       } catch (e) {
         ScaffoldMessengerHelper.showError(
-          // ignore: use_build_context_synchronously
           context: context,
           message: 'Erro ao enviar proposta.',
         );
