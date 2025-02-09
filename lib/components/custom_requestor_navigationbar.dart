@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
@@ -16,7 +17,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: onItemTapped,
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.green,
+      selectedItemColor: AppColors.green2,
       unselectedItemColor: Colors.grey,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),

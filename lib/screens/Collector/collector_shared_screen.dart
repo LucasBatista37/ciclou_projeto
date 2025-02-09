@@ -3,6 +3,7 @@ import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -119,7 +120,7 @@ class _ColetorNotificacaoScreenState extends State<ColetorNotificacaoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Detalhes da Coleta',

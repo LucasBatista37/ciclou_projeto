@@ -3,6 +3,7 @@ import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/certificates_screen.dart';
 import 'package:ciclou_projeto/screens/configuration_screen.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 
 class RequestorDrawer extends StatelessWidget {
@@ -84,7 +85,7 @@ class RequestorDrawer extends StatelessWidget {
   Widget _buildDrawerHeader() {
     return DrawerHeader(
       decoration: const BoxDecoration(
-        color: Colors.green,
+        color: AppColors.green1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

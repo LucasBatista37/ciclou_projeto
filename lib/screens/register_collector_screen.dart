@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -295,7 +296,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                       : ElevatedButton(
                           onPressed: _registerCollector,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: AppColors.green2,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),

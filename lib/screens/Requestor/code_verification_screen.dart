@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -65,7 +66,7 @@ class CodeVerificationScreen extends StatelessWidget {
                 'Verificação de Código',
                 style: TextStyle(color: Colors.white),
               ),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.green1,
               iconTheme: const IconThemeData(color: Colors.white),
               elevation: 0,
             ),

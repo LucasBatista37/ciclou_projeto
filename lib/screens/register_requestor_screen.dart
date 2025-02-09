@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -138,6 +139,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
         );
 
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
@@ -163,11 +165,13 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
       }
 
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: errorMessage,
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message:
             'Erro inesperado ao registrar solicitante. Por favor, tente novamente.',
@@ -310,7 +314,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                       : ElevatedButton(
                           onPressed: _registerRequestor,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: AppColors.green2,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),

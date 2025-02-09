@@ -4,6 +4,7 @@ import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:ciclou_projeto/screens/Collector/payment_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/send_proposal.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -40,7 +41,7 @@ class CollectorNotificationsScreen extends StatelessWidget {
         title:
             const Text('Notificações', style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),

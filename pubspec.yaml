@@ -71,17 +71,17 @@ dependencies:
 
 flutter_native_splash:
   color: "#02652b"
-  image: "assets/app/splash.png"
+  image: "assets/app/splash-ciclou.png"
   android: true
   ios: true
 
 flutter_icons:
-  image_path: "assets/app/icon.png"
+  image_path: "assets/app/icon-ciclou.png"
   ios: true
   remove_alpha_ios: true
   android: "launcher_icon"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/app/icon-android.png"
+  adaptive_icon_foreground: "assets/app/android-ciclou.png"
 
 dev_dependencies:
   flutter_test:

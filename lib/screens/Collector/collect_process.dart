@@ -10,6 +10,7 @@ import 'package:ciclou_projeto/components/collect_shared/collect_data_form.dart'
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
 import 'package:ciclou_projeto/screens/Collector/share_collection.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -596,7 +597,7 @@ class _CollectProcessState extends State<CollectProcess> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Processo de Coleta',

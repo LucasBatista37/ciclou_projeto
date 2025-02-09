@@ -3,6 +3,7 @@ import 'package:ciclou_projeto/components/generate_payment_screen.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -26,7 +27,7 @@ class ProposalsScreen extends StatelessWidget {
           'Propostas para $solicitationTitle',
           style: const TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),

@@ -3,6 +3,7 @@ import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_shared_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -64,6 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (widget.coletaId != null) {
           Navigator.pushReplacement(
+            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
               builder: (context) => ColetorNotificacaoScreen(
@@ -74,6 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         } else {
           Navigator.pushReplacement(
+            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
               builder: (context) => CollectorDashboard(user: userModel),
@@ -95,6 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final userModel = UserModel.fromFirestore(requestorDoc.data()!, userId);
 
         Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
           context,
           MaterialPageRoute(
             builder: (context) => RequestorDashboard(user: userModel),
@@ -127,11 +131,13 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: errorMessage,
       );
     } catch (e) {
       ScaffoldMessengerHelper.showError(
+        // ignore: use_build_context_synchronously
         context: context,
         message: 'Erro inesperado. Tente novamente.',
       );
@@ -186,9 +192,11 @@ class _LoginScreenState extends State<LoginScreen> {
               try {
                 await _auth.sendPasswordResetEmail(
                     email: emailController.text.trim());
+                // ignore: use_build_context_synchronously
                 Navigator.pop(context);
 
                 ScaffoldMessengerHelper.showSuccess(
+                  // ignore: use_build_context_synchronously
                   context: context,
                   message:
                       "E-mail de redefinição enviado! Verifique sua caixa de entrada.",
@@ -208,6 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 }
 
                 ScaffoldMessengerHelper.showError(
+                  // ignore: use_build_context_synchronously
                   context: context,
                   message: errorMessage,
                 );
@@ -273,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     : ElevatedButton(
                         onPressed: _login,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: AppColors.green2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
                           ),

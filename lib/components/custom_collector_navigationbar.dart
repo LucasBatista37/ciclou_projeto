@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +21,7 @@ class CollectorBottomNavigationBar extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: onItemTapped,
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.green,
+      selectedItemColor: AppColors.green2,
       unselectedItemColor: Colors.grey,
       items: [
         const BottomNavigationBarItem(

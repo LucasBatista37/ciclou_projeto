@@ -14,6 +14,7 @@ import 'package:ciclou_projeto/components/custom_requestor_navigationbar.dart';
 import 'package:ciclou_projeto/screens/Requestor/create_collection_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_history_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 
 class RequestorDashboard extends StatefulWidget {
   final UserModel user;
@@ -49,7 +50,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         elevation: 0,
         leading: GestureDetector(
           onTap: () {
@@ -311,9 +312,10 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: _currentTip == "Obrigado por usar o nosso app!"
-                    ? Colors.lightGreen
-                    : Colors.lightGreen,
+                color:
+                    _currentTip == "Obrigado por se juntar à rede sustentável!"
+                        ? Colors.lightGreen
+                        : Colors.lightGreen,
                 borderRadius: BorderRadius.circular(8.0),
               ),
               child: Text(
@@ -327,7 +329,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildQuickActionButton(
-                  Icons.add_circle, 'Solicitar Coleta', Colors.green),
+                  Icons.add_circle, 'Solicitar Coleta', AppColors.green1),
               _buildQuickActionButton(Icons.history, 'Histórico', Colors.blue),
               _buildQuickActionButton(
                   Icons.bar_chart, 'Relatórios', Colors.orange),
@@ -386,10 +388,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
-                      'CO₂ Evitado',
-                      '${avoidedCO2.toStringAsFixed(0)} Kg',
-                      Colors.green,
-                    ),
+                        'CO₂ Evitado',
+                        '${avoidedCO2.toStringAsFixed(0)} Kg',
+                        AppColors.green2),
                   ),
                 ],
               );
