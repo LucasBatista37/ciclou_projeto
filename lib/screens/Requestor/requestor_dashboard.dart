@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/code_verification_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/collector_rating_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/comprovante_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_stats_screen.dart';
@@ -446,42 +447,25 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
   }
 
   Widget _buildSolicitationsList() {
-    final isNetUser = widget.user.IsNet;
-
-    Query query = FirebaseFirestore.instance
-        .collection('coletas')
-        .where('userId', isEqualTo: widget.user.userId);
-
-    if (isNetUser) {
-      query = query
-          .where('status', whereIn: ['Pendente', 'Em andamento', 'Aprovado']);
-    } else {
-      query = query.where('comprovante', isEqualTo: false);
-    }
-
     return StreamBuilder<QuerySnapshot>(
-      stream: query.orderBy('createdAt', descending: true).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('coletas')
+          .where('userId', isEqualTo: widget.user.userId)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-
         if (snapshot.hasError) {
-          return const Center(
-            child: Text('Erro ao carregar solicitações.'),
-          );
+          return const Center(child: Text('Erro ao carregar solicitações.'));
         }
-
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.hourglass_empty,
-                  size: 80,
-                  color: Colors.grey,
-                ),
+                Icon(Icons.hourglass_empty, size: 80, color: Colors.grey),
                 SizedBox(height: 16),
                 Text(
                   'Nenhuma solicitação ativa no momento.',
@@ -492,9 +476,35 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           );
         }
 
-        final documents = snapshot.data!.docs;
+        final allDocs = snapshot.data!.docs;
+
+        final filteredDocs = allDocs.where((docSnap) {
+          final data = docSnap.data() as Map<String, dynamic>;
+          final bool comprovante = data['comprovante'] ?? false;
+          final bool rating =
+              data['rating'] ?? true; 
+          final status = data['status'] ?? '';
+
+          if (widget.user.IsNet) {
+            final allowed = ['Pendente', 'Em andamento', 'Aprovado'];
+            if (allowed.contains(status)) return true;
+
+            if (!comprovante || !rating) return true;
+            return false;
+          } else {
+
+            return (!comprovante || !rating);
+          }
+        }).toList();
+
+        if (filteredDocs.isEmpty) {
+          return const Center(
+            child: Text('Nenhuma solicitação ativa no momento.'),
+          );
+        }
+
         final itemCount =
-            documents.length < 3 || _showAll ? documents.length : 3;
+            filteredDocs.length < 3 || _showAll ? filteredDocs.length : 3;
 
         return Column(
           children: [
@@ -503,8 +513,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: itemCount,
               itemBuilder: (context, index) {
-                final data = documents[index].data() as Map<String, dynamic>;
-                final documentId = documents[index].id;
+                final docSnap = filteredDocs[index];
+                final data = docSnap.data() as Map<String, dynamic>;
+                final documentId = docSnap.id;
 
                 return _buildSolicitationCard(
                   data['tipoEstabelecimento'] ?? 'N/A',
@@ -514,7 +525,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                 );
               },
             ),
-            if (documents.length > 3)
+            if (filteredDocs.length > 3)
               TextButton(
                 onPressed: () {
                   setState(() {
@@ -586,15 +597,47 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             }
 
             return GestureDetector(
-              onTap: () {
+              onTap: () async {
                 if (status == 'Finalizada') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ComprovanteVerificationScreen(documentId: documentId),
-                    ),
-                  );
+                  // Carrega dados dessa coleta para verificar os campos 'comprovante' e 'rating'
+                  final docSnap = await FirebaseFirestore.instance
+                      .collection('coletas')
+                      .doc(documentId)
+                      .get();
+
+                  if (!docSnap.exists) return; // Se não existir, não faz nada
+
+                  final docData = docSnap.data() as Map<String, dynamic>;
+
+                  final bool hasComprovante =
+                      (docData['comprovante'] ?? false) == true;
+                  final bool hasRating = (docData['rating'] ?? false) == true;
+
+                  // Prioridade: se 'comprovante' for false, vai para ComprovanteVerificationScreen
+                  if (!hasComprovante) {
+                    Navigator.push(
+                      // ignore: use_build_context_synchronously
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ComprovanteVerificationScreen(
+                            documentId: documentId),
+                      ),
+                    );
+                  } else if (!hasRating) {
+                    Navigator.push(
+                      // ignore: use_build_context_synchronously
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CollectorProposalRatingScreen(
+                          coletaId: documentId,
+                        ),
+                      ),
+                    );
+                  }
+                  // Caso já tenha comprovante e rating, pode decidir se não faz nada ou abre outra tela...
+                  else {
+                    // Exemplo: ScaffoldMessengerHelper.showWarning(context: context, message: 'Coleta já concluída com comprovante e rating.');
+                  }
                 } else if (status == 'Em andamento' || status == 'Aprovado') {
                   Navigator.push(
                     context,

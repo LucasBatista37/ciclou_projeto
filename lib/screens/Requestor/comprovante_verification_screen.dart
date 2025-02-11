@@ -1,5 +1,5 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
-import 'package:ciclou_projeto/screens/Requestor/verificacao_concluida_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/collector_rating_screen.dart';
 import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +26,7 @@ class ComprovanteVerificationScreen extends StatelessWidget {
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return Scaffold(
             appBar: AppBar(
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.green1,
               centerTitle: true,
               title: const Text(
                 'Verificação de Comprovante',
@@ -72,7 +72,7 @@ class ComprovanteVerificationScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.green1,
             centerTitle: true,
             title: const Text(
               'Verificação de Comprovante',
@@ -149,7 +149,7 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                             .doc(documentId)
                             .update({
                           'comprovanteStatus': 'Inválido',
-                          'comprovante': true
+                          'comprovante': true,
                         });
 
                         ScaffoldMessengerHelper.showWarning(
@@ -158,12 +158,23 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                           message: 'Comprovante marcado como inválido.',
                         );
 
+                        final querySnapshot = await FirebaseFirestore.instance
+                            .collection('coletas')
+                            .doc(documentId)
+                            .collection('propostas')
+                            .where('status', isEqualTo: 'Aceita')
+                            .limit(1)
+                            .get();
+
+                        if (querySnapshot.docs.isNotEmpty) {}
+
                         Navigator.pushReplacement(
                           // ignore: use_build_context_synchronously
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const VerificacaoConcluidaScreen(),
+                            builder: (_) => CollectorProposalRatingScreen(
+                              coletaId: documentId,
+                            ),
                           ),
                         );
                       },
@@ -188,7 +199,7 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                             .doc(documentId)
                             .update({
                           'comprovanteStatus': 'Válido',
-                          'comprovante': true
+                          'comprovante': true,
                         });
 
                         ScaffoldMessengerHelper.showSuccess(
@@ -197,12 +208,23 @@ class ComprovanteVerificationScreen extends StatelessWidget {
                           message: 'Comprovante marcado como válido!',
                         );
 
+                        final querySnapshot = await FirebaseFirestore.instance
+                            .collection('coletas')
+                            .doc(documentId)
+                            .collection('propostas')
+                            .where('status', isEqualTo: 'Aceita')
+                            .limit(1)
+                            .get();
+
+                        if (querySnapshot.docs.isNotEmpty) {}
+
                         Navigator.pushReplacement(
                           // ignore: use_build_context_synchronously
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const VerificacaoConcluidaScreen(),
+                            builder: (_) => CollectorProposalRatingScreen(
+                              coletaId: documentId,
+                            ),
                           ),
                         );
                       },

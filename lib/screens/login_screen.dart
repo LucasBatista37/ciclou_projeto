@@ -30,8 +30,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, preencha todos os campos.')),
+      ScaffoldMessengerHelper.showWarning(
+        // ignore: use_build_context_synchronously
+        context: context,
+        message: 'Por favor, preencha todos os campos.',
       );
       return;
     }
@@ -88,7 +90,6 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // 🔹 Verifica se o usuário está na coleção 'requestor'
       final requestorDoc = await FirebaseFirestore.instance
           .collection('requestor')
           .doc(userId)
@@ -122,11 +123,15 @@ class _LoginScreenState extends State<LoginScreen> {
         case 'invalid-email':
           errorMessage = 'Formato de e-mail inválido. Por favor, corrija.';
           break;
+        case 'invalid-credential':
+          errorMessage = 'Credenciais inválidas ou expiradas.';
+          break;
+        // Caso você use verificação de e-mail, por exemplo:
         case 'email-nao-verificado':
-          errorMessage = e.message!;
+          errorMessage = e.message ?? 'Seu e-mail ainda não foi verificado.';
           break;
         default:
-          errorMessage = 'Erro inesperado. Tente novamente.';
+          errorMessage = e.message ?? 'Ocorreu um erro inesperado.';
           break;
       }
 
@@ -242,7 +247,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 40),
                 Image.asset(
                   'assets/ciclou.png',
-                  height: 400,
+                  height: 300,
+                  width: 300,
                 ),
                 Column(
                   children: const [
@@ -252,14 +258,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.green,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'O app de coleta de óleo que você precisa.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
                       ),
                     ),
                   ],

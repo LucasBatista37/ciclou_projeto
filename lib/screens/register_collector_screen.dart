@@ -170,7 +170,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                 children: [
                   Image.asset(
                     'assets/ciclou.png',
-                    height: 400,
+                    height: 300,
+                    width: 300,
                   ),
                   Column(
                     children: const [

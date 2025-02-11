@@ -172,6 +172,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           'coletorACaminho': false,
           'comprovante': false,
           'informacoesColetorInseridas': false,
+          'rating': false,
         };
 
         if (widget.user.precoFixoOleo > 0.0) {

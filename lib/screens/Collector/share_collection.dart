@@ -48,8 +48,8 @@ class _CompartilharColetaScreenState extends State<CompartilharColetaScreen> {
     try {
       final DynamicLinkParameters parameters = DynamicLinkParameters(
         link: Uri.parse(
-            'https://ciclouprojeto.page.link/coleta?coletaId=${widget.coletaId}'),
-        uriPrefix: 'https://ciclouprojeto.page.link',
+            'https://ciclouprojetoproducao.page.link/coleta?coletaId=${widget.coletaId}'),
+        uriPrefix: 'https://ciclouprojetoproducao.page.link',
         androidParameters: AndroidParameters(
           packageName: 'com.example.ciclou_projeto',
           minimumVersion: 1,

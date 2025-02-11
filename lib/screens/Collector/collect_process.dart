@@ -448,6 +448,16 @@ class _CollectProcessState extends State<CollectProcess> {
         _isProcessing = true;
       });
 
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Usuário não autenticado.',
+        );
+        return;
+      }
+      final userId = currentUser.uid;
+
       final propostasSnapshot = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -466,6 +476,7 @@ class _CollectProcessState extends State<CollectProcess> {
 
       final propostaDocId = propostasSnapshot.docs.first.id;
 
+      // 👉 Atualiza a subcoleção com o ID do usuário (coletor)
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -477,6 +488,7 @@ class _CollectProcessState extends State<CollectProcess> {
         'rg': _rgController.text.trim(),
         'placa': _placaController.text.trim(),
         'veiculo': _veiculoController.text.trim(),
+        'coletorId': userId,
       });
 
       await FirebaseFirestore.instance

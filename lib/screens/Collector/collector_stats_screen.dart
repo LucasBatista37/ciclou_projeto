@@ -69,8 +69,8 @@ class _CollectorStatsScreenState extends State<CollectorStatsScreen> {
 
           double oilPerMonth = totalLiters / 12;
           double oilPerDay = totalLiters / 365;
-          double savedWater = totalLiters * 25000; 
-          double avoidedCO2 = totalLiters * 3.39; 
+          double savedWater = totalLiters * 25000;
+          double avoidedCO2 = totalLiters * 3.39;
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
