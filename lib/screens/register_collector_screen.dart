@@ -76,6 +76,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
       final userId = userCredential.user?.uid;
 
       if (userId != null) {
+        await userCredential.user!.sendEmailVerification();
+
         await FirebaseFirestore.instance
             .collection('collector')
             .doc(userId)
@@ -117,7 +119,6 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      // Tratamento de erros do Firebase Authentication
       String errorMessage;
       switch (e.code) {
         case 'email-already-in-use':
@@ -142,7 +143,6 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         message: errorMessage,
       );
     } catch (e) {
-      // Tratamento de erros inesperados
       ScaffoldMessengerHelper.showError(
         // ignore: use_build_context_synchronously
         context: context,
@@ -205,7 +205,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                       );
                     },
                     child: const Text(
-                      'Registrar como Solicitante',
+                      'Quero me registrar como Solicitante',
                       style: TextStyle(fontSize: 16, color: Colors.blue),
                     ),
                   ),

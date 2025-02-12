@@ -21,7 +21,7 @@ class CollectorProposalRatingScreen extends StatefulWidget {
 class _CollectorProposalRatingScreenState
     extends State<CollectorProposalRatingScreen> {
   bool _isLoading = false;
-  int _rating = 0; 
+  int _rating = 0;
   final TextEditingController _commentController = TextEditingController();
 
   Future<void> _sendRating({
@@ -48,26 +48,24 @@ class _CollectorProposalRatingScreenState
     setState(() => _isLoading = true);
 
     try {
-      final businessName = collectorData['businessName'] ?? '';
-      final cnpj = collectorData['cnpj'] ?? '';
-      final phone = collectorData['phone'] ?? '';
-      final address = collectorData['address'] ?? '';
-      final responsible = collectorData['responsible'] ?? '';
-      final userType = collectorData['userType'] ?? 'Coletor';
-
       await FirebaseFirestore.instance.collection('ratings').add({
         'collectorId': collectorId,
-        'businessName': businessName,
-        'cnpj': cnpj,
-        'phone': phone,
-        'address': address,
-        'responsible': responsible,
-        'userType': userType,
+        'businessName': collectorData['businessName'] ?? '',
+        'cnpj': collectorData['cnpj'] ?? '',
+        'phone': collectorData['phone'] ?? '',
+        'address': collectorData['address'] ?? '',
+        'responsible': collectorData['responsible'] ?? '',
+        'userType': collectorData['userType'] ?? 'Coletor',
         'rating': _rating,
         'feedback': _commentController.text.trim(),
         'ratedBy': currentUser.uid,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      await FirebaseFirestore.instance
+          .collection('coletas')
+          .doc(widget.coletaId)
+          .update({'rating': true});
 
       ScaffoldMessengerHelper.showSuccess(
         // ignore: use_build_context_synchronously
@@ -76,7 +74,7 @@ class _CollectorProposalRatingScreenState
       );
 
       if (!mounted) return;
-      Navigator.pop(context); 
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessengerHelper.showError(
@@ -109,7 +107,8 @@ class _CollectorProposalRatingScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Avaliar Coletor', style: TextStyle(color: Colors.white)),
+        title: const Text('Avaliar Coletor',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.green1,
         centerTitle: true,
         leading: IconButton(
@@ -188,10 +187,8 @@ class _CollectorProposalRatingScreenState
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 20),
-
                       _buildStarRating(),
                       const SizedBox(height: 20),
-
                       TextField(
                         controller: _commentController,
                         maxLines: 5,
@@ -203,12 +200,12 @@ class _CollectorProposalRatingScreenState
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12.0),
-                            borderSide: const BorderSide(color: Colors.green, width: 2),
+                            borderSide:
+                                const BorderSide(color: Colors.green, width: 2),
                           ),
                         ),
                       ),
                       const SizedBox(height: 30),
-
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -226,10 +223,12 @@ class _CollectorProposalRatingScreenState
                             ),
                           ),
                           child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
                               : const Text(
                                   'Enviar Avaliação',
-                                  style: TextStyle(fontSize: 16, color: Colors.white),
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.white),
                                 ),
                         ),
                       ),

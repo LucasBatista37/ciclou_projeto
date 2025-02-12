@@ -109,6 +109,8 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
       final user = userCredential.user;
 
       if (user != null) {
+        await user.sendEmailVerification();
+
         await FirebaseFirestore.instance
             .collection('requestor')
             .doc(user.uid)
@@ -134,8 +136,8 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
         ScaffoldMessengerHelper.showSuccess(
           // ignore: use_build_context_synchronously
           context: context,
-          message:
-              'Cadastro realizado com sucesso! Verifique seu e-mail antes de fazer login.',
+          message: 'Cadastro realizado com sucesso! '
+              'Verifique seu e-mail antes de fazer login.',
         );
 
         Navigator.pushReplacement(
@@ -232,7 +234,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                       );
                     },
                     child: const Text(
-                      'Registrar como Coletor',
+                      'Quero me registrar como Coletor',
                       style: TextStyle(fontSize: 16, color: Colors.blue),
                     ),
                   ),

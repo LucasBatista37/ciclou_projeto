@@ -54,9 +54,16 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('UID do usuário não encontrado.');
       }
 
+      await user.reload();
+      if (!user.emailVerified) {
+        throw FirebaseAuthException(
+          code: 'email-nao-verificado',
+          message: 'Por favor, verifique seu e-mail antes de fazer login.',
+        );
+      }
+
       final userId = user.uid;
 
-      // 🔹 Verifica se o usuário está na coleção 'collector'
       final collectorDoc = await FirebaseFirestore.instance
           .collection('collector')
           .doc(userId)
@@ -126,7 +133,6 @@ class _LoginScreenState extends State<LoginScreen> {
         case 'invalid-credential':
           errorMessage = 'Credenciais inválidas ou expiradas.';
           break;
-        // Caso você use verificação de e-mail, por exemplo:
         case 'email-nao-verificado':
           errorMessage = e.message ?? 'Seu e-mail ainda não foi verificado.';
           break;

@@ -481,8 +481,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
         final filteredDocs = allDocs.where((docSnap) {
           final data = docSnap.data() as Map<String, dynamic>;
           final bool comprovante = data['comprovante'] ?? false;
-          final bool rating =
-              data['rating'] ?? true; 
+          final bool rating = data['rating'] ?? true;
           final status = data['status'] ?? '';
 
           if (widget.user.IsNet) {
@@ -492,7 +491,6 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             if (!comprovante || !rating) return true;
             return false;
           } else {
-
             return (!comprovante || !rating);
           }
         }).toList();
@@ -599,13 +597,12 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             return GestureDetector(
               onTap: () async {
                 if (status == 'Finalizada') {
-                  // Carrega dados dessa coleta para verificar os campos 'comprovante' e 'rating'
                   final docSnap = await FirebaseFirestore.instance
                       .collection('coletas')
                       .doc(documentId)
                       .get();
 
-                  if (!docSnap.exists) return; // Se não existir, não faz nada
+                  if (!docSnap.exists) return;
 
                   final docData = docSnap.data() as Map<String, dynamic>;
 
@@ -613,7 +610,6 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                       (docData['comprovante'] ?? false) == true;
                   final bool hasRating = (docData['rating'] ?? false) == true;
 
-                  // Prioridade: se 'comprovante' for false, vai para ComprovanteVerificationScreen
                   if (!hasComprovante) {
                     Navigator.push(
                       // ignore: use_build_context_synchronously
