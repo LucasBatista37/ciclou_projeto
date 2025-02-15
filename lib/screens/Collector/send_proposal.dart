@@ -168,6 +168,7 @@ class _SendProposalState extends State<SendProposal> {
           'criadoEm': FieldValue.serverTimestamp(),
           'tempoMaximoColeta': _tempoMaximoSelecionado,
           'collectorName': widget.user.responsible,
+          'collectorEmail': widget.user.email,
           'collectorId': widget.user.userId,
           'photoUrl': widget.user.photoUrl,
           'valorTotalPago': valorTotalPago.toStringAsFixed(2),

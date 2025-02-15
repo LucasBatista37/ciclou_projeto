@@ -4,6 +4,7 @@ import 'package:ciclou_projeto/screens/Collector/upload_documents.dart';
 import 'package:ciclou_projeto/screens/Requestor/suporte_screen_requestor.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
 import 'package:ciclou_projeto/screens/edit_requestor_profile.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -103,7 +104,7 @@ class PerfilConfiguracoesScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.green1,
             centerTitle: true,
             title: const Text(
               'Perfil e Configurações',

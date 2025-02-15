@@ -107,7 +107,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         ScaffoldMessengerHelper.showSuccess(
           // ignore: use_build_context_synchronously
           context: context,
-          message: 'Coletor registrado com sucesso!',
+          message: 'Cadastro realizado com sucesso! '
+              'Verifique seu e-mail antes de fazer login.',
         );
 
         Navigator.pushReplacement(

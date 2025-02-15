@@ -138,6 +138,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                       MaterialPageRoute(
                         builder: (context) => RequestorNotificationsScreen(
                           requestorId: widget.user.userId,
+                          user: widget.user,
                         ),
                       ),
                     );
@@ -157,6 +158,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                         MaterialPageRoute(
                           builder: (context) => RequestorNotificationsScreen(
                             requestorId: widget.user.userId,
+                            user: widget.user,
                           ),
                         ),
                       );
@@ -629,17 +631,15 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                         ),
                       ),
                     );
-                  }
-                  // Caso já tenha comprovante e rating, pode decidir se não faz nada ou abre outra tela...
-                  else {
-                    // Exemplo: ScaffoldMessengerHelper.showWarning(context: context, message: 'Coleta já concluída com comprovante e rating.');
-                  }
+                  } else {}
                 } else if (status == 'Em andamento' || status == 'Aprovado') {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          CodeVerificationScreen(documentId: documentId),
+                      builder: (context) => CodeVerificationScreen(
+                        documentId: documentId,
+                        user: widget.user,
+                      ),
                     ),
                   );
                 } else {

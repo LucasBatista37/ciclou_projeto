@@ -44,6 +44,7 @@ class PaymentScreen extends StatelessWidget {
         user: user,
         documentId: documentId,
         proposalId: proposalId,
+        payerEmail: user.email, 
       );
 
       // ignore: use_build_context_synchronously
@@ -108,6 +109,7 @@ Future<Map<String, dynamic>?> generateFixedPixPayment({
   required String amount,
   required UserModel user,
   required String documentId,
+  required String payerEmail,
   required String proposalId,
 }) async {
   const String endpoint =
@@ -121,10 +123,9 @@ Future<Map<String, dynamic>?> generateFixedPixPayment({
       body: jsonEncode({
         'amount': double.parse(amount),
         'description': description,
-        'payerEmail': user.email,
+        'payerEmail': payerEmail,
       }),
     );
-
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);

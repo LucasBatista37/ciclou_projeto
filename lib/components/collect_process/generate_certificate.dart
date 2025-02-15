@@ -14,9 +14,6 @@ class CertificadoService {
     required double quantidadeReal,
   }) async {
     try {
-      if (!coletaData.containsKey('cnpj') || coletaData['cnpj'] == null) {
-        throw Exception('CNPJ não está presente nos dados da coleta.');
-      }
       if (quantidadeReal <= 0) {
         throw Exception('Quantidade real inválida: $quantidadeReal');
       }
@@ -49,7 +46,7 @@ class CertificadoService {
                   left: 99.5,
                   top: 314.2,
                   child: pw.Text(
-                    '${coletaData['cnpj'] ?? 'N/A'}',
+                    '${coletaData['document'] ?? 'N/A'}',
                     style: pw.TextStyle(font: ttf, fontSize: 18),
                   ),
                 ),

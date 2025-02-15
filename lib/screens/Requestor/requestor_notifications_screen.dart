@@ -9,8 +9,10 @@ import 'package:flutter/material.dart';
 
 class RequestorNotificationsScreen extends StatelessWidget {
   final String requestorId;
+  final UserModel user;
 
-  const RequestorNotificationsScreen({super.key, required this.requestorId});
+  const RequestorNotificationsScreen(
+      {super.key, required this.requestorId, required this.user});
 
   void _markNotificationsAsRead() {
     FirebaseFirestore.instance
@@ -230,6 +232,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
               MaterialPageRoute(
                 builder: (context) => CodeVerificationScreen(
                   documentId: coletaId,
+                  user: user,
                 ),
               ),
             );

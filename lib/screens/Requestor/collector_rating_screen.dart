@@ -178,7 +178,7 @@ class _CollectorProposalRatingScreenState
                   child: Column(
                     children: [
                       Text(
-                        'Avaliar: $collectorName',
+                        'Avalie sua coleta: $collectorName',
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,

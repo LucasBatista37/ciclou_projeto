@@ -83,16 +83,14 @@ class ProposalsScreen extends StatelessWidget {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const SizedBox
-                      .shrink(); // Não exibe nada enquanto carrega
+                  return const SizedBox.shrink();
                 }
 
                 final coletaData =
                     snapshot.data!.data() as Map<String, dynamic>?;
 
                 if (coletaData?['status'] == 'Em andamento') {
-                  return const SizedBox
-                      .shrink(); // Oculta o botão se a coleta está em andamento
+                  return const SizedBox.shrink();
                 }
 
                 return ElevatedButton(
@@ -407,6 +405,7 @@ class ProposalsScreen extends StatelessWidget {
 
       final collectorId = proposalData['collectorId'];
       final collectorName = proposalData['collectorName'];
+      final collectorEmail = proposalData['collectorEmail'];
       final precoPorLitro = proposalData['precoPorLitro'];
 
       final amount = _calculateAmount(double.parse(quantityOleo.toString()));
@@ -423,8 +422,8 @@ class ProposalsScreen extends StatelessWidget {
         documentId,
       );
 
-      await _generateQRCodes(
-          coletaData, proposalData, documentId, proposalId, amount);
+      await _generateQRCodes(coletaData, proposalData, documentId, proposalId,
+          amount, collectorEmail);
 
       ScaffoldMessengerHelper.showSuccess(
         // ignore: use_build_context_synchronously
@@ -488,15 +487,18 @@ class ProposalsScreen extends StatelessWidget {
   }
 
   Future<void> _generateQRCodes(
-      Map<String, dynamic> coletaData,
-      Map<String, dynamic> proposalData,
-      String documentId,
-      String proposalId,
-      double amount) async {
+    Map<String, dynamic> coletaData,
+    Map<String, dynamic> proposalData,
+    String documentId,
+    String proposalId,
+    double amount,
+    String collectorEmail,
+  ) async {
     final principalQrCodeData = await generateFixedPixPayment(
       amount: amount.toString(),
       user: user,
       documentId: documentId,
+      payerEmail: collectorEmail,
       proposalId: proposalId,
     );
 
@@ -522,6 +524,7 @@ class ProposalsScreen extends StatelessWidget {
         final solicitanteQrCodeData = await generateFixedPixPayment(
           amount: valorTotalPago,
           user: user,
+          payerEmail: collectorEmail,
           documentId: documentId,
           proposalId: proposalId,
         );

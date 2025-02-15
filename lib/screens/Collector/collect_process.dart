@@ -398,7 +398,8 @@ class _CollectProcessState extends State<CollectProcess> {
 
       await FirebaseFirestore.instance.collection('notifications').add({
         'title': 'Coleta Finalizada',
-        'message': 'A coleta foi concluída com sucesso!',
+        'message':
+            'A coleta foi concluída com sucesso! Verifique o comprovante enviado pelo coletor.',
         'timestamp': FieldValue.serverTimestamp(),
         'requestorId': requestorId,
         'coletaId': _coletaAtual.id,
@@ -1085,7 +1086,7 @@ class _CollectProcessState extends State<CollectProcess> {
               if (_paymentStatus == 'pending')
                 StatusCard(
                   message:
-                      'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
+                      'Pagamento pendente. Por favor, conclua o pagamento para a plataforma em até 24 Horas para continuar.',
                   backgroundColor: Colors.red[50]!,
                   textColor: Colors.red,
                 ),
@@ -1096,6 +1097,14 @@ class _CollectProcessState extends State<CollectProcess> {
                       'Pagamento rejeitado. Entre em contato com o suporte.',
                   backgroundColor: Colors.red[50]!,
                   textColor: Colors.red,
+                ),
+
+              if (_paymentStatus == 'cancelled')
+                StatusCard(
+                  message:
+                      'Tempo para pagar plataforma esgotado. O pagamento foi cancelado.',
+                  backgroundColor: Colors.blueGrey[50]!,
+                  textColor: Colors.blueGrey.shade700,
                 ),
 
               if (_qrCodeBase64 == null && _paymentStatus != 'approved')

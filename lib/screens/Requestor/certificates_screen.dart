@@ -30,8 +30,7 @@ class CertificatesScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('certificados')
             .where('userId', isEqualTo: user.userId)
-            .orderBy('createdAt',
-                descending: true)
+            .orderBy('createdAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -98,7 +97,7 @@ class PDFViewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Visualizar PDF',
