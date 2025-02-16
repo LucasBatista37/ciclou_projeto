@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Ciclou App',
-      theme: ThemeData(primarySwatch: Colors.green),
+      theme: ThemeData(primaryColor: Color.fromARGB(255, 14, 140, 65)),
       navigatorKey: navigatorKey,
       home: const DynamicLinkHandler(),
     );
