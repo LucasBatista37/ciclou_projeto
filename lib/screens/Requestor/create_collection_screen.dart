@@ -1,6 +1,7 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
@@ -171,6 +172,7 @@ class _CreateCollectionState extends State<CreateCollection> {
           'coletorACaminho': false,
           'comprovante': false,
           'informacoesColetorInseridas': false,
+          'rating': false,
         };
 
         if (widget.user.precoFixoOleo > 0.0) {
@@ -251,7 +253,7 @@ class _CreateCollectionState extends State<CreateCollection> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Criar Solicitação',

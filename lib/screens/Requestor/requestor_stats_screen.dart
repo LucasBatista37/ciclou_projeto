@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -45,7 +46,7 @@ class _RequesterStatsScreenState extends State<RequesterStatsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 76, 175, 80),
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Estatísticas do Solicitante',

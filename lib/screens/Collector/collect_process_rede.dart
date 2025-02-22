@@ -13,6 +13,7 @@ import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_finished.dart';
 import 'package:ciclou_projeto/screens/Collector/share_collection.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -443,7 +444,8 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
       await FirebaseFirestore.instance.collection('notifications').add({
         'title': 'Coleta Finalizada',
-        'message': 'A coleta foi concluída com sucesso!',
+        'message':
+            'A coleta foi concluída com sucesso! Verifique o comprovante enviado pelo coletor.',
         'timestamp': FieldValue.serverTimestamp(),
         'requestorId': requestorId,
         'coletaId': _coletaAtual.id,
@@ -554,6 +556,16 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         _isProcessing = true;
       });
 
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        ScaffoldMessengerHelper.showError(
+          context: context,
+          message: 'Usuário não autenticado.',
+        );
+        return;
+      }
+      final userId = currentUser.uid;
+
       final propostasSnapshot = await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)
@@ -583,7 +595,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         'rg': _rgController.text.trim(),
         'placa': _placaController.text.trim(),
         'veiculo': _veiculoController.text.trim(),
-      });
+        'coletorId': userId,
 
       await FirebaseFirestore.instance
           .collection('coletas')
@@ -642,7 +654,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Processo de Coleta Rede',
@@ -839,11 +851,10 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                 });
 
                                 // ignore: use_build_context_synchronously
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('QR Code gerado com sucesso!'),
-                                  ),
+                                ScaffoldMessengerHelper.showSuccess(
+                                  // ignore: use_build_context_synchronously
+                                  context: context,
+                                  message: 'Qr Code gerado com sucesso!',
                                 );
                               } catch (e) {
                                 // ignore: use_build_context_synchronously
@@ -930,7 +941,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                                   // ignore: use_build_context_synchronously
                                   context: context,
                                   message:
-                                      'Pagamento ao solicitante confirmado!',
+                                      'Pagamento ao solicitante confirmado! Finalize a coleta.',
                                 );
                               } else {
                                 // ignore: use_build_context_synchronously
@@ -1264,7 +1275,7 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
               if (_paymentStatus == 'pending')
                 StatusCard(
                   message:
-                      'Pagamento pendente. Por favor, conclua o pagamento para continuar.',
+                      'Pagamento pendente. Por favor, conclua o pagamento para a plataforma em até 24 Horas para continuar.',
                   backgroundColor: Colors.red[50]!,
                   textColor: Colors.red,
                 ),
@@ -1275,6 +1286,14 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
                       'Pagamento rejeitado. Entre em contato com o suporte.',
                   backgroundColor: Colors.red[50]!,
                   textColor: Colors.red,
+                ),
+
+              if (_paymentStatus == 'cancelled')
+                StatusCard(
+                  message:
+                      'Tempo para pagar plataforma esgotado. O pagamento foi cancelado.',
+                  backgroundColor: Colors.blueGrey[50]!,
+                  textColor: Colors.blueGrey.shade700,
                 ),
 
               if (_qrCodeBase64 == null && _paymentStatus != 'approved')

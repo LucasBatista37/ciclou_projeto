@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -33,7 +34,7 @@ class _CollectorStatsScreenState extends State<CollectorStatsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 76, 175, 80),
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Estatísticas do Coletor',
@@ -68,8 +69,9 @@ class _CollectorStatsScreenState extends State<CollectorStatsScreen> {
 
           double oilPerMonth = totalLiters / 12;
           double oilPerDay = totalLiters / 365;
-          double savedWater = totalLiters * 25000; 
-          double avoidedCO2 = totalLiters * 3.39; 
+          double savedWater = totalLiters * 25000;
+          double avoidedCO2 = totalLiters * 3.39;
+
 
           return Padding(
             padding: const EdgeInsets.all(16.0),

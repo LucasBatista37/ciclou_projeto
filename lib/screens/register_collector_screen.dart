@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/screens/register_requestor_screen.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +22,6 @@ class RegisterCollectorScreen extends StatefulWidget {
 
 class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   final TextEditingController _businessNameController = TextEditingController();
   final TextEditingController _cnpjController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -54,7 +54,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
   }
 
   Future<void> _registerCollector() async {
-    // Validação do formulário
+
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessengerHelper.showError(
         context: context,
@@ -78,7 +78,9 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
       final userId = userCredential.user?.uid;
 
       if (userId != null) {
-        // Registro no Firestore
+        await userCredential.user!.sendEmailVerification();
+
+
         await FirebaseFirestore.instance
             .collection('collector')
             .doc(userId)
@@ -101,7 +103,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'operatingPermit': null,
           'avcb': null,
           'IsNet': false,
-          'numero': _numberController.text.trim(),
+          'numero': int.tryParse(_numberController.text.trim()) ?? 0,
           'regiao': _regionController.text.trim(),
         });
 
@@ -109,7 +111,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         ScaffoldMessengerHelper.showSuccess(
           // ignore: use_build_context_synchronously
           context: context,
-          message: 'Coletor registrado com sucesso!',
+          message: 'Cadastro realizado com sucesso! '
+              'Verifique seu e-mail antes de fazer login.',
         );
 
         // Navegação para a tela de login
@@ -175,7 +178,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                 children: [
                   Image.asset(
                     'assets/ciclou.png',
-                    height: 350,
+                    height: 300,
+                    width: 300,
                   ),
                   Column(
                     children: const [
@@ -209,7 +213,8 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                       );
                     },
                     child: const Text(
-                      'Registrar como Solicitante',
+                      'Quero me registrar como Solicitante',
+
                       style: TextStyle(fontSize: 16, color: Colors.blue),
                     ),
                   ),
@@ -301,7 +306,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                       : ElevatedButton(
                           onPressed: _registerCollector,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: AppColors.green2,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),

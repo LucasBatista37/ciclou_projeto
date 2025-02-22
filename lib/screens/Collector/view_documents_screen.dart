@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 
@@ -17,7 +18,7 @@ class DocumentViewerScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         title: Text(
           documentType,
           style: const TextStyle(color: Colors.white),

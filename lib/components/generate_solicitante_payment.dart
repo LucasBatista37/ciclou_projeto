@@ -13,6 +13,7 @@ Future<void> generateSolicitantePixPayment({
     user: user,
     documentId: documentId,
     proposalId: proposalId,
+    payerEmail: user.email
   );
 
   await FirebaseFirestore.instance

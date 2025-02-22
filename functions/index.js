@@ -8,7 +8,8 @@ exports.deleteExpiredColetas = require("firebase-functions/v1")
     .onRun(async (context) => {
       const firestore = admin.firestore();
       const now = admin.firestore.Timestamp.now();
-      const expirationTime = 15 * 60 * 1000; 
+      const expirationTime = 15 * 60 * 1000;
+  
       const coletasRef = firestore.collection("coletas");
 
       try {

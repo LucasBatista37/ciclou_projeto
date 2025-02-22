@@ -6,6 +6,7 @@ import 'package:ciclou_projeto/screens/Collector/collector_notifications_screen.
 import 'package:ciclou_projeto/screens/Collector/collects_screen.dart';
 import 'package:ciclou_projeto/screens/login_screen.dart';
 import 'package:ciclou_projeto/screens/Collector/support_screen.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ciclou_projeto/components/custom_collector_navigationbar.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_history_screen.dart';
@@ -48,7 +49,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         elevation: 0,
         leading: GestureDetector(
           onTap: () {
@@ -289,6 +290,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 color:
                     _currentTip == "Obrigado por se juntar à rede sustentável!"
                         ? Colors.lightGreen
+                        : AppColors.green2,
                         : Colors.lightGreen,
                 borderRadius: BorderRadius.circular(8.0),
               ),
@@ -353,7 +355,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                     child: _buildStatCard(
                       'Óleo Coletado',
                       '${totalLiters.toStringAsFixed(1)} L',
-                      Colors.green,
+                      AppColors.green2,
                     ),
                   ),
                   const SizedBox(width: 12),

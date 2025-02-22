@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/configuration_screen.dart';
 import 'package:ciclou_projeto/screens/edit_collector_profile.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 
 class CollectorDrawer extends StatelessWidget {
@@ -13,16 +14,15 @@ class CollectorDrawer extends StatelessWidget {
   final VoidCallback onLogout;
   final UserModel user;
 
-  const CollectorDrawer({
-    super.key,
-    required this.userName,
-    required this.userEmail,
-    this.profileImageUrl,
-    required this.onEditProfile,
-    required this.onSettings,
-    required this.onLogout,
-    required this.user
-  });
+  const CollectorDrawer(
+      {super.key,
+      required this.userName,
+      required this.userEmail,
+      this.profileImageUrl,
+      required this.onEditProfile,
+      required this.onSettings,
+      required this.onLogout,
+      required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +38,9 @@ class CollectorDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PerfilConfiguracoesScreen(user: user,),
+                  builder: (context) => PerfilConfiguracoesScreen(
+                    user: user,
+                  ),
                 ),
               );
             },
@@ -68,7 +70,7 @@ class CollectorDrawer extends StatelessWidget {
   Widget _buildDrawerHeader() {
     return DrawerHeader(
       decoration: const BoxDecoration(
-        color: Colors.green,
+        color: AppColors.green1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

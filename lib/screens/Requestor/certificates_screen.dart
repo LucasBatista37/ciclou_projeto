@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,7 +13,7 @@ class CertificatesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Visualizar Certificados',
@@ -29,8 +30,7 @@ class CertificatesScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('certificados')
             .where('userId', isEqualTo: user.userId)
-            .orderBy('createdAt',
-                descending: true)
+            .orderBy('createdAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -97,7 +97,7 @@ class PDFViewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Visualizar PDF',

@@ -1,3 +1,4 @@
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -74,7 +75,7 @@ class _ManualQrPaymentScreenState extends State<ManualQrPaymentScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gerar Pagamento Manual PIX'),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

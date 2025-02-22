@@ -44,8 +44,6 @@ dependencies:
   open_file: ^3.5.10
   image_picker: ^1.1.2
   flutter_local_notifications: ^18.0.1
-  geolocator: ^13.0.2
-  geocoding: ^3.0.0
   google_fonts: ^6.2.1
   flutter_multi_formatter: ^2.13.0
   google_places_flutter: ^2.0.9
@@ -73,17 +71,17 @@ dependencies:
 
 flutter_native_splash:
   color: "#02652b"
-  image: "assets/app/splash.png"
+  image: "assets/app/splash-ciclou.png"
   android: true
   ios: true
 
 flutter_icons:
-  image_path: "assets/app/icon.png"
+  image_path: "assets/app/icon-ciclou.png"
   ios: true
   remove_alpha_ios: true
   android: "launcher_icon"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/app/icon-android.png"
+  adaptive_icon_foreground: "assets/app/android-ciclou.png"
 
 dev_dependencies:
   flutter_test:

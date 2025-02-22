@@ -3,6 +3,7 @@ import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_shared_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,8 +30,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     if (_emailController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor, preencha todos os campos.')),
+      ScaffoldMessengerHelper.showWarning(
+        // ignore: use_build_context_synchronously
+        context: context,
+        message: 'Por favor, preencha todos os campos.',
       );
       return;
     }
@@ -45,65 +48,76 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
 
-      final userId = userCredential.user?.uid;
+      final user = userCredential.user;
 
-      if (userId != null) {
-        final collectorDoc = await FirebaseFirestore.instance
-            .collection('collector')
-            .doc(userId)
-            .get();
+      if (user == null) {
+        throw Exception('UID do usuário não encontrado.');
+      }
 
-        if (collectorDoc.exists) {
-          final user = UserModel.fromFirestore(collectorDoc.data()!, userId);
+      await user.reload();
+      if (!user.emailVerified) {
+        throw FirebaseAuthException(
+          code: 'email-nao-verificado',
+          message: 'Por favor, verifique seu e-mail antes de fazer login.',
+        );
+      }
 
-          if (widget.coletaId != null) {
-            Navigator.pushReplacement(
-              // ignore: use_build_context_synchronously
-              context,
-              MaterialPageRoute(
-                builder: (context) => ColetorNotificacaoScreen(
-                  coletaId: widget.coletaId!,
-                  user: user,
-                ),
-              ),
-            );
-          } else {
-            Navigator.pushReplacement(
-              // ignore: use_build_context_synchronously
-              context,
-              MaterialPageRoute(
-                builder: (context) => CollectorDashboard(user: user),
-              ),
-            );
-          }
-          widget.onLoginSuccess?.call();
-          return;
-        }
+      final userId = user.uid;
 
-        final requestorDoc = await FirebaseFirestore.instance
-            .collection('requestor')
-            .doc(userId)
-            .get();
+      final collectorDoc = await FirebaseFirestore.instance
+          .collection('collector')
+          .doc(userId)
+          .get();
 
-        if (requestorDoc.exists) {
-          final user = UserModel.fromFirestore(requestorDoc.data()!, userId);
+      if (collectorDoc.exists) {
+        final userModel = UserModel.fromFirestore(collectorDoc.data()!, userId);
 
+        if (widget.coletaId != null) {
           Navigator.pushReplacement(
             // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
-              builder: (context) => RequestorDashboard(user: user),
+              builder: (context) => ColetorNotificacaoScreen(
+                coletaId: widget.coletaId!,
+                user: userModel,
+              ),
             ),
           );
-
-          widget.onLoginSuccess?.call();
-          return;
+        } else {
+          Navigator.pushReplacement(
+            // ignore: use_build_context_synchronously
+            context,
+            MaterialPageRoute(
+              builder: (context) => CollectorDashboard(user: userModel),
+            ),
+          );
         }
 
-        throw Exception('Usuário não encontrado em nenhuma coleção.');
-      } else {
-        throw Exception('UID do usuário não encontrado.');
+        widget.onLoginSuccess?.call();
+        return;
       }
+
+      final requestorDoc = await FirebaseFirestore.instance
+          .collection('requestor')
+          .doc(userId)
+          .get();
+
+      if (requestorDoc.exists) {
+        final userModel = UserModel.fromFirestore(requestorDoc.data()!, userId);
+
+        Navigator.pushReplacement(
+          // ignore: use_build_context_synchronously
+          context,
+          MaterialPageRoute(
+            builder: (context) => RequestorDashboard(user: userModel),
+          ),
+        );
+
+        widget.onLoginSuccess?.call();
+        return;
+      }
+
+      throw Exception('Usuário não encontrado em nenhuma coleção.');
     } on FirebaseAuthException catch (e) {
       String errorMessage;
       switch (e.code) {
@@ -116,29 +130,114 @@ class _LoginScreenState extends State<LoginScreen> {
         case 'invalid-email':
           errorMessage = 'Formato de e-mail inválido. Por favor, corrija.';
           break;
+        case 'invalid-credential':
+          errorMessage = 'Credenciais inválidas ou expiradas.';
+          break;
+        case 'email-nao-verificado':
+          errorMessage = e.message ?? 'Seu e-mail ainda não foi verificado.';
+          break;
         default:
-          errorMessage = 'Erro inesperado. Tente novamente.';
+          errorMessage = e.message ?? 'Ocorreu um erro inesperado.';
           break;
       }
 
-      // ignore: use_build_context_synchronously
       ScaffoldMessengerHelper.showError(
         // ignore: use_build_context_synchronously
         context: context,
         message: errorMessage,
       );
     } catch (e) {
-      // ignore: use_build_context_synchronously
       ScaffoldMessengerHelper.showError(
         // ignore: use_build_context_synchronously
         context: context,
-        message: 'Erro inesperado. Tente novamente',
+        message: 'Erro inesperado. Tente novamente.',
       );
     } finally {
       setState(() {
-        _isLoading = false; 
+        _isLoading = false;
       });
     }
+  }
+
+  Future<void> _forgotPassword() async {
+    final TextEditingController emailController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Redefinir Senha"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Digite seu e-mail e enviaremos um link para redefinição de senha.",
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                hintText: "E-mail",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (emailController.text.trim().isEmpty) {
+                ScaffoldMessengerHelper.showWarning(
+                  context: context,
+                  message: "Por favor, insira um e-mail válido.",
+                );
+                return;
+              }
+
+              try {
+                await _auth.sendPasswordResetEmail(
+                    email: emailController.text.trim());
+                // ignore: use_build_context_synchronously
+                Navigator.pop(context);
+
+                ScaffoldMessengerHelper.showSuccess(
+                  // ignore: use_build_context_synchronously
+                  context: context,
+                  message:
+                      "E-mail de redefinição enviado! Verifique sua caixa de entrada.",
+                );
+              } on FirebaseAuthException catch (e) {
+                String errorMessage;
+                switch (e.code) {
+                  case 'user-not-found':
+                    errorMessage = "Nenhuma conta encontrada com esse e-mail.";
+                    break;
+                  case 'invalid-email':
+                    errorMessage = "Formato de e-mail inválido.";
+                    break;
+                  default:
+                    errorMessage = "Erro ao enviar e-mail. Tente novamente.";
+                    break;
+                }
+
+                ScaffoldMessengerHelper.showError(
+                  // ignore: use_build_context_synchronously
+                  context: context,
+                  message: errorMessage,
+                );
+              }
+            },
+            child: const Text("Enviar"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -154,7 +253,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 40),
                 Image.asset(
                   'assets/ciclou.png',
-                  height: 350,
+                  height: 300,
+                  width: 300,
                 ),
                 Column(
                   children: const [
@@ -164,14 +264,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.green,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'O app de coleta de óleo que você precisa.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
                       ),
                     ),
                   ],
@@ -194,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     : ElevatedButton(
                         onPressed: _login,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: AppColors.green2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
                           ),
@@ -219,6 +311,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: const Text(
                     'Criar Conta',
+                    style: TextStyle(fontSize: 16, color: Colors.green),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _forgotPassword,
+                  child: const Text(
+                    "Esqueceu a senha?",
                     style: TextStyle(fontSize: 16, color: Colors.green),
                   ),
                 ),

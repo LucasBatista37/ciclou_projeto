@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/code_verification_screen.dart';
+import 'package:ciclou_projeto/screens/Requestor/collector_rating_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/comprovante_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_notifications_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_stats_screen.dart';
@@ -14,6 +15,7 @@ import 'package:ciclou_projeto/components/custom_requestor_navigationbar.dart';
 import 'package:ciclou_projeto/screens/Requestor/create_collection_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_history_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 
 class RequestorDashboard extends StatefulWidget {
   final UserModel user;
@@ -49,7 +51,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         elevation: 0,
         leading: GestureDetector(
           onTap: () {
@@ -136,6 +138,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                       MaterialPageRoute(
                         builder: (context) => RequestorNotificationsScreen(
                           requestorId: widget.user.userId,
+                          user: widget.user,
                         ),
                       ),
                     );
@@ -155,6 +158,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                         MaterialPageRoute(
                           builder: (context) => RequestorNotificationsScreen(
                             requestorId: widget.user.userId,
+                            user: widget.user,
                           ),
                         ),
                       );
@@ -311,9 +315,10 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: _currentTip == "Obrigado por usar o nosso app!"
-                    ? Colors.lightGreen
-                    : Colors.lightGreen,
+                color:
+                    _currentTip == "Obrigado por se juntar à rede sustentável!"
+                        ? Colors.lightGreen
+                        : Colors.lightGreen,
                 borderRadius: BorderRadius.circular(8.0),
               ),
               child: Text(
@@ -327,7 +332,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildQuickActionButton(
-                  Icons.add_circle, 'Solicitar Coleta', Colors.green),
+                  Icons.add_circle, 'Solicitar Coleta', AppColors.green1),
               _buildQuickActionButton(Icons.history, 'Histórico', Colors.blue),
               _buildQuickActionButton(
                   Icons.bar_chart, 'Relatórios', Colors.orange),
@@ -386,10 +391,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
-                      'CO₂ Evitado',
-                      '${avoidedCO2.toStringAsFixed(0)} Kg',
-                      Colors.green,
-                    ),
+                        'CO₂ Evitado',
+                        '${avoidedCO2.toStringAsFixed(0)} Kg',
+                        AppColors.green2),
                   ),
                 ],
               );
@@ -459,28 +463,27 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
     }
 
     return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('coletas')
+          .where('userId', isEqualTo: widget.user.userId)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
       stream: query.orderBy('createdAt', descending: true).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-
         if (snapshot.hasError) {
           return const Center(
             child: Text('Erro ao carregar solicitações.'),
           );
         }
-
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.hourglass_empty,
-                  size: 80,
-                  color: Colors.grey,
-                ),
+                Icon(Icons.hourglass_empty, size: 80, color: Colors.grey),
                 SizedBox(height: 16),
                 Text(
                   'Nenhuma solicitação ativa no momento.',
@@ -491,9 +494,33 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           );
         }
 
-        final documents = snapshot.data!.docs;
+        final allDocs = snapshot.data!.docs;
+
+        final filteredDocs = allDocs.where((docSnap) {
+          final data = docSnap.data() as Map<String, dynamic>;
+          final bool comprovante = data['comprovante'] ?? false;
+          final bool rating = data['rating'] ?? true;
+          final status = data['status'] ?? '';
+
+          if (widget.user.IsNet) {
+            final allowed = ['Pendente', 'Em andamento', 'Aprovado'];
+            if (allowed.contains(status)) return true;
+
+            if (!comprovante || !rating) return true;
+            return false;
+          } else {
+            return (!comprovante || !rating);
+          }
+        }).toList();
+
+        if (filteredDocs.isEmpty) {
+          return const Center(
+            child: Text('Nenhuma solicitação ativa no momento.'),
+          );
+        }
+
         final itemCount =
-            documents.length < 3 || _showAll ? documents.length : 3;
+            filteredDocs.length < 3 || _showAll ? filteredDocs.length : 3;
 
         return Column(
           children: [
@@ -502,8 +529,9 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: itemCount,
               itemBuilder: (context, index) {
-                final data = documents[index].data() as Map<String, dynamic>;
-                final documentId = documents[index].id;
+                final docSnap = filteredDocs[index];
+                final data = docSnap.data() as Map<String, dynamic>;
+                final documentId = docSnap.id;
 
                 return _buildSolicitationCard(
                   data['tipoEstabelecimento'] ?? 'N/A',
@@ -513,7 +541,7 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
                 );
               },
             ),
-            if (documents.length > 3)
+            if (filteredDocs.length > 3)
               TextButton(
                 onPressed: () {
                   setState(() {
@@ -585,21 +613,49 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
             }
 
             return GestureDetector(
-              onTap: () {
+              onTap: () async {
                 if (status == 'Finalizada') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ComprovanteVerificationScreen(documentId: documentId),
-                    ),
-                  );
+                  final docSnap = await FirebaseFirestore.instance
+                      .collection('coletas')
+                      .doc(documentId)
+                      .get();
+
+                  if (!docSnap.exists) return;
+
+                  final docData = docSnap.data() as Map<String, dynamic>;
+
+                  final bool hasComprovante =
+                      (docData['comprovante'] ?? false) == true;
+                  final bool hasRating = (docData['rating'] ?? false) == true;
+
+                  if (!hasComprovante) {
+                    Navigator.push(
+                      // ignore: use_build_context_synchronously
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ComprovanteVerificationScreen(
+                            documentId: documentId),
+                      ),
+                    );
+                  } else if (!hasRating) {
+                    Navigator.push(
+                      // ignore: use_build_context_synchronously
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CollectorProposalRatingScreen(
+                          coletaId: documentId,
+                        ),
+                      ),
+                    );
+                  } else {}
                 } else if (status == 'Em andamento' || status == 'Aprovado') {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          CodeVerificationScreen(documentId: documentId),
+                      builder: (context) => CodeVerificationScreen(
+                        documentId: documentId,
+                        user: widget.user,
+                      ),
                     ),
                   );
                 } else {

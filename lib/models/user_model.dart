@@ -6,7 +6,8 @@ class UserModel {
   final String? establishmentType;
   final String pixKey;
   late final String address;
-  late final int numero; // Removido o uso de `late`
+  late final int numero;
+
   // ignore: non_constant_identifier_names
   final bool IsNet;
   final double precoFixoOleo;
@@ -21,7 +22,7 @@ class UserModel {
     this.establishmentType,
     this.pixKey = 'Pix não informado',
     this.address = 'Endereço não informado',
-    this.numero = 0, 
+    this.numero = 0,
     // ignore: non_constant_identifier_names
     this.IsNet = false,
     this.precoFixoOleo = 0.0,
@@ -38,7 +39,9 @@ class UserModel {
       establishmentType: data['establishmentType'],
       pixKey: data['pixKey'] ?? 'Pix não informado',
       address: data['address'] ?? 'Endereço não informado',
-      numero: data['numero'] ?? 0, 
+ 
+      numero: data['numero'] ?? 0,
+
       IsNet: data['IsNet'] ?? false,
       precoFixoOleo: (data['precoFixoOleo'] is String)
           ? double.tryParse(data['precoFixoOleo']) ?? 0.0

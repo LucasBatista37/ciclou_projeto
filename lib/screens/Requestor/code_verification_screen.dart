@@ -1,4 +1,7 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
+import 'package:ciclou_projeto/models/user_model.dart';
+import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,8 +19,10 @@ class UpperCaseTextFormatter extends TextInputFormatter {
 
 class CodeVerificationScreen extends StatelessWidget {
   final String documentId;
+  final UserModel user;
 
-  const CodeVerificationScreen({super.key, required this.documentId});
+  const CodeVerificationScreen(
+      {super.key, required this.documentId, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +47,7 @@ class CodeVerificationScreen extends StatelessWidget {
                 'Verificação de Código',
                 style: TextStyle(color: Colors.white),
               ),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.green1,
               iconTheme: const IconThemeData(color: Colors.white),
               elevation: 0,
             ),
@@ -65,7 +70,7 @@ class CodeVerificationScreen extends StatelessWidget {
                 'Verificação de Código',
                 style: TextStyle(color: Colors.white),
               ),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.green1,
               iconTheme: const IconThemeData(color: Colors.white),
               elevation: 0,
             ),
@@ -139,7 +144,7 @@ class CodeVerificationScreen extends StatelessWidget {
               'Verificação de Código',
               style: TextStyle(color: Colors.white),
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.green1,
             iconTheme: const IconThemeData(color: Colors.white),
             elevation: 0,
           ),
@@ -254,7 +259,14 @@ class CodeVerificationScreen extends StatelessWidget {
                             );
 
                             // ignore: use_build_context_synchronously
-                            Navigator.pop(context);
+                            Navigator.pushReplacement(
+                              // ignore: use_build_context_synchronously
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => RequestorDashboard(
+                                        user: user,
+                                      )),
+                            );
                           } else {
                             ScaffoldMessengerHelper.showError(
                               // ignore: use_build_context_synchronously

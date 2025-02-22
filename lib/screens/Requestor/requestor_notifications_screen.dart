@@ -3,13 +3,16 @@ import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/code_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/comprovante_verification_screen.dart';
 import 'package:ciclou_projeto/screens/Requestor/proposals_screen.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class RequestorNotificationsScreen extends StatelessWidget {
   final String requestorId;
+  final UserModel user;
 
-  const RequestorNotificationsScreen({super.key, required this.requestorId});
+  const RequestorNotificationsScreen(
+      {super.key, required this.requestorId, required this.user});
 
   void _markNotificationsAsRead() {
     FirebaseFirestore.instance
@@ -34,7 +37,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
         title:
             const Text('Notificações', style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -229,6 +232,7 @@ class RequestorNotificationsScreen extends StatelessWidget {
               MaterialPageRoute(
                 builder: (context) => CodeVerificationScreen(
                   documentId: coletaId,
+                  user: user,
                 ),
               ),
             );

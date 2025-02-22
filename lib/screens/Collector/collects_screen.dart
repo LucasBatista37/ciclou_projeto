@@ -3,6 +3,7 @@ import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process.dart';
 import 'package:ciclou_projeto/screens/Collector/collect_process_rede.dart';
 import 'package:ciclou_projeto/screens/Collector/collector_dashboard.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -60,7 +61,7 @@ class _CollectsScreenState extends State<CollectsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         centerTitle: true,
         title: const Text(
           'Coletas em Andamento',

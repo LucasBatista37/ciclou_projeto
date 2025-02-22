@@ -3,6 +3,7 @@ import 'package:ciclou_projeto/components/generate_payment_screen.dart';
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
 import 'package:ciclou_projeto/models/user_model.dart';
 import 'package:ciclou_projeto/screens/Requestor/requestor_dashboard.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -26,7 +27,7 @@ class ProposalsScreen extends StatelessWidget {
           'Propostas para $solicitationTitle',
           style: const TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.green1,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -82,16 +83,14 @@ class ProposalsScreen extends StatelessWidget {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const SizedBox
-                      .shrink(); // Não exibe nada enquanto carrega
+                  return const SizedBox.shrink();
                 }
 
                 final coletaData =
                     snapshot.data!.data() as Map<String, dynamic>?;
 
                 if (coletaData?['status'] == 'Em andamento') {
-                  return const SizedBox
-                      .shrink(); // Oculta o botão se a coleta está em andamento
+                  return const SizedBox.shrink();
                 }
 
                 return ElevatedButton(
@@ -406,6 +405,7 @@ class ProposalsScreen extends StatelessWidget {
 
       final collectorId = proposalData['collectorId'];
       final collectorName = proposalData['collectorName'];
+      final collectorEmail = proposalData['collectorEmail'];
       final precoPorLitro = proposalData['precoPorLitro'];
 
       final amount = _calculateAmount(double.parse(quantityOleo.toString()));
@@ -422,8 +422,8 @@ class ProposalsScreen extends StatelessWidget {
         documentId,
       );
 
-      await _generateQRCodes(
-          coletaData, proposalData, documentId, proposalId, amount);
+      await _generateQRCodes(coletaData, proposalData, documentId, proposalId,
+          amount, collectorEmail);
 
       ScaffoldMessengerHelper.showSuccess(
         // ignore: use_build_context_synchronously
@@ -487,15 +487,18 @@ class ProposalsScreen extends StatelessWidget {
   }
 
   Future<void> _generateQRCodes(
-      Map<String, dynamic> coletaData,
-      Map<String, dynamic> proposalData,
-      String documentId,
-      String proposalId,
-      double amount) async {
+    Map<String, dynamic> coletaData,
+    Map<String, dynamic> proposalData,
+    String documentId,
+    String proposalId,
+    double amount,
+    String collectorEmail,
+  ) async {
     final principalQrCodeData = await generateFixedPixPayment(
       amount: amount.toString(),
       user: user,
       documentId: documentId,
+      payerEmail: collectorEmail,
       proposalId: proposalId,
     );
 
@@ -521,6 +524,7 @@ class ProposalsScreen extends StatelessWidget {
         final solicitanteQrCodeData = await generateFixedPixPayment(
           amount: valorTotalPago,
           user: user,
+          payerEmail: collectorEmail,
           documentId: documentId,
           proposalId: proposalId,
         );

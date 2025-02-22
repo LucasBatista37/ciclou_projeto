@@ -49,7 +49,7 @@ class CertificadoService {
                   left: 99.5,
                   top: 314.2,
                   child: pw.Text(
-                    '${coletaData['cnpj'] ?? 'N/A'}',
+                    '${coletaData['document'] ?? 'N/A'}',
                     style: pw.TextStyle(font: ttf, fontSize: 18),
                   ),
                 ),

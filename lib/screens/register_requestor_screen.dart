@@ -1,4 +1,5 @@
 import 'package:ciclou_projeto/components/scaffold_mensager.dart';
+import 'package:ciclou_projeto/utils/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -105,12 +106,14 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
         password: _passwordController.text.trim(),
       );
 
-      final userId = userCredential.user?.uid;
+      final user = userCredential.user;
 
-      if (userId != null) {
+      if (user != null) {
+        await user.sendEmailVerification();
+
         await FirebaseFirestore.instance
             .collection('requestor')
-            .doc(userId)
+            .doc(user.uid)
             .set({
           'businessName': _businessNameController.text.trim(),
           'documentType': _selectedDocumentType,
@@ -125,15 +128,16 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
           'establishmentType': _selectedEstablishmentType,
           'IsNet': false,
           'realQuantityCollected': false,
-          'logradouro': _addressController.text.trim(),
-          'numero': _numberController.text.trim(),
+          'address': _addressController.text.trim(),
+          'numero': int.tryParse(_numberController.text.trim()) ?? 0,
           'regiao': _regionController.text.trim(),
         });
 
         ScaffoldMessengerHelper.showSuccess(
           // ignore: use_build_context_synchronously
           context: context,
-          message: 'Solicitante registrado com sucesso!',
+          message: 'Cadastro realizado com sucesso! '
+              'Verifique seu e-mail antes de fazer login.',
         );
 
         Navigator.pushReplacement(
@@ -195,7 +199,8 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                 children: [
                   Image.asset(
                     'assets/ciclou.png',
-                    height: 350,
+                    height: 300,
+                    width: 300,
                   ),
                   Column(
                     children: const [
@@ -229,7 +234,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                       );
                     },
                     child: const Text(
-                      'Registrar como Coletor',
+                      'Quero me registrar como Coletor',
                       style: TextStyle(fontSize: 16, color: Colors.blue),
                     ),
                   ),
@@ -312,7 +317,8 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                       : ElevatedButton(
                           onPressed: _registerRequestor,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: AppColors.green2,
+
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),
