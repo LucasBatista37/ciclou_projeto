@@ -46,6 +46,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   google_fonts: ^6.2.1
   flutter_multi_formatter: ^2.13.0
+  google_places_flutter: ^2.0.9
   # Firebase
   firebase_core: ^3.8.0
   firebase_auth: ^5.3.3
@@ -66,6 +67,7 @@ dependencies:
   file_picker: ^8.1.7
   firebase_storage: ^12.3.7
   firebase_dynamic_links: ^6.1.0
+  flutter_dotenv: ^5.2.1
 
 flutter_native_splash:
   color: "#02652b"
@@ -110,6 +112,7 @@ flutter:
     - assets/banco.csv
     - assets/fonts/Roboto-Regular.ttf
     - assets/fonts/Roboto-Bold.ttf
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

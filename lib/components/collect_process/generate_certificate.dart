@@ -14,6 +14,9 @@ class CertificadoService {
     required double quantidadeReal,
   }) async {
     try {
+      if (!coletaData.containsKey('cnpj') || coletaData['cnpj'] == null) {
+        throw Exception('CNPJ não está presente nos dados da coleta.');
+      }
       if (quantidadeReal <= 0) {
         throw Exception('Quantidade real inválida: $quantidadeReal');
       }

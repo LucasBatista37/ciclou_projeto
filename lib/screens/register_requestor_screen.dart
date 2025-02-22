@@ -318,6 +318,7 @@ class _RegisterRequestorScreenState extends State<RegisterRequestorScreen> {
                           onPressed: _registerRequestor,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.green2,
+
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),

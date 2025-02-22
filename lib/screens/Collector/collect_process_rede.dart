@@ -596,7 +596,6 @@ class _CollectProcessRedeState extends State<CollectProcessRede> {
         'placa': _placaController.text.trim(),
         'veiculo': _veiculoController.text.trim(),
         'coletorId': userId,
-      });
 
       await FirebaseFirestore.instance
           .collection('coletas')

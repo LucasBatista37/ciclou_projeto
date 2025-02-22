@@ -7,6 +7,7 @@ class UserModel {
   final String pixKey;
   late final String address;
   late final int numero;
+
   // ignore: non_constant_identifier_names
   final bool IsNet;
   final double precoFixoOleo;
@@ -38,7 +39,9 @@ class UserModel {
       establishmentType: data['establishmentType'],
       pixKey: data['pixKey'] ?? 'Pix não informado',
       address: data['address'] ?? 'Endereço não informado',
+ 
       numero: data['numero'] ?? 0,
+
       IsNet: data['IsNet'] ?? false,
       precoFixoOleo: (data['precoFixoOleo'] is String)
           ? double.tryParse(data['precoFixoOleo']) ?? 0.0

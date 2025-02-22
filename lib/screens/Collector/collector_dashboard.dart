@@ -291,6 +291,7 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                     _currentTip == "Obrigado por se juntar à rede sustentável!"
                         ? Colors.lightGreen
                         : AppColors.green2,
+                        : Colors.lightGreen,
                 borderRadius: BorderRadius.circular(8.0),
               ),
               child: Text(

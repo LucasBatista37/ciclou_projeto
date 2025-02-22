@@ -449,18 +449,34 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
   }
 
   Widget _buildSolicitationsList() {
+    final isNetUser = widget.user.IsNet;
+
+    Query query = FirebaseFirestore.instance
+        .collection('coletas')
+        .where('userId', isEqualTo: widget.user.userId);
+
+    if (isNetUser) {
+      query = query
+          .where('status', whereIn: ['Pendente', 'Em andamento', 'Aprovado']);
+    } else {
+      query = query.where('comprovante', isEqualTo: false);
+    }
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('coletas')
           .where('userId', isEqualTo: widget.user.userId)
           .orderBy('createdAt', descending: true)
           .snapshots(),
+      stream: query.orderBy('createdAt', descending: true).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return const Center(child: Text('Erro ao carregar solicitações.'));
+          return const Center(
+            child: Text('Erro ao carregar solicitações.'),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
