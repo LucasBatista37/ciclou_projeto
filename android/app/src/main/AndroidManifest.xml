@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.ciclou_projeto"> 
+    package="com.beyondtech.ciclou_projeto"> 
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -45,10 +45,6 @@
                 <data android:scheme="mailto" />
             </intent-filter>
         </activity>
-
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCMCn9oTxcBpL7F79kW6lm9qsDgS45djag" /> 
 
         <meta-data
             android:name="flutterEmbedding"

@@ -1,4 +1,4 @@
-package com.example.ciclou_projeto
+package com.beyondtech.ciclou_projeto
 
 import io.flutter.embedding.android.FlutterActivity
 
