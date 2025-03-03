@@ -477,7 +477,6 @@ class _CollectProcessState extends State<CollectProcess> {
 
       final propostaDocId = propostasSnapshot.docs.first.id;
 
-      // 👉 Atualiza a subcoleção com o ID do usuário (coletor)
       await FirebaseFirestore.instance
           .collection('coletas')
           .doc(_coletaAtual.id)

@@ -72,6 +72,7 @@ class _CollectorStatsScreenState extends State<CollectorStatsScreen> {
           double savedWater = totalLiters * 25000;
           double avoidedCO2 = totalLiters * 3.39;
 
+
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: SingleChildScrollView(

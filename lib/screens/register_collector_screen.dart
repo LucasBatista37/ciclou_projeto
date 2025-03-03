@@ -54,6 +54,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
   }
 
   Future<void> _registerCollector() async {
+
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessengerHelper.showError(
         context: context,
@@ -67,6 +68,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
     });
 
     try {
+      // Criação do usuário no Firebase Authentication
       final userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
@@ -77,6 +79,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
 
       if (userId != null) {
         await userCredential.user!.sendEmailVerification();
+
 
         await FirebaseFirestore.instance
             .collection('collector')
@@ -104,6 +107,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
           'regiao': _regionController.text.trim(),
         });
 
+        // Mensagem de sucesso
         ScaffoldMessengerHelper.showSuccess(
           // ignore: use_build_context_synchronously
           context: context,
@@ -111,6 +115,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
               'Verifique seu e-mail antes de fazer login.',
         );
 
+        // Navegação para a tela de login
         Navigator.pushReplacement(
           // ignore: use_build_context_synchronously
           context,
@@ -120,6 +125,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         );
       }
     } on FirebaseAuthException catch (e) {
+      // Tratamento de erros do Firebase Authentication
       String errorMessage;
       switch (e.code) {
         case 'email-already-in-use':
@@ -144,6 +150,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
         message: errorMessage,
       );
     } catch (e) {
+      // Tratamento de erros inesperados
       ScaffoldMessengerHelper.showError(
         // ignore: use_build_context_synchronously
         context: context,
@@ -207,6 +214,7 @@ class _RegisterCollectorScreenState extends State<RegisterCollectorScreen> {
                     },
                     child: const Text(
                       'Quero me registrar como Solicitante',
+
                       style: TextStyle(fontSize: 16, color: Colors.blue),
                     ),
                   ),
