@@ -468,7 +468,6 @@ class _RequestorDashboardState extends State<RequestorDashboard> {
           .where('userId', isEqualTo: widget.user.userId)
           .orderBy('createdAt', descending: true)
           .snapshots(),
-      stream: query.orderBy('createdAt', descending: true).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
